@@ -1,0 +1,12 @@
+{
+  "assetKey": "shisanshui-motion-popup-win",
+  "kind": "EFFECT",
+  "title": "十三张胜利结算弹层动画关键帧",
+  "intendedUse": "4×4 序列关键帧图集，裁成 16 帧后输出透明 AVIF 与 Pixi 帧序列；作为胜利结算弹层的无字装饰层",
+  "prompt": "Create an exact 4-column by 4-row transparent sprite sheet of 16 sequential frames for the decorative opening flourish behind a Shisanshui win-result popup. The same blank, wide rounded emerald panel silhouette stays centered and the same size in every cell. Animate only a gentle warm-gold edge light that travels around the panel, a small ivory starburst rising above its top edge, and a few sparks that fade. Frame progression: panel softly appears, gold edge traces around it, one compact celebratory sparkle peaks, then the final frames settle to a stable blank panel. Leave the entire central panel empty and transparent enough for live H5 text, buttons, scores and payout details. Exact 4x4 equal cells, no overlap across cells. Premium game-specific emerald-and-gold style.",
+  "negativePrompt": "words, letters, numbers, score, buttons, icons, characters, cards, panel text, background, grid lines, gutters, cell borders, effects crossing cells, changing panel size, inconsistent position, camera movement, casino chips, harsh bloom, photorealism, watermark, logo",
+  "output": { "size": "1600x1600", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/candidates/shisanshui-subhall-background/aab473a3-ad3b-4784-8474-df7c2a50458b/source.webp", "purpose": "Match the distinct emerald and restrained gold internal game-room style; do not include the table background." }],
+  "tags": ["shisanshui", "animation", "sprite-sheet", "popup", "win", "settlement"]
+}

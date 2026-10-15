@@ -1,0 +1,12 @@
+{
+  "assetKey": "avatar-05",
+  "kind": "AVATAR",
+  "title": "玩家头像 05",
+  "intendedUse": "用户可选头像之一，圆形裁切显示",
+  "prompt": "Create a friendly premium casual-game avatar portrait of a thoughtful South Asian man with short dark hair and a neatly trimmed beard, wearing a simple ivory shirt, head and shoulders, facing camera, centered for a circular crop. Polished stylized 3D mobile-game illustration, rounded forms, soft upper-left highlights and a deep-teal backdrop. No props or text.",
+  "negativePrompt": "photorealism, full body, side profile, text, letters, watermark, logo, busy background, realistic skin pores",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Polished casual-game 3D rendering and soft lighting only; do not copy the card icon composition." }],
+  "tags": ["avatar", "player", "portrait"]
+}

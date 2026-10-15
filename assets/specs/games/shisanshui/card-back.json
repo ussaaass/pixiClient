@@ -1,0 +1,27 @@
+{
+  "assetKey": "shisanshui-card-back",
+  "kind": "CARD_BACK",
+  "title": "十三张牌背",
+  "intendedUse": "52 张牌背统一纹样，正反翻转由 PixiJS 控制",
+  "prompt": "Create a single vertical playing-card back, viewed straight-on, with a symmetrical abstract geometric pattern inspired by folded card fans and woven emerald felt. Deep green/teal base, warm-ivory fine geometry and a restrained polished-gold double border. Match the specific Shisanshui game-room material style. Keep the pattern perfectly non-semantic and rotationally balanced; no text, ranks, suit symbols, logo or identifiable number.",
+  "negativePrompt": "face side, card ranks, letters, numbers, suit pips, asymmetrical layout, perspective view, real casino branding, photorealism, watermark, excessive gold, clutter",
+  "output": {
+    "size": "768x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/candidates/shisanshui-subhall-background/aab473a3-ad3b-4784-8474-df7c2a50458b/source.webp",
+      "purpose": "Match dedicated-game palette, rendering and surface material; do not copy the room composition."
+    }
+  ],
+  "tags": [
+    "shisanshui",
+    "card",
+    "back",
+    "gameplay"
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "assetKey": "game-card-fishing-poster",
+  "kind": "BACKGROUND",
+  "title": "捕鱼 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；标题、状态与按钮由 H5 绘制",
+  "prompt": "Create a wide 16:9 premium casual-game background for 捕鱼: a bright elegant underwater arcade scene with rounded stylized coral reef at lower-right, a small school of jewel-toned friendly fish in the middle distance, luminous turquoise water rays and a few bubbles. Polished rounded 3D casual-game art matching the supplied reference's clean premium materials, soft bevels, deep teal and restrained warm-gold glints. Focus center-right; leave lower-left 35% dark calm teal for H5 text; keep outer crop margins safe. Friendly and colorful, readable at small card size. No weapons, text, letters, numerals, logos, UI, people, money, watermark, realistic sea photography or particle clutter.",
+  "negativePrompt": "photorealism, realistic sea photography, weapons, text, letters, numerals, logos, watermark, UI, people, money, clutter, flat vector, watercolor",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match style/material/color only; do not copy the playing-card layout." }],
+  "tags": ["fishing", "arcade", "pc-card", "background"]
+}

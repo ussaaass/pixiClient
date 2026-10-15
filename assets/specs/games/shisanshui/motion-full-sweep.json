@@ -1,0 +1,12 @@
+{
+  "assetKey": "shisanshui-motion-full-sweep",
+  "kind": "EFFECT",
+  "title": "十三张全垒打结算动画关键帧",
+  "intendedUse": "4×4 序列关键帧图集，裁成 16 帧后输出透明 AVIF 与 Pixi 帧序列；表现战胜其余全部玩家的奖励",
+  "prompt": "Create an exact 4-column by 4-row transparent sprite sheet of 16 sequential frames for a Shisanshui full-table sweep celebration. Animate a tasteful fan-shaped halo of ivory and warm-gold light with small teal diamond sparks: frames 1-3 a tiny central glint, frames 4-7 a clean semicircular halo opens, frames 8-10 the halo reaches a celebratory peak with a few controlled star sparks, frames 11-14 the light disperses gently, frames 15-16 become transparent. Same center and scale per cell, no crossing boundaries. Transparent background. Premium game result flourish, festive but restrained. No player faces, no cards, no text, no numerical score; code controls the result and multiplier.",
+  "negativePrompt": "text, letters, numbers, multiplier, panels, cards, suit symbols, characters, confetti covering a large area, background, grid lines, gutters, borders, effects touching neighboring cells, changing camera, inconsistent pivots, casino chips, harsh bloom, photorealism, watermark, logo",
+  "output": { "size": "1600x1600", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/candidates/shisanshui-effect-atlas/cccafa9e-c1e5-4a03-99d5-bf882369586e/source.webp", "purpose": "Match the established effect texture/color; the animation is a new fan-shaped celebration." }],
+  "tags": ["shisanshui", "animation", "sprite-sheet", "full-sweep", "result"]
+}

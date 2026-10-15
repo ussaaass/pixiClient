@@ -1,0 +1,12 @@
+{
+  "assetKey": "game-card-mahjong-hule-poster",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；游戏标题与状态由 H5 绘制",
+  "prompt": "Create a wide 16:9 premium casual-game background for 麻将胡了. Scene: jade-green mahjong tabletop, chunky ivory rectangular mahjong tiles with simple raised bamboo strokes and red/green circles (clearly mahjong tiles, never poker cards), peony blossom and a soft round-window motif. Use a friendly rounded 3D illustration style with smooth enamel surfaces, soft bevels, deep teal/jade, ivory and restrained gold, matching the supplied reference. Place the tile group center-right; leave lower-left 35% dark and uncluttered for H5 copy; retain safe outer crop margins. Soft upper-left light, welcoming and readable at small size. No text, Chinese characters, letters, numerals, logos, UI, watermark, people, photorealism, casino imagery, playing cards, hearts, spades, diamonds or clubs.",
+  "negativePrompt": "photorealism, cinematic realism, playing cards, poker suit symbols, readable Chinese text, letters, numerals, logos, watermark, UI, people, casino photography, clutter, flat vector, watercolor",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match style/material/color only; do not copy its playing cards or layout." }],
+  "tags": ["mahjong-hule", "mahjong", "pc-card", "background"]
+}

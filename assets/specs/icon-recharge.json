@@ -1,0 +1,12 @@
+{
+  "assetKey": "icon-recharge",
+  "kind": "ICON",
+  "title": "充值入口图标",
+  "intendedUse": "游戏大厅的钱包充值入口，不表示真实支付渠道品牌",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game icon for adding game coins: a small rounded deep-teal coin pouch with two warm-gold coins and a simple ivory upward arrow embossed as a shape. Match the supplied reference's rounded dimensional enamel finish, soft bevels, controlled highlights, and upper-left lighting. Center the silhouette with transparent padding, clear at 64 px. Do not use any real payment-company marks.",
+  "negativePrompt": "currency symbols, banknotes, credit cards, payment brand logos, text, letters, numbers, photorealism, flat vector, clutter, watermark",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Rendering material, palette, bevel highlights and lighting only." }],
+  "tags": ["icon", "recharge", "wallet", "lobby"]
+}

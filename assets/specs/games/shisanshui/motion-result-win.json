@@ -1,0 +1,12 @@
+{
+  "assetKey": "shisanshui-motion-result-win",
+  "kind": "EFFECT",
+  "title": "十三张单墩获胜动画关键帧",
+  "intendedUse": "4×4 序列关键帧图集，裁成 16 帧后输出透明 AVIF 与 Pixi 帧序列，用于单墩获胜提示",
+  "prompt": "Create an exact 4-column by 4-row transparent sprite sheet of 16 sequential animation frames for a premium Shisanshui card game. Animate one compact ivory-and-warm-gold victory sparkle: frame 1 a tiny dim glint, frames 2-5 a clean expanding gold ring and a few diamond sparks, frames 6-9 a bright but controlled starburst, frames 10-13 sparks drift outward and fade, frames 14-16 return to fully transparent. Keep the effect centered in every equal square cell, same scale and pivot, with no motion crossing cell boundaries. Transparent background. Game-specific visual language: dark emerald game room, restrained gold, crisp soft-edged stylized 3D particles. Effect only; all wording, score and card data are rendered by the game.",
+  "negativePrompt": "text, letters, numbers, score, labels, panels, cards, suit symbols, characters, background, grid lines, gutters, borders, effects touching neighboring cells, changing camera, inconsistent pivots, harsh bloom, photorealism, watermark, logo",
+  "output": { "size": "1600x1600", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/candidates/shisanshui-effect-atlas/cccafa9e-c1e5-4a03-99d5-bf882369586e/source.webp", "purpose": "Use only as the existing particle material and color reference; generate a 16-frame sequence, not a copy of its static layout." }],
+  "tags": ["shisanshui", "animation", "sprite-sheet", "result", "win"]
+}

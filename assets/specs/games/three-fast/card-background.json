@@ -1,0 +1,12 @@
+{
+  "assetKey": "game-card-three-fast-poster",
+  "kind": "BACKGROUND",
+  "title": "3快 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；开奖倒计时与文字由 H5 绘制",
+  "prompt": "Create a wide 16:9 premium casual-game background for 3快, a scheduled three-number draw game. Scene: a compact elegant draw stage with exactly three separate glowing ivory number-ball chambers arranged horizontally, each holding an abstract blank luminous sphere with no printed digits; teal/blue-green background, a few warm red accents and subtle concentric light rings. Polished rounded 3D casual-game art matching the supplied reference's soft bevels, teal/ivory surfaces, restrained gold and soft broad light. Focus center-right, lower-left 35% dark quiet space for H5 title and CTA, safe crop edges, simple focal grouping. No text, digits, letters, logos, UI, people, money, jackpot graphics, casino photography or watermark.",
+  "negativePrompt": "digits, numerals, readable text, letters, logos, watermark, UI, people, money, jackpot signage, casino photography, clutter, flat vector, watercolor",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match style/material/color only; do not copy its playing-card layout." }],
+  "tags": ["three-fast", "number-draw", "pc-card", "background"]
+}

@@ -1,0 +1,17 @@
+{
+  "assetKey": "icon-invite-network",
+  "kind": "ICON",
+  "title": "邀请好友入口图标",
+  "intendedUse": "大厅邀请与代理入口的小尺寸图标；透明背景",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game icon representing an invitation: two simple rounded teal bust silhouettes side by side, one small warm-gold plus sparkle between them, and a subtle ivory circular badge. Match the supplied reference's smooth dimensional surfaces, rounded bevels, controlled highlights and soft upper-left light. Center a bold, readable silhouette with safe transparent padding; legible at 64 px. Do not copy the playing-card subject.",
+  "negativePrompt": "flat vector, photorealism, tiny details, clutter, realistic portrait, letters, digits, logos, watermark",
+  "output": {
+    "size": "1024x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match rendering style, palette, materials, bevels and light only." }],
+  "tags": ["icon", "invite", "referral", "lobby"]
+}

@@ -1,0 +1,12 @@
+{
+  "assetKey": "game-card-bounty-queen-poster",
+  "kind": "BACKGROUND",
+  "title": "赏金女王 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；标题、状态与按钮由 H5 绘制",
+  "prompt": "Create a wide 16:9 premium casual-game background for 赏金女王, a multi-reel slot title. Scene: an elegant emerald treasure vault with a sculptural jewel-encrusted crown above a softly glowing abstract reel cabinet, velvet and jade surfaces and a few faceted gems; no human queen or face. Friendly polished rounded 3D casual-game art matching the supplied reference's soft bevels, teal enamel and restrained gold. Focus center-right and preserve lower-left 35% dark quiet space for H5 text; safe crop edges; welcoming rather than casino-like. No text, letters, numerals, logos, UI, people, banknotes, excessive coin piles, casino photography or watermark.",
+  "negativePrompt": "human face, portrait, photorealism, casino photography, text, letters, numerals, logos, watermark, UI, people, banknotes, excessive coins, clutter, flat vector, watercolor",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match style/material/color only; do not copy its playing-card layout." }],
+  "tags": ["bounty-queen", "slot", "pc-card", "background"]
+}

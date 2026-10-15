@@ -1,0 +1,27 @@
+{
+  "assetKey": "shisanshui-table-background-portrait",
+  "kind": "BACKGROUND",
+  "title": "十三张竖屏牌桌背景",
+  "intendedUse": "竖屏设备上的十三张游戏场景，牌区和玩家状态由 PixiJS 绘制",
+  "prompt": "Create a portrait-orientation dedicated Shisanshui game-table background viewed from a slightly elevated near-top-down angle. Use deep emerald felt, ink-teal shadows, a restrained warm-ivory/gold perimeter rail and polished stylized 3D casual-game materials. Keep the central vertical card-play area uninterrupted and low-contrast, with subtle peripheral regions for four player seats. This is the focused game interior, not the external multi-game portal. No people, cards, ranks, symbols, text, score marks or controls.",
+  "negativePrompt": "bright portal lobby, archway scenery, casino photography, roulette, chips, dice, cash, people, cards, text, numbers, UI, clutter, center ornament, watermark",
+  "output": {
+    "size": "1024x1536",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/candidates/shisanshui-subhall-background/aab473a3-ad3b-4784-8474-df7c2a50458b/source.webp",
+      "purpose": "Match game-specific material and lighting; compose an independent vertical play surface."
+    }
+  ],
+  "tags": [
+    "shisanshui",
+    "table",
+    "portrait",
+    "background"
+  ]
+}

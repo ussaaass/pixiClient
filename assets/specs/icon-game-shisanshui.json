@@ -1,0 +1,17 @@
+{
+  "assetKey": "icon-game-shisanshui",
+  "kind": "ICON",
+  "title": "十三张游戏大厅图标",
+  "intendedUse": "横向游戏大厅中的十三张游戏卡片图标；透明背景，缩小到约96像素仍清晰",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game icon for a Chinese thirteen-card game. Show a compact fan of three ivory playing cards with a few accurate simple suit pips, mounted on a rounded deep-teal medallion with warm-gold beveled trim. Match the supplied visual reference's smooth enamel-like volume, soft upper-left highlights, gentle shadows, and friendly premium mobile-game finish. Strong centered silhouette with transparent padding; readable at 96 px. Do not draw ranks or lettering.",
+  "negativePrompt": "flat vector, photorealism, thin fragile lines, clutter, inaccurate suit pips, letters, digits, logos, watermark",
+  "output": {
+    "size": "1024x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match rendering style and finish without copying exact object geometry." }],
+  "tags": ["icon", "lobby", "game", "thirteen-cards"]
+}

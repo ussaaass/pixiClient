@@ -1,0 +1,12 @@
+{
+  "assetKey": "icon-profile",
+  "kind": "ICON",
+  "title": "个人资料入口图标",
+  "intendedUse": "游戏大厅的个人资料按钮，不包含姓名或用户信息",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game icon: one friendly ivory bust silhouette inside a rounded deep-teal medallion with a small restrained warm-gold rim. Match the supplied reference's dimensional enamel finish, rounded bevels, controlled highlights, and soft upper-left lighting. Keep one simple centered silhouette with transparent padding, readable at 64 px; do not copy the reference's cards or exact medallion silhouette.",
+  "negativePrompt": "realistic portrait, photorealism, flat vector, detailed facial features, text, letters, numbers, logos, watermark, clutter",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Rendering material, teal/ivory/gold palette, bevel highlights and lighting only." }],
+  "tags": ["icon", "profile", "lobby"]
+}

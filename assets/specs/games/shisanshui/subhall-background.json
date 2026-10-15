@@ -1,0 +1,31 @@
+{
+  "assetKey": "shisanshui-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "十三张专属子厅背景",
+  "intendedUse": "选择十三张后、选择金币难度档位前的游戏专属子厅；H5 绘制厅名、档位、金币范围和按钮",
+  "prompt": "Create a wide dedicated thirteen-card game subhall environment, intentionally different from a bright multi-game portal. Use focused premium casual 3D game art: a deep emerald felt card-room with a broad clean center and three subtle horizontal table-like zones suggesting the three-hand structure, restrained ivory and warm-gold details, soft lantern-like upper-left light, dark teal edge framing. Keep the central 65 percent visually quiet for H5 room cards and controls. Use only card-table materials and abstract card motifs; no large lobby arches or scenery. This image establishes the specific Shisanshui visual language.",
+  "negativePrompt": "bright generic game portal, lobby archway, realistic casino, photorealism, roulette, chips, dice, cash, people, visible card ranks or suits, text, letters, numbers, UI panels, buttons, logos, watermark, clutter, strong bloom",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "purpose": "Shared polished 3D rendering quality and card-game identity only; do not copy its bright icon composition."
+    },
+    {
+      "path": "assets/candidates/shisanshui-cover/6ae13766-1063-42cd-83da-b991f69969ff/source.webp",
+      "purpose": "Game-specific card materials and deep teal/gold palette; do not copy the cover layout."
+    }
+  ],
+  "tags": [
+    "shisanshui",
+    "subhall",
+    "background",
+    "game-specific"
+  ]
+}

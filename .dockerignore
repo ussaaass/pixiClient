@@ -1,0 +1,11 @@
+.git
+.env
+.env.*
+!.env.example
+**/node_modules
+**/dist
+**/coverage
+assets/aigen
+assets/candidates
+assets/provenance/jobs
+tools/asset-generation/node_modules

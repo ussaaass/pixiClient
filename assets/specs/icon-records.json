@@ -1,0 +1,12 @@
+{
+  "assetKey": "icon-records",
+  "kind": "ICON",
+  "title": "战绩记录入口图标",
+  "intendedUse": "游戏大厅的战绩和牌局历史入口",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game icon for match records: a short stack of two ivory playing-card score sheets with a simple raised gold star token, resting on a rounded deep-teal base. Match the supplied reference's dimensional game-art finish, smooth bevels, soft upper-left light, and teal/ivory/gold colors. Use no readable ranks or score marks. Center the object with transparent padding; readable at 64 px.",
+  "negativePrompt": "letters, numbers, card ranks, score text, logos, watermark, photorealism, flat vector, tiny details, clutter",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Rendering material, palette, bevel highlights and lighting only." }],
+  "tags": ["icon", "records", "history", "lobby"]
+}

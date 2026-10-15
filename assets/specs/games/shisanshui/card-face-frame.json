@@ -1,0 +1,21 @@
+{
+  "assetKey": "shisanshui-card-face-frame",
+  "kind": "CARD_FRAME",
+  "title": "十三张扑克牌正面底框",
+  "intendedUse": "52 张正面卡牌共用的无文字底框；点数、花色和布局由代码绘制",
+  "prompt": "Use case: stylized-concept. Asset type: neutral background reference for a standard Anglo-American playing-card face. Create a single blank vertical poker card viewed straight on, with a flat clean white paper face, very thin neutral black outer keyline, tiny ordinary corner radius, and no shading except a faint edge antialiasing. Keep the interior completely empty and evenly white so software can place conventional black/red indices and pips. Transparent outside the card silhouette. Match the plain printed appearance of a traditional casino playing card; no game theme or decorative styling.",
+  "negativePrompt": "gold edge, emerald accent, 3D bevel, glossy material, drop shadow, letters, numbers, ranks, suit pips, symbols, center ornament, heavy border, perspective, photorealism, watermark",
+  "output": {
+    "size": "768x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/games/shisanshui/traditional-card-style.md",
+  "tags": [
+    "shisanshui",
+    "card",
+    "face-frame",
+    "gameplay"
+  ]
+}

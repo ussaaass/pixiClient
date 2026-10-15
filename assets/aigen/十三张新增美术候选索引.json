@@ -1,0 +1,2241 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-09T16:33:51.153Z",
+  "title": "十三张新增美术候选审核索引",
+  "models": {
+    "main": "gpt-6-sol",
+    "image": "gpt-image-2.5-sunburst"
+  },
+  "reviewPolicy": "所有条目仍为 REVIEW_REQUIRED；本索引不构成批准或发布。",
+  "avatarSheets": [
+    {
+      "assetKey": "avatar-sheet-female",
+      "jobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "candidatePath": "assets/candidates/avatar-sheet-female/7db4887c-6766-4a66-8d83-a6fabe5da9cc/source.webp",
+      "sha256": "0134194c87096fd58b58e04afcad628cedf6d6fb0d39705bf02e212ce2d7b77b",
+      "mime": "image/webp",
+      "width": 1600,
+      "height": 1600,
+      "bytes": 2321046,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "avatar-sheet-male",
+      "jobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "candidatePath": "assets/candidates/avatar-sheet-male/790ca994-3fc1-4da9-952f-cf5f87da7f4a/source.webp",
+      "sha256": "2cf9cc1f626fe7a244bcf35567812038a474a1d6a62556363fb3541622fafe2a",
+      "mime": "image/webp",
+      "width": 1600,
+      "height": 1600,
+      "bytes": 2169590,
+      "status": "REVIEW_REQUIRED"
+    }
+  ],
+  "avatars": [
+    {
+      "assetKey": "player-avatar-female-01",
+      "jobId": "a6e734d1-307a-4c77-a089-de3aae2dbf8d",
+      "candidatePath": "assets/candidates/player-avatar-female-01/a6e734d1-307a-4c77-a089-de3aae2dbf8d/source.webp",
+      "sha256": "c81ecbfea02ce6f650b61718099505c8856e4c603c36980c18e363233e3b442e",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11130,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-02",
+      "jobId": "2244e602-44b6-47d2-aeee-5cbe1fd42482",
+      "candidatePath": "assets/candidates/player-avatar-female-02/2244e602-44b6-47d2-aeee-5cbe1fd42482/source.webp",
+      "sha256": "10b842f5397364353ca685c703db4f2eaee811d69a9a7a0b461c68c895a0eecd",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14278,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 320,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-03",
+      "jobId": "186e58ae-56c6-4752-b0ea-379e87cb7e0b",
+      "candidatePath": "assets/candidates/player-avatar-female-03/186e58ae-56c6-4752-b0ea-379e87cb7e0b/source.webp",
+      "sha256": "315cbec43f60dc81a9c35c8b5e3e7c3d143ab380b1ea11df17bbcc9d3d55f8c7",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 20056,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 640,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-04",
+      "jobId": "8e815205-b3ea-4006-b3e9-e1d94c88f372",
+      "candidatePath": "assets/candidates/player-avatar-female-04/8e815205-b3ea-4006-b3e9-e1d94c88f372/source.webp",
+      "sha256": "5901195c6eaf0c20bf4b6d884becddcbbf3122f986d7c0eb9d0537a35c59c7a6",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12122,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 960,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-05",
+      "jobId": "73a51514-5952-4070-82ec-b9405395b7dc",
+      "candidatePath": "assets/candidates/player-avatar-female-05/73a51514-5952-4070-82ec-b9405395b7dc/source.webp",
+      "sha256": "be634f1614eecb5196bf02cce04f557451a4dc5647242f05ff4a4035363af16d",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14588,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 1280,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-06",
+      "jobId": "d7dcd300-531b-4fb5-89c1-1f468fec1298",
+      "candidatePath": "assets/candidates/player-avatar-female-06/d7dcd300-531b-4fb5-89c1-1f468fec1298/source.webp",
+      "sha256": "dc091846e0c7980288c584b331cf3769dca354d3f7d6fd4b1d628e93febaf6a7",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 15374,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 0,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-07",
+      "jobId": "928740c3-05ca-4605-b9ef-341aae29adad",
+      "candidatePath": "assets/candidates/player-avatar-female-07/928740c3-05ca-4605-b9ef-341aae29adad/source.webp",
+      "sha256": "bab543c72a674363af7c5cef731599a751ca73f3669ffd69e229f7b9fe5bc076",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12076,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 320,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-08",
+      "jobId": "17b1333d-a930-479c-a05f-e7a2b6a5f77d",
+      "candidatePath": "assets/candidates/player-avatar-female-08/17b1333d-a930-479c-a05f-e7a2b6a5f77d/source.webp",
+      "sha256": "ac106cc73a8d1a545ae36f873d3813df02f0959c77427963e0c334fddbfbb523",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 18394,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 640,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-09",
+      "jobId": "b13a3926-98fa-452f-9f47-3d95685753c7",
+      "candidatePath": "assets/candidates/player-avatar-female-09/b13a3926-98fa-452f-9f47-3d95685753c7/source.webp",
+      "sha256": "302d5409e39d1cfe04ae2acab9284817d8f78160184fed1716070234ce4c3c44",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14946,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 960,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-10",
+      "jobId": "d4799472-eee7-4736-a98e-94218a5070f6",
+      "candidatePath": "assets/candidates/player-avatar-female-10/d4799472-eee7-4736-a98e-94218a5070f6/source.webp",
+      "sha256": "ae342883b15f45847f3df8b77ee7f2a8e950c94aace81924c099da9aa0ca17a5",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13468,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 1280,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-11",
+      "jobId": "09a14e5e-508c-4d06-9588-30eaa362fbfb",
+      "candidatePath": "assets/candidates/player-avatar-female-11/09a14e5e-508c-4d06-9588-30eaa362fbfb/source.webp",
+      "sha256": "73d0704abc1595d6417279a6bbbc7111ca603eef65952892aa778dd329fca25d",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14510,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 0,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-12",
+      "jobId": "64d6ea56-880b-4ba1-9b35-b58f8d8f1504",
+      "candidatePath": "assets/candidates/player-avatar-female-12/64d6ea56-880b-4ba1-9b35-b58f8d8f1504/source.webp",
+      "sha256": "98a37d288edc148702ca4327e10cdbfc05975c2b329ba76eabd9d1c59b68d9ce",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16610,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 320,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-13",
+      "jobId": "1b2ece47-830d-4b1e-93db-fd365686ebfe",
+      "candidatePath": "assets/candidates/player-avatar-female-13/1b2ece47-830d-4b1e-93db-fd365686ebfe/source.webp",
+      "sha256": "7d4d4df96492345340e3dd452ccffa8f08fc70ad4e90828e66af7d0256cee2ec",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16414,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 640,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-14",
+      "jobId": "c6d890ba-bd04-45f5-a28d-74486bcb59a7",
+      "candidatePath": "assets/candidates/player-avatar-female-14/c6d890ba-bd04-45f5-a28d-74486bcb59a7/source.webp",
+      "sha256": "ab3aab259b4b73c9a1265ef483726a17a5c790f5af84e04e8b0c7b1f09bd3c72",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13218,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 960,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-15",
+      "jobId": "22d09dac-7782-4ab6-a6bd-189c1f3097c7",
+      "candidatePath": "assets/candidates/player-avatar-female-15/22d09dac-7782-4ab6-a6bd-189c1f3097c7/source.webp",
+      "sha256": "b5e3ab94c77446accc12aaefcb94459b5bc2704b379533c1bcc4b1b1cb567a7c",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12150,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 1280,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-16",
+      "jobId": "d0c5d91a-aeb8-4c2f-a251-6a6dd9867366",
+      "candidatePath": "assets/candidates/player-avatar-female-16/d0c5d91a-aeb8-4c2f-a251-6a6dd9867366/source.webp",
+      "sha256": "e50b6f91d067090fc179d087507e1333c18900f2e4424cb101bfe2e2419a10b1",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 18264,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 0,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-17",
+      "jobId": "38286729-b991-4e77-808b-18f2d0b2b576",
+      "candidatePath": "assets/candidates/player-avatar-female-17/38286729-b991-4e77-808b-18f2d0b2b576/source.webp",
+      "sha256": "29658be22a490449a78cce027e9e5882de9a0d822fdf417d8a16072398c8ebb7",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11274,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 320,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-18",
+      "jobId": "db5d28a9-eea8-4b78-911c-7d847a1fc425",
+      "candidatePath": "assets/candidates/player-avatar-female-18/db5d28a9-eea8-4b78-911c-7d847a1fc425/source.webp",
+      "sha256": "64acbb469251de1833c372213349f5e80e00d0885698cda0ec2e31c0fff751cb",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16086,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 640,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-19",
+      "jobId": "23b9dfcd-0b66-46f7-a976-79dcac8f341e",
+      "candidatePath": "assets/candidates/player-avatar-female-19/23b9dfcd-0b66-46f7-a976-79dcac8f341e/source.webp",
+      "sha256": "4475a4da2c1c893dcf225b5aef8c5d8d0a072c341a6df07645926377394a7c4d",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13200,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 960,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-20",
+      "jobId": "964266d3-7a01-42ff-ba2f-71a5f57ce202",
+      "candidatePath": "assets/candidates/player-avatar-female-20/964266d3-7a01-42ff-ba2f-71a5f57ce202/source.webp",
+      "sha256": "7a45189d41f595e70302a55a0b7d7e76a31098a2728d6e834259dd659eabe7a3",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16102,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 1280,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-21",
+      "jobId": "7be030a3-ca6f-4f89-a4f4-8a90c09d408d",
+      "candidatePath": "assets/candidates/player-avatar-female-21/7be030a3-ca6f-4f89-a4f4-8a90c09d408d/source.webp",
+      "sha256": "84579e8490f486981b7bc3d97c65f8719f2b04ba87cc0344acbb7ea1106bfdfd",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 15204,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 0,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-22",
+      "jobId": "8807366d-d48f-4db2-9095-cfd74550fc20",
+      "candidatePath": "assets/candidates/player-avatar-female-22/8807366d-d48f-4db2-9095-cfd74550fc20/source.webp",
+      "sha256": "7aa523ffc9ccb56ce3a3238428c1d1b05f5cc45cfd9182531207698221e2316b",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 15360,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 320,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-23",
+      "jobId": "a9ed1a9d-ab23-45fd-9bfd-129b912797c8",
+      "candidatePath": "assets/candidates/player-avatar-female-23/a9ed1a9d-ab23-45fd-9bfd-129b912797c8/source.webp",
+      "sha256": "6a85c17b116877b51f4e955540d7e3f3b226d2fd576459826ce77ab3ccc1c102",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 18574,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 640,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-24",
+      "jobId": "8594bb34-745b-4a79-9054-40eb397a15ab",
+      "candidatePath": "assets/candidates/player-avatar-female-24/8594bb34-745b-4a79-9054-40eb397a15ab/source.webp",
+      "sha256": "923ea8506e69b8b7005310429f2b87fd95799cbb0cb8b8daee7188734e1d7610",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 15832,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 960,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-female-25",
+      "jobId": "0e571a29-82dd-41ec-a9f5-0c05b9b94686",
+      "candidatePath": "assets/candidates/player-avatar-female-25/0e571a29-82dd-41ec-a9f5-0c05b9b94686/source.webp",
+      "sha256": "8a9d348e0b6961673e0de9b4c7482389f8acb9ab8af74c41cfbc05e88b073494",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13230,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "7db4887c-6766-4a66-8d83-a6fabe5da9cc",
+      "crop": {
+        "x": 1280,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-01",
+      "jobId": "238e5827-0b3d-407d-9a13-554a07ed1344",
+      "candidatePath": "assets/candidates/player-avatar-male-01/238e5827-0b3d-407d-9a13-554a07ed1344/source.webp",
+      "sha256": "afdad497641469a372d58f21ced116c6b836554fbd4623e5d25c9510c1655178",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14488,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-02",
+      "jobId": "625f798b-49e2-455a-aaa8-ef373fa6290a",
+      "candidatePath": "assets/candidates/player-avatar-male-02/625f798b-49e2-455a-aaa8-ef373fa6290a/source.webp",
+      "sha256": "89f5b7b5ac91d1fa78c99f5e1298dcb11bb2f389da83266e53164648db35f2cc",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 10562,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 320,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-03",
+      "jobId": "4a57b380-2bee-4095-8710-75ce35d2b0a4",
+      "candidatePath": "assets/candidates/player-avatar-male-03/4a57b380-2bee-4095-8710-75ce35d2b0a4/source.webp",
+      "sha256": "da9bc1de32f8a8a22b91a5249ff490af8affcdb4c37722cadbf8f35931ac4dc2",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14908,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 640,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-04",
+      "jobId": "80cc7fe4-0bcd-4fbb-b555-f1be0e747828",
+      "candidatePath": "assets/candidates/player-avatar-male-04/80cc7fe4-0bcd-4fbb-b555-f1be0e747828/source.webp",
+      "sha256": "d9dbacca78b5572ce0d3d259f5f129f652d789a05393b89bb4382d8cb931f191",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13286,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 960,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-05",
+      "jobId": "39be7319-cc48-4903-9552-b4f8400df7b0",
+      "candidatePath": "assets/candidates/player-avatar-male-05/39be7319-cc48-4903-9552-b4f8400df7b0/source.webp",
+      "sha256": "c6fdff63c7dd34ebbc02a231d529dda7619e3c6aaa2532a8f87c2c4c4fdb5cc0",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 10694,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 1280,
+        "y": 0,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-06",
+      "jobId": "028773af-6883-4337-be87-343f0f2e060d",
+      "candidatePath": "assets/candidates/player-avatar-male-06/028773af-6883-4337-be87-343f0f2e060d/source.webp",
+      "sha256": "4fd76cb6f09febb1ab1f5bcfb8e4e4355ee6f9d249d1f47c6fafcd3b61aff9cc",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11892,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 0,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-07",
+      "jobId": "5bb1ef6f-3724-4745-9d5f-1ae39fdef630",
+      "candidatePath": "assets/candidates/player-avatar-male-07/5bb1ef6f-3724-4745-9d5f-1ae39fdef630/source.webp",
+      "sha256": "690cedbc8029937e0535435887c79ee4082f7df17dccc9f76a6b88b2752ac402",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16812,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 320,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-08",
+      "jobId": "6f839e9a-6909-40d1-8591-285e126556de",
+      "candidatePath": "assets/candidates/player-avatar-male-08/6f839e9a-6909-40d1-8591-285e126556de/source.webp",
+      "sha256": "cba08bcbb926a5adc552e54110ec0b55636d9aa834ee50574a6686a4be65d68d",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14510,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 640,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-09",
+      "jobId": "89f25282-217e-4fae-83de-b2eed4108dcd",
+      "candidatePath": "assets/candidates/player-avatar-male-09/89f25282-217e-4fae-83de-b2eed4108dcd/source.webp",
+      "sha256": "14ab07e94f1225f5f02ce8d99e9c2deb10f52592a92e17e172a51f3e9f9b7fb6",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 15966,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 960,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-10",
+      "jobId": "b2cd2570-bd75-4fe2-9d15-82a908466d65",
+      "candidatePath": "assets/candidates/player-avatar-male-10/b2cd2570-bd75-4fe2-9d15-82a908466d65/source.webp",
+      "sha256": "cea5f3b6bf1b2b078f9b61bb40abdb0447937c1ff3c85450bdf525689ffc688f",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14514,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 1280,
+        "y": 320,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-11",
+      "jobId": "b8d4134d-ac24-4145-9cda-35496b993505",
+      "candidatePath": "assets/candidates/player-avatar-male-11/b8d4134d-ac24-4145-9cda-35496b993505/source.webp",
+      "sha256": "d1d40680431d287af5cee287c6f41b1591233e5888e15f06931a27632ca64eca",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11940,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 0,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-12",
+      "jobId": "00e808a0-e742-4c56-8128-932493ff1cde",
+      "candidatePath": "assets/candidates/player-avatar-male-12/00e808a0-e742-4c56-8128-932493ff1cde/source.webp",
+      "sha256": "77e7be532ab6ac86655c8185283ba439146c5652539d5575deb31692cc641c0c",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11180,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 320,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-13",
+      "jobId": "d35aec84-d220-4549-9bfa-2039784daf6e",
+      "candidatePath": "assets/candidates/player-avatar-male-13/d35aec84-d220-4549-9bfa-2039784daf6e/source.webp",
+      "sha256": "053bae6d8177db648e95ea532ddb8edc8eb4a5df52612ff1def71b241966df27",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16258,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 640,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-14",
+      "jobId": "c2dd3d2a-3ea4-48b5-807f-616cef538236",
+      "candidatePath": "assets/candidates/player-avatar-male-14/c2dd3d2a-3ea4-48b5-807f-616cef538236/source.webp",
+      "sha256": "99c39a617de92ea1b81a97acd047e9fc1007b1f7d0494a1fff92ab5f1f6a69e9",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12686,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 960,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-15",
+      "jobId": "c2bad538-fa1c-413d-a2c1-c86c962a73c9",
+      "candidatePath": "assets/candidates/player-avatar-male-15/c2bad538-fa1c-413d-a2c1-c86c962a73c9/source.webp",
+      "sha256": "c998143bd78c3d68ce1c2b561f495a62ab044402f6998e2aeab1c892fc842448",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 16846,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 1280,
+        "y": 640,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-16",
+      "jobId": "70c9b5ee-e2dd-4608-98d7-2604e50b6bbe",
+      "candidatePath": "assets/candidates/player-avatar-male-16/70c9b5ee-e2dd-4608-98d7-2604e50b6bbe/source.webp",
+      "sha256": "f52cc785a3058b1546fa911a2a78c4cec7daa93e3c6365a73c8b7074988e685a",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14604,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 0,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-17",
+      "jobId": "31a6d05c-9a2d-4eba-963b-a09bba9bf419",
+      "candidatePath": "assets/candidates/player-avatar-male-17/31a6d05c-9a2d-4eba-963b-a09bba9bf419/source.webp",
+      "sha256": "bb1146970cfb78f97d499fabf6c3e3be794c5f694a4df964b75e35174f0f2ac4",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12888,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 320,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-18",
+      "jobId": "5174fec5-f86d-444e-9f99-fb5060da4251",
+      "candidatePath": "assets/candidates/player-avatar-male-18/5174fec5-f86d-444e-9f99-fb5060da4251/source.webp",
+      "sha256": "75ef0d673fb48eb851bd6a60c48e184ea639fb2d0c1a45da3cf1bfe02fe5f565",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11352,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 640,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-19",
+      "jobId": "1000cf1f-ad31-4692-9cf6-f05528456a8f",
+      "candidatePath": "assets/candidates/player-avatar-male-19/1000cf1f-ad31-4692-9cf6-f05528456a8f/source.webp",
+      "sha256": "0b24c6d62d3119e863efb0f0c9a42c250e0934bc56d96be57f00559f06e550ee",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 14378,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 960,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-20",
+      "jobId": "bf71981c-0e63-4ead-b750-07c045f96f8a",
+      "candidatePath": "assets/candidates/player-avatar-male-20/bf71981c-0e63-4ead-b750-07c045f96f8a/source.webp",
+      "sha256": "8a93f0111deec20b470930a69425c2f7d08dcfb28eb75684281b7d103e39ccc6",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 15642,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 1280,
+        "y": 960,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-21",
+      "jobId": "2c59f233-d315-4c64-850d-d99b62b885f2",
+      "candidatePath": "assets/candidates/player-avatar-male-21/2c59f233-d315-4c64-850d-d99b62b885f2/source.webp",
+      "sha256": "190135d8985e870a97946c0c144a71a821465e8b0b13ad433805e966bd1f3928",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 11620,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 0,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-22",
+      "jobId": "e8dac028-3617-48f2-b1db-a8238e842164",
+      "candidatePath": "assets/candidates/player-avatar-male-22/e8dac028-3617-48f2-b1db-a8238e842164/source.webp",
+      "sha256": "ac0b5d9cd1148767cc0ea2518d7a1b9996b5026c90cbea66b20ffd97227c822e",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12864,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 320,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-23",
+      "jobId": "85a01232-69b0-4789-97af-5ad4a4e68748",
+      "candidatePath": "assets/candidates/player-avatar-male-23/85a01232-69b0-4789-97af-5ad4a4e68748/source.webp",
+      "sha256": "b70916d446c096e952109f3944bc2f96784f2a9f681b08812492467ee517a15f",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 12482,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 640,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-24",
+      "jobId": "ce4088d9-5bbd-43f5-b670-59abce09b891",
+      "candidatePath": "assets/candidates/player-avatar-male-24/ce4088d9-5bbd-43f5-b670-59abce09b891/source.webp",
+      "sha256": "c309a8dc4044167277e3c272ab62aaa3d012393837312a65f590f159db3a3fb8",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13626,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 960,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    },
+    {
+      "assetKey": "player-avatar-male-25",
+      "jobId": "62e8839f-3528-4bb1-af3b-226d5c44157c",
+      "candidatePath": "assets/candidates/player-avatar-male-25/62e8839f-3528-4bb1-af3b-226d5c44157c/source.webp",
+      "sha256": "1fa5c9684f1cf47bc1afcea698874ef7ca20f531788af0be3434c757e46de44f",
+      "mime": "image/webp",
+      "width": 320,
+      "height": 320,
+      "bytes": 13966,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "790ca994-3fc1-4da9-952f-cf5f87da7f4a",
+      "crop": {
+        "x": 1280,
+        "y": 1280,
+        "width": 320,
+        "height": 320
+      }
+    }
+  ],
+  "cardFaces": [
+    {
+      "assetKey": "shisanshui-card-10-clubs",
+      "jobId": "65fdc186-b4a1-454e-ad68-6ed84ddbb90c",
+      "candidatePath": "assets/candidates/shisanshui-card-10-clubs/65fdc186-b4a1-454e-ad68-6ed84ddbb90c/source.webp",
+      "sha256": "a49313b97c5e72f12d221ab89728104406177cb99e708ff0e968eeb3c6489d35",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5952,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-10-diamonds",
+      "jobId": "07cf3213-f24a-4776-b438-914f7ed7b8da",
+      "candidatePath": "assets/candidates/shisanshui-card-10-diamonds/07cf3213-f24a-4776-b438-914f7ed7b8da/source.webp",
+      "sha256": "415e043d6bfe5e14e202a579e8fec6665f7b91219440469da7644eeceeb758ef",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 7328,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-10-hearts",
+      "jobId": "1b879b6e-21c7-4a66-90d3-052702271ec5",
+      "candidatePath": "assets/candidates/shisanshui-card-10-hearts/1b879b6e-21c7-4a66-90d3-052702271ec5/source.webp",
+      "sha256": "3171c36688a5462517fd7535b899a36b0ffc3875d4d512d4ed326a615c113c57",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 7334,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-10-spades",
+      "jobId": "d6985aff-776a-4e62-966e-702c925afb6d",
+      "candidatePath": "assets/candidates/shisanshui-card-10-spades/d6985aff-776a-4e62-966e-702c925afb6d/source.webp",
+      "sha256": "4bfbbf663a5f359b76d89f23ca03ea11d81da6450e033a57de7269c7ce1c83e1",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5710,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-2-clubs",
+      "jobId": "d3507c4c-4207-4579-a96a-39621bb50d7a",
+      "candidatePath": "assets/candidates/shisanshui-card-2-clubs/d3507c4c-4207-4579-a96a-39621bb50d7a/source.webp",
+      "sha256": "aa3fd39b25dd0eabbe706558d64f3bf28066cc64cb9edbde45733747d424bddf",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 2620,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-2-diamonds",
+      "jobId": "9bc36a73-ad21-4adb-a5fd-807afe67ad51",
+      "candidatePath": "assets/candidates/shisanshui-card-2-diamonds/9bc36a73-ad21-4adb-a5fd-807afe67ad51/source.webp",
+      "sha256": "48e40524f5e7292235c8b27002c1e24d253f1a97ecc6a9621472d69cc03843fe",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3162,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-2-hearts",
+      "jobId": "4b282ef7-b1cb-4b14-b6da-99c123cabc49",
+      "candidatePath": "assets/candidates/shisanshui-card-2-hearts/4b282ef7-b1cb-4b14-b6da-99c123cabc49/source.webp",
+      "sha256": "490195c31e7a3a62bef3492b77da948336778017055b4f14e485eecbaf6d7591",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3288,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-2-spades",
+      "jobId": "be2e91b7-4046-4b40-b3af-4555e7297c92",
+      "candidatePath": "assets/candidates/shisanshui-card-2-spades/be2e91b7-4046-4b40-b3af-4555e7297c92/source.webp",
+      "sha256": "57c8520875d1581333c308f739468e24b49d0a70a6d4891d94499ff67edb8e89",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 2574,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-3-clubs",
+      "jobId": "b1145c33-029f-4adc-981d-3108d2934e9c",
+      "candidatePath": "assets/candidates/shisanshui-card-3-clubs/b1145c33-029f-4adc-981d-3108d2934e9c/source.webp",
+      "sha256": "f1b22af005f106563a5d2815cb18441d6c19ede3da10a106767eeb0bac838a22",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3094,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-3-diamonds",
+      "jobId": "91fa031e-edab-44ca-ad2b-f6068a124768",
+      "candidatePath": "assets/candidates/shisanshui-card-3-diamonds/91fa031e-edab-44ca-ad2b-f6068a124768/source.webp",
+      "sha256": "9fc67f197ded36c202cf33cd5e5795f9eba524c14c0ae20dedfc78d313c62d4c",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3774,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-3-hearts",
+      "jobId": "794db713-939d-4a79-a292-64bdce8eeea9",
+      "candidatePath": "assets/candidates/shisanshui-card-3-hearts/794db713-939d-4a79-a292-64bdce8eeea9/source.webp",
+      "sha256": "04831413af0fcaed0ff823503534603e314f46af4b90383178b8efe06df7583c",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3848,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-3-spades",
+      "jobId": "78b9e988-04b3-424d-a333-70c6cac96592",
+      "candidatePath": "assets/candidates/shisanshui-card-3-spades/78b9e988-04b3-424d-a333-70c6cac96592/source.webp",
+      "sha256": "630ebd5835ab7dba0bec63ca4dc8af237fa35fce31f510b97d102c53375cf1eb",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3050,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-4-clubs",
+      "jobId": "13e0a000-21c3-41c4-ad07-4f7e953ed747",
+      "candidatePath": "assets/candidates/shisanshui-card-4-clubs/13e0a000-21c3-41c4-ad07-4f7e953ed747/source.webp",
+      "sha256": "131f1acfb8a3566a44430ae9f27f914a7ec1e6f3cbe300dc4ceecb50fd969900",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3280,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-4-diamonds",
+      "jobId": "caf38094-e6dc-4b0c-935b-31c324555dec",
+      "candidatePath": "assets/candidates/shisanshui-card-4-diamonds/caf38094-e6dc-4b0c-935b-31c324555dec/source.webp",
+      "sha256": "57d6c6e2614d43c126d0438cea75197b5a8371e8b47a1395e6a4272e02d6ba57",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4108,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-4-hearts",
+      "jobId": "7d3a086b-3e14-4d45-a7fc-c288e8330985",
+      "candidatePath": "assets/candidates/shisanshui-card-4-hearts/7d3a086b-3e14-4d45-a7fc-c288e8330985/source.webp",
+      "sha256": "1239da01453f0117eb41f2469820d1cfb6c3e8f0006948cae637b0bdfa59b6f7",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4100,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-4-spades",
+      "jobId": "3dd89c30-54a3-47a3-a99a-d64c4bd00f16",
+      "candidatePath": "assets/candidates/shisanshui-card-4-spades/3dd89c30-54a3-47a3-a99a-d64c4bd00f16/source.webp",
+      "sha256": "eeb56e151bc5dd5510e2012e5fd469ce86c7fd4e34f4cb79ad6bdecfb3cb3a9e",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3144,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-5-clubs",
+      "jobId": "395fa0dd-d363-4051-ad71-3ce5e127145d",
+      "candidatePath": "assets/candidates/shisanshui-card-5-clubs/395fa0dd-d363-4051-ad71-3ce5e127145d/source.webp",
+      "sha256": "29640196c8ad8a35a282c36bfc414a626aef09eea228bb902d109ed60baea0d5",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3800,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-5-diamonds",
+      "jobId": "ad4ac295-4b4e-451e-967f-f8630a157700",
+      "candidatePath": "assets/candidates/shisanshui-card-5-diamonds/ad4ac295-4b4e-451e-967f-f8630a157700/source.webp",
+      "sha256": "8eb3977f71c55ae24648cc237dedaa33ccd7b71c57d433d82e8f63edca45d35e",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4760,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-5-hearts",
+      "jobId": "21128937-c283-4dc5-a388-a27b997d4d0f",
+      "candidatePath": "assets/candidates/shisanshui-card-5-hearts/21128937-c283-4dc5-a388-a27b997d4d0f/source.webp",
+      "sha256": "8898c9fdeb799a5009f1c262aac11c406909ac13dde84ae7c496b15f57f2bdea",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4734,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-5-spades",
+      "jobId": "28837911-a06d-4c8b-a041-44ab7bd6bc5d",
+      "candidatePath": "assets/candidates/shisanshui-card-5-spades/28837911-a06d-4c8b-a041-44ab7bd6bc5d/source.webp",
+      "sha256": "cdfaff57472a19b2e56a96c9c55dea066c5ba137427a476f824949f0b91bdccc",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3642,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-6-clubs",
+      "jobId": "ec087ea5-3d1e-4b05-8e41-61af73881d29",
+      "candidatePath": "assets/candidates/shisanshui-card-6-clubs/ec087ea5-3d1e-4b05-8e41-61af73881d29/source.webp",
+      "sha256": "570e2ed3d76f8ae902b2ccfce49379a928edfdb8001c41bef5e67f7cc27ae848",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4296,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-6-diamonds",
+      "jobId": "ca0902fb-aa4e-4a57-b52c-c78ac0ffe158",
+      "candidatePath": "assets/candidates/shisanshui-card-6-diamonds/ca0902fb-aa4e-4a57-b52c-c78ac0ffe158/source.webp",
+      "sha256": "dee2d5ba5bdb752ff63b1f76f2a2ab5093ce4e23516447c2349b85d241a608c9",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5212,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-6-hearts",
+      "jobId": "5cc305f5-6227-487f-953f-3a51bcc0b490",
+      "candidatePath": "assets/candidates/shisanshui-card-6-hearts/5cc305f5-6227-487f-953f-3a51bcc0b490/source.webp",
+      "sha256": "118defb3f31c485dc6bb67fedd0b4f55eeff160226364751716fff56d71e8b3e",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5250,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-6-spades",
+      "jobId": "cef422f9-618c-4763-823f-3dcd612be071",
+      "candidatePath": "assets/candidates/shisanshui-card-6-spades/cef422f9-618c-4763-823f-3dcd612be071/source.webp",
+      "sha256": "b1069ba5df0a491d43b9a94aff6395691de17f74d56b4c46fa5fa26ed42073ca",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4222,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-7-clubs",
+      "jobId": "d19b72fe-7921-4aef-b238-b8498ab444e1",
+      "candidatePath": "assets/candidates/shisanshui-card-7-clubs/d19b72fe-7921-4aef-b238-b8498ab444e1/source.webp",
+      "sha256": "7b85b0993c669112f9cdad002a7214ddd6fd0cad0dba3a3b497ac3c3e64dcf4a",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4450,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-7-diamonds",
+      "jobId": "89b86023-c943-4fc3-9fdb-0ec6d5323b48",
+      "candidatePath": "assets/candidates/shisanshui-card-7-diamonds/89b86023-c943-4fc3-9fdb-0ec6d5323b48/source.webp",
+      "sha256": "e49afe089eb2493fde00156d4d09b25fcbceb18b8667e6d4d5495acf973456d0",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5384,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-7-hearts",
+      "jobId": "4d82cc29-f1ab-4d9e-be59-9011ceb62c2a",
+      "candidatePath": "assets/candidates/shisanshui-card-7-hearts/4d82cc29-f1ab-4d9e-be59-9011ceb62c2a/source.webp",
+      "sha256": "329680188b31f831b3e7d49e7c62b91a63de4bb9b86e4da69722220258f94265",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5410,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-7-spades",
+      "jobId": "607240ab-2188-49a2-a4a5-1c5643ea55a6",
+      "candidatePath": "assets/candidates/shisanshui-card-7-spades/607240ab-2188-49a2-a4a5-1c5643ea55a6/source.webp",
+      "sha256": "9b5ea5898c92c1a92c48d03a98bd9e15a3963b98f86b49537045e25f60d07a64",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4306,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-8-clubs",
+      "jobId": "f883e451-3288-4a6e-90dc-1719962d9383",
+      "candidatePath": "assets/candidates/shisanshui-card-8-clubs/f883e451-3288-4a6e-90dc-1719962d9383/source.webp",
+      "sha256": "ba3e567abb563f163f093834b4ac00c882fc03e62b40dc8da27884389350ceee",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4952,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-8-diamonds",
+      "jobId": "ce5169d6-389c-4b0f-be10-26b9a18abe88",
+      "candidatePath": "assets/candidates/shisanshui-card-8-diamonds/ce5169d6-389c-4b0f-be10-26b9a18abe88/source.webp",
+      "sha256": "7df39a20efcb262e0e5c35ae785fa83287b9d80b163bece5284d63763dd0131e",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5972,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-8-hearts",
+      "jobId": "95909c99-9b12-46fb-afdf-e5d06f2fbeb3",
+      "candidatePath": "assets/candidates/shisanshui-card-8-hearts/95909c99-9b12-46fb-afdf-e5d06f2fbeb3/source.webp",
+      "sha256": "b7bd25f06dfb8aa2da6096deda2eaa63ea0078bfaf826579091cddb459801e1a",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5972,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-8-spades",
+      "jobId": "99298140-3432-43db-8c48-bc2d84ecdf89",
+      "candidatePath": "assets/candidates/shisanshui-card-8-spades/99298140-3432-43db-8c48-bc2d84ecdf89/source.webp",
+      "sha256": "8ef7e9b7cee5cef1db8a18bb328e935755e1a1807498fabdc7513b2e13b84a89",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 4766,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-9-clubs",
+      "jobId": "acc27109-d5bb-433f-adb5-6d3224d1aafd",
+      "candidatePath": "assets/candidates/shisanshui-card-9-clubs/acc27109-d5bb-433f-adb5-6d3224d1aafd/source.webp",
+      "sha256": "637d2d82dadefb7a1e70482f91503b4021accd0c4c16c496d7c019c3ecb1ec78",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5526,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-9-diamonds",
+      "jobId": "03fb43cc-27f0-4fdb-b1d5-df33d1677d79",
+      "candidatePath": "assets/candidates/shisanshui-card-9-diamonds/03fb43cc-27f0-4fdb-b1d5-df33d1677d79/source.webp",
+      "sha256": "1f099f8ccc86626474ca93ddc3abfba89390dfeb59ed3353ef53a4de43704678",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 6618,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-9-hearts",
+      "jobId": "020e5ee3-30be-4979-987f-540c78f02648",
+      "candidatePath": "assets/candidates/shisanshui-card-9-hearts/020e5ee3-30be-4979-987f-540c78f02648/source.webp",
+      "sha256": "0276f92933f49b15bb7f5eacd7c3dbd874c27f770674ca7416cf9c5c39eae382",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 6616,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-9-spades",
+      "jobId": "b96dfdb5-5427-4bf4-ba6c-507c1c134810",
+      "candidatePath": "assets/candidates/shisanshui-card-9-spades/b96dfdb5-5427-4bf4-ba6c-507c1c134810/source.webp",
+      "sha256": "80a088e9bbc58d13ef4213c03f7bf970a37cbad366d796cceab3af4ac78ce795",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 5250,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-a-clubs",
+      "jobId": "2cfd2895-48b9-4ea4-9819-1c5a293b014f",
+      "candidatePath": "assets/candidates/shisanshui-card-a-clubs/2cfd2895-48b9-4ea4-9819-1c5a293b014f/source.webp",
+      "sha256": "8164b61f51483697da9a80f17e8280d18da1e9030db58150504775496e752b42",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 2550,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-a-diamonds",
+      "jobId": "dc0e627e-d14e-431f-b048-d5a02f0d772e",
+      "candidatePath": "assets/candidates/shisanshui-card-a-diamonds/dc0e627e-d14e-431f-b048-d5a02f0d772e/source.webp",
+      "sha256": "4959ba73502b3b7b775910e1b9c615cb159c404a0ceb44c5c14c30d5a9692dc2",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3148,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-a-hearts",
+      "jobId": "bb9dd3a3-9309-4e65-98bc-d23bbed072e4",
+      "candidatePath": "assets/candidates/shisanshui-card-a-hearts/bb9dd3a3-9309-4e65-98bc-d23bbed072e4/source.webp",
+      "sha256": "915c8ce4fc929af04d84f9cb51c862a34db5772fde3abb597b3ed30709895e1e",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 3190,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-a-spades",
+      "jobId": "a4af9d26-e237-41d6-bb95-26b8f9f0c3e5",
+      "candidatePath": "assets/candidates/shisanshui-card-a-spades/a4af9d26-e237-41d6-bb95-26b8f9f0c3e5/source.webp",
+      "sha256": "db0b88b68d2d13a782b21a4efdde5bf016052501d9fd41e01a0eb4cc0c4f8c1c",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 2466,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-j-clubs",
+      "jobId": "ada45474-f8e4-455e-b0c4-e21b8eba27c9",
+      "candidatePath": "assets/candidates/shisanshui-card-j-clubs/ada45474-f8e4-455e-b0c4-e21b8eba27c9/source.webp",
+      "sha256": "b0c769c576f8d8d8dfc74809615f53903b3c744745c355f89717ca63223062c5",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 18380,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-j-diamonds",
+      "jobId": "167f1aa2-a4d3-4022-991b-95c9d476fe44",
+      "candidatePath": "assets/candidates/shisanshui-card-j-diamonds/167f1aa2-a4d3-4022-991b-95c9d476fe44/source.webp",
+      "sha256": "bcb40b01ab274a68edba95adcd49f39ffb91c609425cad3414aee17208b2e1c1",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 18614,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-j-hearts",
+      "jobId": "eeae0d33-b9cb-4c41-b14d-9bc441e0d239",
+      "candidatePath": "assets/candidates/shisanshui-card-j-hearts/eeae0d33-b9cb-4c41-b14d-9bc441e0d239/source.webp",
+      "sha256": "9434a68aba1b089837d984cd3bf87de44786ade490482903d2b148251ac7e2c2",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 21042,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-j-spades",
+      "jobId": "4f4b0da0-b8f7-4669-87f2-f2312cbd9128",
+      "candidatePath": "assets/candidates/shisanshui-card-j-spades/4f4b0da0-b8f7-4669-87f2-f2312cbd9128/source.webp",
+      "sha256": "e282399c8c763cdeb9c2b9238d024bfaf7c7229d9041feeb03c134eb934791d8",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 18352,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-k-clubs",
+      "jobId": "f80962c1-767a-42b8-b699-16844bed09e3",
+      "candidatePath": "assets/candidates/shisanshui-card-k-clubs/f80962c1-767a-42b8-b699-16844bed09e3/source.webp",
+      "sha256": "85e271ed8283df84ba39cc52436c6c642c07a5b298569a16cc161efb5b305ecd",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 21386,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-k-diamonds",
+      "jobId": "5757ead2-3792-4fa2-8d48-f86b5f6ca022",
+      "candidatePath": "assets/candidates/shisanshui-card-k-diamonds/5757ead2-3792-4fa2-8d48-f86b5f6ca022/source.webp",
+      "sha256": "2401745ba4bcf8a23749b061605612bafd08c6c021a88a0adf2d188980d61cbb",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 21694,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-k-hearts",
+      "jobId": "54bf8711-da2a-401d-88d0-c22dc9101c62",
+      "candidatePath": "assets/candidates/shisanshui-card-k-hearts/54bf8711-da2a-401d-88d0-c22dc9101c62/source.webp",
+      "sha256": "e1a4053de73426f73ee0b8858948908a6c4e759d3958220dfedd58e2845705f1",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 18390,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-k-spades",
+      "jobId": "eb3a4c9a-aea5-4459-a715-1bbf91a50054",
+      "candidatePath": "assets/candidates/shisanshui-card-k-spades/eb3a4c9a-aea5-4459-a715-1bbf91a50054/source.webp",
+      "sha256": "0ae8521ea6c78d7c7f00434eb2e3ad2c2f5935426bb2bd7f3927d4b25a82f1c0",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 19620,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-q-clubs",
+      "jobId": "aa7bf7da-ce03-409d-b1ac-b052916a9da7",
+      "candidatePath": "assets/candidates/shisanshui-card-q-clubs/aa7bf7da-ce03-409d-b1ac-b052916a9da7/source.webp",
+      "sha256": "8ea4c0e2e8e854bbf074f0c629c391f82ae2e108592fe4c3a521842a149962eb",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 19412,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-q-diamonds",
+      "jobId": "6116f75c-9786-4333-b1e9-5510228464f7",
+      "candidatePath": "assets/candidates/shisanshui-card-q-diamonds/6116f75c-9786-4333-b1e9-5510228464f7/source.webp",
+      "sha256": "a92f23bd09a3c5365b7d338316ad2e7a583fb249de26cc267ea204b65113ca72",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 19374,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-q-hearts",
+      "jobId": "c870ce10-30f3-4ed8-8692-dadcb488acd2",
+      "candidatePath": "assets/candidates/shisanshui-card-q-hearts/c870ce10-30f3-4ed8-8692-dadcb488acd2/source.webp",
+      "sha256": "6dea310a4e0c218263c09c6db186d41a673b2057468804ea441808a3eccd302f",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 21246,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    },
+    {
+      "assetKey": "shisanshui-card-q-spades",
+      "jobId": "6254be41-1175-4ef9-911f-2f22048c01d6",
+      "candidatePath": "assets/candidates/shisanshui-card-q-spades/6254be41-1175-4ef9-911f-2f22048c01d6/source.webp",
+      "sha256": "82b07e84d4c86b12afbcdaec00caafa2c23a749ec241ffbc2a41117ab31399ec",
+      "mime": "image/webp",
+      "width": 384,
+      "height": 512,
+      "bytes": 20830,
+      "status": "REVIEW_REQUIRED",
+      "parentJobId": "8d18c197-9c89-4027-a440-7265a3cb5868",
+      "crop": {
+        "x": 0,
+        "y": 0,
+        "width": 768,
+        "height": 1024
+      }
+    }
+  ],
+  "motion": [
+    {
+      "key": "result-win",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-result-win",
+        "jobId": "fadfc8a7-3942-46b6-8024-8702cd0ed37f",
+        "candidatePath": "assets/candidates/shisanshui-motion-result-win/fadfc8a7-3942-46b6-8024-8702cd0ed37f/source.webp",
+        "sha256": "cd0415eaba58d4ff3720f56754e508e64dfb10789857749bb3a2fd2839bac08f",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 1034504,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-result-win",
+        "jobId": "c1ea458b-d4e0-4961-9fd5-7c9a60a2770e",
+        "candidatePath": "assets/candidates/shisanshui-motion-result-win/c1ea458b-d4e0-4961-9fd5-7c9a60a2770e/source.avif",
+        "sha256": "52af1813e359c0e54d4d3cae4eea272e411a2ed7b08531ad8de1c50b1361a20e",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 128835,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    },
+    {
+      "key": "result-loss",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-result-loss",
+        "jobId": "2beb59bf-261b-4f78-88b8-969dff39bf6a",
+        "candidatePath": "assets/candidates/shisanshui-motion-result-loss/2beb59bf-261b-4f78-88b8-969dff39bf6a/source.webp",
+        "sha256": "223c345280dd23fa2b0aaa71de3ebb66714a6fdfc00e6bb15637ca2bdd434286",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 662272,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-result-loss",
+        "jobId": "69314433-06fa-43c0-8bda-a8421c94cd5e",
+        "candidatePath": "assets/candidates/shisanshui-motion-result-loss/69314433-06fa-43c0-8bda-a8421c94cd5e/source.avif",
+        "sha256": "4fa0a502e006ae735804a722a66ed98dfff84d9aab6b257948588202af4010e8",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 118583,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    },
+    {
+      "key": "slam",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-slam",
+        "jobId": "17b55c87-d251-4e32-802b-bfbf38755fc7",
+        "candidatePath": "assets/candidates/shisanshui-motion-slam/17b55c87-d251-4e32-802b-bfbf38755fc7/source.webp",
+        "sha256": "bc22ced509038b58a92a45e2634909de8337a164f04f5f7082eefabb6f0e3515",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 1544794,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-slam",
+        "jobId": "f6f47b83-6c77-4a40-b157-d81856fdb1e0",
+        "candidatePath": "assets/candidates/shisanshui-motion-slam/f6f47b83-6c77-4a40-b157-d81856fdb1e0/source.avif",
+        "sha256": "c15a4c932fc9ee992180fc764a8b977d6df69d019b1afd4769099f89a5a82981",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 181538,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    },
+    {
+      "key": "full-sweep",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-full-sweep",
+        "jobId": "c4748ba9-36d0-4484-a860-1ee377686b67",
+        "candidatePath": "assets/candidates/shisanshui-motion-full-sweep/c4748ba9-36d0-4484-a860-1ee377686b67/source.webp",
+        "sha256": "a5f911c948f842b0fa0634280ad9eded1ac9871f11ea1115ec4514b2bffa6769",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 879766,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-full-sweep",
+        "jobId": "91450dcf-e33c-4b28-a74a-d144c33bd373",
+        "candidatePath": "assets/candidates/shisanshui-motion-full-sweep/91450dcf-e33c-4b28-a74a-d144c33bd373/source.avif",
+        "sha256": "3a891996394d78c936221539fb1b49ce8d8dbfb0d00734cf19d64fb26c03c7ec",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 118154,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    },
+    {
+      "key": "special-hand",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-special-hand",
+        "jobId": "f6744610-5456-43cd-9024-48cd803a1276",
+        "candidatePath": "assets/candidates/shisanshui-motion-special-hand/f6744610-5456-43cd-9024-48cd803a1276/source.webp",
+        "sha256": "7e0a6179770d6d9272d157206e3de7be58b6332bc0b6fc73297b1bf81f60290c",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 1112972,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-special-hand",
+        "jobId": "82f1c2f6-bc26-4b4d-9e14-0207eb6c0266",
+        "candidatePath": "assets/candidates/shisanshui-motion-special-hand/82f1c2f6-bc26-4b4d-9e14-0207eb6c0266/source.avif",
+        "sha256": "59e731b202c4e5afd998e03a5db787c94c58ee55b202cc31e4059de8733f2700",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 93655,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    },
+    {
+      "key": "popup-win",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-popup-win",
+        "jobId": "8dd26332-0223-495a-8ab8-f1f8ecc65a6e",
+        "candidatePath": "assets/candidates/shisanshui-motion-popup-win/8dd26332-0223-495a-8ab8-f1f8ecc65a6e/source.webp",
+        "sha256": "fc782b898632a878cd43d7632704b870da81438b23b206eefffc642005c1d27c",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 1639418,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-popup-win",
+        "jobId": "db78fe15-ea52-4c4f-8318-b269313a81cb",
+        "candidatePath": "assets/candidates/shisanshui-motion-popup-win/db78fe15-ea52-4c4f-8318-b269313a81cb/source.avif",
+        "sha256": "927b8030b672f317b600638a369b7eb69ee6f4a54b24c26c118a8616ba51f76c",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 98852,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    },
+    {
+      "key": "popup-loss",
+      "sourceSheet": {
+        "assetKey": "shisanshui-motion-popup-loss",
+        "jobId": "d5e3ab1d-9a26-4747-ab84-bc67398b8cd6",
+        "candidatePath": "assets/candidates/shisanshui-motion-popup-loss/d5e3ab1d-9a26-4747-ab84-bc67398b8cd6/source.webp",
+        "sha256": "7f617503ad42801bfad1630e947402d9dcc718bead2e7d29d31a3bb3bd17d22c",
+        "mime": "image/webp",
+        "width": 1600,
+        "height": 1600,
+        "bytes": 1613626,
+        "status": "REVIEW_REQUIRED"
+      },
+      "animation": {
+        "assetKey": "shisanshui-motion-popup-loss",
+        "jobId": "2af92554-b20b-4fc5-955b-b6c15de24a3c",
+        "candidatePath": "assets/candidates/shisanshui-motion-popup-loss/2af92554-b20b-4fc5-955b-b6c15de24a3c/source.avif",
+        "sha256": "7dc58a33410118f90086b784733a9425dcee19af578b3bfe441e1ddd1acb9b9b",
+        "mime": "image/avif",
+        "width": 400,
+        "height": 400,
+        "bytes": 88422,
+        "status": "REVIEW_REQUIRED"
+      },
+      "frameCount": 16,
+      "columns": 4,
+      "rows": 4,
+      "frameWidth": 400,
+      "frameHeight": 400,
+      "framesPerSecond": 12,
+      "repeatCount": 0
+    }
+  ],
+  "reviewNotes": [
+    "玩家头像已重制为纯二维描线与平涂动画风格；男女头像各 25 张精灵图，切片均为独立待审 WebP。",
+    "牌面改为传统扑克白底、红黑点位和双向宫廷牌；角标、数值、花色点位由代码精确生成。",
+    "黑桃 J 的 API 请求 job b8c2aa8a-6135-44bf-a515-a65a5fc6ca26 状态 UNKNOWN，未重发以免重复计费；黑桃 J 牌面暂复用梅花 J 宫廷插画，角标及花色仍是黑桃 J。",
+    "旧头像、旧宫廷插画、旧牌面与旧牌框已在生成台账标记 FAILED（被新风格取代或不适用），文件保留用于审计。"
+  ],
+  "courtIllustrations": [
+    {
+      "assetKey": "shisanshui-court-jack-clubs",
+      "jobId": "734570d2-52bb-47b7-8f67-a733f4e0d18c",
+      "candidatePath": "assets/candidates/shisanshui-court-jack-clubs/734570d2-52bb-47b7-8f67-a733f4e0d18c/source.webp",
+      "sha256": "88666a6cf883bdfaf2588dc225457a96bda02a0c9b7e6aae31875b316eddc156",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 467458,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-jack-diamonds",
+      "jobId": "1b58048f-7902-4944-9d5a-7bdb39d1920d",
+      "candidatePath": "assets/candidates/shisanshui-court-jack-diamonds/1b58048f-7902-4944-9d5a-7bdb39d1920d/source.webp",
+      "sha256": "820015cb1e6ab965b8f0d257483a2def2aad0023d3b8d30892a9bd17d29ab219",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 571506,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-jack-hearts",
+      "jobId": "0052fbfa-198c-4c9b-a0ba-6bd46d03d0ad",
+      "candidatePath": "assets/candidates/shisanshui-court-jack-hearts/0052fbfa-198c-4c9b-a0ba-6bd46d03d0ad/source.webp",
+      "sha256": "cb2360cf5a27c6b24ca784b0a72b6d0131448e9f3afc649313351fb1fd971019",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 585486,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-king-clubs",
+      "jobId": "1f162305-5e06-4a05-9da6-bd11c6750534",
+      "candidatePath": "assets/candidates/shisanshui-court-king-clubs/1f162305-5e06-4a05-9da6-bd11c6750534/source.webp",
+      "sha256": "c72e8c8bd5e6672db02b90751b4e6d0da169ed7ab5e30e3f56ad1aeeb08487ea",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 575628,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-king-diamonds",
+      "jobId": "ed8b17a8-9bd7-4fda-87f4-57f24ba5c704",
+      "candidatePath": "assets/candidates/shisanshui-court-king-diamonds/ed8b17a8-9bd7-4fda-87f4-57f24ba5c704/source.webp",
+      "sha256": "06a41f030792e72bc387cfbaddead55d55fcc16ac7a23da207a1d027b7f4f2b1",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 610332,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-king-hearts",
+      "jobId": "f07b4753-c8de-4a3a-987b-b37ef15d99ca",
+      "candidatePath": "assets/candidates/shisanshui-court-king-hearts/f07b4753-c8de-4a3a-987b-b37ef15d99ca/source.webp",
+      "sha256": "a00a005406fbd77d92dfc97b8918ae0a1b7aa49d6022e7fe5babc4dd90e23b76",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 565278,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-king-spades",
+      "jobId": "7d7838c9-c617-42c9-9e46-48cb8dc15bac",
+      "candidatePath": "assets/candidates/shisanshui-court-king-spades/7d7838c9-c617-42c9-9e46-48cb8dc15bac/source.webp",
+      "sha256": "4f0eab85c3387df113103ffb5b64616336c06e52f6faba99ade9a4a12b3231c2",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 587830,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-queen-clubs",
+      "jobId": "d5e253d1-27a5-4f6f-b3b0-fa4bd3387760",
+      "candidatePath": "assets/candidates/shisanshui-court-queen-clubs/d5e253d1-27a5-4f6f-b3b0-fa4bd3387760/source.webp",
+      "sha256": "e599133e902bdc98b8d28857c56ff64bc7d50919c61ea73dadb538f94910ba08",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 611724,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-queen-diamonds",
+      "jobId": "e48fcc37-1728-448d-9146-e91c60a328c1",
+      "candidatePath": "assets/candidates/shisanshui-court-queen-diamonds/e48fcc37-1728-448d-9146-e91c60a328c1/source.webp",
+      "sha256": "7a5393c0a2bfbcabce4d6281fb7ee93e72f4fbbb49e56f0b92de9e5ebaaa4f34",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 537916,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-queen-hearts",
+      "jobId": "f8a8cfba-721a-441b-b7bb-df656fbc8267",
+      "candidatePath": "assets/candidates/shisanshui-court-queen-hearts/f8a8cfba-721a-441b-b7bb-df656fbc8267/source.webp",
+      "sha256": "a30291c00c1f5fb9d69a703026025dac76e630fcf4ffaddeee26937272733b50",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 649160,
+      "status": "REVIEW_REQUIRED"
+    },
+    {
+      "assetKey": "shisanshui-court-queen-spades",
+      "jobId": "57f8be55-998f-41f7-9597-a067c9a5dce0",
+      "candidatePath": "assets/candidates/shisanshui-court-queen-spades/57f8be55-998f-41f7-9597-a067c9a5dce0/source.webp",
+      "sha256": "df20c3375132120fd2858681886c214499a510d6a797d1c5277f577de523408d",
+      "mime": "image/webp",
+      "width": 768,
+      "height": 1024,
+      "bytes": 577808,
+      "status": "REVIEW_REQUIRED"
+    }
+  ],
+  "unknownJobs": [
+    {
+      "jobId": "b8c2aa8a-6135-44bf-a515-a65a5fc6ca26",
+      "assetKey": "shisanshui-court-jack-spades",
+      "status": "UNKNOWN",
+      "failure": {
+        "kind": "UNKNOWN",
+        "message": "fetch failed",
+        "at": "2026-10-09T16:24:09.629Z"
+      }
+    }
+  ]
+}

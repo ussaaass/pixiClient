@@ -1,0 +1,12 @@
+{
+  "assetKey": "avatar-06",
+  "kind": "AVATAR",
+  "title": "玩家头像 06",
+  "intendedUse": "用户可选头像之一，圆形裁切显示",
+  "prompt": "Create a friendly premium casual-game avatar portrait of a composed young East Asian man with medium-length dark hair swept to one side and a warm-ivory collar, head and shoulders, facing camera, centered for a circular crop. Polished stylized 3D mobile-game illustration, rounded forms, soft upper-left highlights, teal backdrop and restrained gold accent. No props or text.",
+  "negativePrompt": "photorealism, full body, side profile, text, letters, watermark, logo, busy background, realistic skin pores",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Polished casual-game 3D rendering and soft lighting only; do not copy the card icon composition." }],
+  "tags": ["avatar", "player", "portrait"]
+}

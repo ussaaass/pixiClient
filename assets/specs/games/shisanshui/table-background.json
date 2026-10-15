@@ -1,0 +1,27 @@
+{
+  "assetKey": "shisanshui-table-background",
+  "kind": "BACKGROUND",
+  "title": "十三张横向牌桌背景",
+  "intendedUse": "PixiJS 横向牌局场景；玩家、手牌、座位、分数和操作均由 Pixi 绘制",
+  "prompt": "Create a wide dedicated Shisanshui game-table background from a slightly elevated near-top-down view. A rich deep-emerald felt surface fills the canvas, with a very subtle warm-ivory and gold perimeter rail. Keep the central play area broad, flat and low contrast for dynamically rendered cards. Leave clean peripheral zones for four player seats without drawing actual seats, players, cards, text or controls. Use the dedicated game's polished but restrained stylized 3D finish, soft lighting and tactile felt; it must not resemble the bright multi-game portal.",
+  "negativePrompt": "lobby arches, scenic background, realistic casino, roulette, chips, dice, people, cards, ranks, suits, numbers, text, UI panels, strong center ornament, clutter, watermark",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/candidates/shisanshui-subhall-background/aab473a3-ad3b-4784-8474-df7c2a50458b/source.webp",
+      "purpose": "Match game-specific rendering, dark emerald palette and tactile materials; compose a top-down tabletop independently."
+    }
+  ],
+  "tags": [
+    "shisanshui",
+    "table",
+    "background",
+    "gameplay"
+  ]
+}

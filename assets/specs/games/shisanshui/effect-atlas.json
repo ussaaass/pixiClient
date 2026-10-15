@@ -1,0 +1,27 @@
+{
+  "assetKey": "shisanshui-effect-atlas",
+  "kind": "EFFECT",
+  "title": "十三张牌局特效纹理图集",
+  "intendedUse": "PixiJS 打枪、胜利、金币弹跳的通用粒子纹理；事件、数字和运动由代码控制",
+  "prompt": "Create a transparent 3 by 2 sprite atlas of six separate reusable game-effect textures for a polished Shisanshui card game: a soft ivory-gold starburst, a compact teal-gold impact ring, three small glowing diamond sparks, a gentle emerald dust puff, a clean gold sweep arc, and a subtle ivory card-glint. Give every cell generous clear space; align one isolated effect to the center of each equal-sized cell with no overlap. Stylized polished casual-game VFX, crisp alpha edges, controlled brightness, no text or numbers.",
+  "negativePrompt": "background, panels, cell borders, overlapping effects, text, letters, numbers, cards, suits, photorealism, noisy particles, huge bloom, watermark",
+  "output": {
+    "size": "1024x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/candidates/shisanshui-subhall-background/aab473a3-ad3b-4784-8474-df7c2a50458b/source.webp",
+      "purpose": "Match the dedicated game's teal/gold color and polished light quality; effects remain transparent and independently composed."
+    }
+  ],
+  "tags": [
+    "shisanshui",
+    "effects",
+    "atlas",
+    "gameplay"
+  ]
+}

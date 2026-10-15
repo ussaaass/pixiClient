@@ -1,0 +1,27 @@
+{
+  "assetKey": "lottery-game-emblem",
+  "kind": "BRAND_MARK",
+  "title": "Lottery Game / LG brand emblem",
+  "intendedUse": "Lottery Game browser game hall, app icon, loading screen, and brand lockups",
+  "prompt": "Use case: logo-brand. Asset type: production brand emblem for Lottery Game, abbreviated LG. Primary request: create one compact, memorable emblem based on the exact uppercase monogram LG. Both the L and G must read clearly as those letters, joined into one balanced mark. No wordmark; the exact longer brand name will be typeset separately. Style/medium: clean vector-inspired 2D logo, elegant geometric construction, smooth crisp contours, very restrained dimensional highlight, strong silhouette legible at favicon size. Composition/framing: centered square emblem with generous transparent padding, no border or mockup. Color palette: deep emerald green, warm ivory, refined gold accents, matching a polished dark green and gold game-hall interface. Constraints: transparent background, exact letters L and G only, professional and welcoming, scalable simple shapes, suitable for a loading screen and website header. Avoid: extra text or slogan, playing cards, people, mascots, coins, slots, dice, background scenery, watermark, tiny details, illegible or malformed lettering.",
+  "negativePrompt": "extra letters or words, slogan, playing cards, people, mascots, coins, slots, dice, background scenery, watermark, tiny details, illegible or malformed lettering",
+  "generator": {
+    "tool": "Codex built-in image_gen",
+    "provider": "OpenAI",
+    "imageModelId": "not exposed by the built-in tool"
+  },
+  "output": {
+    "source": "assets/candidates/lottery-game-emblem/openai-imagegen/source.png",
+    "size": "640x640",
+    "format": "webp",
+    "quality": 90,
+    "background": "transparent",
+    "file": "assets/aigen/brand/lottery-game-emblem.webp"
+  },
+  "lockups": [
+    "assets/aigen/brand/lottery-game-logo-horizontal-dark.svg",
+    "assets/aigen/brand/lottery-game-logo-horizontal-light.svg",
+    "assets/aigen/brand/lottery-game-logo-stacked.svg"
+  ],
+  "tags": ["brand", "logo", "LG", "Lottery Game", "transparent", "emerald", "gold"]
+}

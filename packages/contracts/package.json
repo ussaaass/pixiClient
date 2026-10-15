@@ -1,0 +1,34 @@
+{
+  "name": "@gameing/contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./health": "./src/health.ts",
+    "./mock-payment": "./src/mock-payment.ts",
+    "./platform-events/announcement": "./src/platform-events/announcement.ts",
+    "./game-room": "./src/game-room.ts",
+    "./lobby-game-reference": "./src/lobby-game-reference.ts",
+    "./game-catalog": "./src/game-catalog.ts",
+    "./payment-channel": "./src/payment-channel.ts",
+    "./social": "./src/social.ts",
+    "./support": "./src/support.ts",
+    "./identity": "./src/identity.ts",
+    "./wallet": "./src/wallet.ts",
+    "./wallet-funding": "./src/wallet-funding.ts",
+    "./player-entry": "./src/player-entry.ts",
+    "./client-preferences": "./src/client-preferences.ts",
+    "./notifications": "./src/notifications.ts",
+    "./invite-agent": "./src/invite-agent.ts",
+    "./agent-downlines": "./src/agent-downlines.ts",
+    "./agent-audit": "./src/agent-audit.ts",
+    "./referral": "./src/referral.ts",
+    "./game-math": "./src/game-math.ts",
+    "./agent-game-config": "./src/agent-game-config.ts",
+    "./agent-announcements": "./src/agent-announcements.ts",
+    "./event-operations": "./src/event-operations.ts"
+  },
+  "dependencies": {
+    "@sinclair/typebox": "0.34.52"
+  }
+}

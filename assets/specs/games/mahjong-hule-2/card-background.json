@@ -1,0 +1,12 @@
+{
+  "assetKey": "game-card-mahjong-hule-2-poster",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；游戏标题与状态由 H5 绘制",
+  "prompt": "Create a wide 16:9 premium casual-game background for 麻将胡了 2, visually distinct from the first title: an elegant teal-and-amber Chinese-inspired garden pavilion at dusk, stylized jade mahjong tiles on a low table, layered arches and a few warm lanterns. Do not use the first game's peony-and-table composition. Friendly rounded 3D casual-game art, smooth enamel materials, soft bevels, teal/ivory dominant and restrained gold, matching the supplied reference's finish. Focus center-right, reserve lower-left 35% dark quiet space for H5 copy, keep outer crop margins safe. No text, letters, numerals, logos, UI, people, readable tile glyphs, photorealism, casino photography, currency or watermark.",
+  "negativePrompt": "photorealism, cinematic realism, poker cards, readable text, letters, numerals, logos, watermark, UI, people, excessive gold, clutter, flat vector, watercolor",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match style/material/color only; do not copy its playing cards or layout." }],
+  "tags": ["mahjong-hule-2", "mahjong", "pc-card", "background"]
+}

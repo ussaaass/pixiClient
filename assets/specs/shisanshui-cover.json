@@ -1,0 +1,22 @@
+{
+  "assetKey": "shisanshui-cover",
+  "kind": "COVER",
+  "title": "十三张游戏封面",
+  "intendedUse": "大厅游戏选择卡片中的十三张封面插画，文字标题由 H5 渲染",
+  "prompt": "Create a square cover illustration for a premium casual mobile thirteen-card game. Use the supplied visual reference as the rendering-style guide only: polished stylized 3D game art, softly rounded beveled forms, smooth ivory card surfaces, deep teal enamel/felt base, restrained warm-gold card edging, soft upper-left highlights and gentle contact shadows. Show a compact fan of three to five elegant ivory playing cards rising from a rounded teal medallion on a teal tabletop; use only a few accurate, simple red/black suit pips and no ranks. Center the focal object and leave a modest quiet margin so it remains clear as a small lobby tile. Make the image dimensional and polished, not flat vector or realistic casino photography.",
+  "negativePrompt": "flat 2D vector, photorealism, casino photography, realistic gambling table, complex background, messy card fan, too many cards, incorrect suit symbols, letters, readable text, Chinese characters, numerals, watermark, logo, interface screenshot, UI frame",
+  "output": {
+    "size": "1024x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "purpose": "Match only the polished casual-game rendering, teal/ivory/gold palette, material finish, rounded bevels and soft highlights. Do not reuse its medallion/card arrangement."
+    }
+  ],
+  "tags": ["shisanshui", "cover", "lobby", "cartoon"]
+}

@@ -1,0 +1,12 @@
+{
+  "assetKey": "shisanshui-motion-special-hand",
+  "kind": "EFFECT",
+  "title": "十三张特殊牌型加水动画关键帧",
+  "intendedUse": "4×4 序列关键帧图集，裁成 16 帧后输出透明 AVIF 与 Pixi 帧序列；用于规则配置开启时的牌型加水提示",
+  "prompt": "Create an exact 4-column by 4-row transparent sprite sheet of 16 sequential frames for a special-hand scoring highlight in a Shisanshui card game. Animate a restrained royal-gold frame flourish: a thin emerald arc appears, two ivory-gold corner glints sweep around an invisible rectangular card area, a small jewel-like star flashes once, then the light settles and fades. Keep the center of the card area empty for the actual card and game-rendered hand name. Same geometry and pivot in all 16 equal cells, with no effects crossing cell boundaries. Transparent background. Elegant premium card-room styling, clear at small size; optional game rules can enable or disable this flourish.",
+  "negativePrompt": "text, rank letters, numbers, score, fake card faces, suit symbols, people, trophy, crown, panels, background, grid lines, gutters, borders, effects touching neighboring cells, changing camera, inconsistent pivots, casino chips, harsh bloom, photorealism, watermark, logo",
+  "output": { "size": "1600x1600", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/candidates/shisanshui-card-face-frame/97b08e57-6c57-4dc9-ada1-d6a23ac45780/source.webp", "purpose": "Use only the game-specific card edge and gold/emerald palette; keep the center empty for code-rendered card faces." }],
+  "tags": ["shisanshui", "animation", "sprite-sheet", "special-hand", "scoring"]
+}

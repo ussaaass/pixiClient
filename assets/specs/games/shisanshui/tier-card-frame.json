@@ -1,0 +1,27 @@
+{
+  "assetKey": "shisanshui-tier-card-frame",
+  "kind": "CARD_FRAME",
+  "title": "十三张难度档位卡底框",
+  "intendedUse": "十三张专属子厅的统一难度卡片底图；档位名、金币上下限和人数由 H5 绘制",
+  "prompt": "Create one empty landscape room-tier card panel for a dedicated Shisanshui card room. Match the dark emerald felt, ink-teal shadows, warm ivory edge and restrained polished-gold trim of the game-specific style. Stylized 3D casual-game material, rounded bevels and soft upper-left light. Keep the middle 75 percent flat, dark and uncluttered for dynamic text; make the outer rim distinctive but generic so the same artwork supports every difficulty level. No icons, ranks, coins, numbers, text or game results.",
+  "negativePrompt": "bright external lobby style, multiple panels, text, letters, numbers, ranks, suits, chips, cash, photorealism, noisy ornament, watermark, UI screenshot",
+  "output": {
+    "size": "1024x768",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/candidates/shisanshui-subhall-background/aab473a3-ad3b-4784-8474-df7c2a50458b/source.webp",
+      "purpose": "Match only the dedicated game-room palette, material finish and lighting."
+    }
+  ],
+  "tags": [
+    "shisanshui",
+    "tier",
+    "room-card",
+    "game-specific"
+  ]
+}

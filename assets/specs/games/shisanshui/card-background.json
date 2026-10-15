@@ -1,0 +1,12 @@
+{
+  "assetKey": "game-card-shisanshui-poster",
+  "kind": "BACKGROUND",
+  "title": "十三张 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；牌局文字与 CTA 由 H5 绘制",
+  "prompt": "Create a wide 16:9 premium casual-game background for 十三张, a traditional 13-card poker strategy game. Deep emerald felt tabletop seen at a shallow angle, a neat fan of conventional white playing cards with classic red/black suits, plus three orderly card groups suggesting the three rows. Friendly polished 3D casual-game illustration matching the supplied reference's teal/ivory/gold finish, softly beveled forms and gentle upper-left light. Place cards center-right, reserve lower-left 35% dark quiet area for H5 title/details/CTA, keep outer crop safe. Traditional printed card faces only; no cartoon people. No text, logos, UI, watermark, people, money, casino photography or clutter.",
+  "negativePrompt": "cartoon face-card characters, invented card suits, photorealism, casino photography, readable text, logos, watermark, UI, people, banknotes, clutter, flat vector, watercolor",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Use as a style reference and as guidance for conventional playing cards; do not copy its exact composition." }],
+  "tags": ["shisanshui", "traditional-cards", "pc-card", "background"]
+}

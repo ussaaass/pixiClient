@@ -1,0 +1,17 @@
+{
+  "assetKey": "lobby-background-mobile",
+  "kind": "BACKGROUND",
+  "title": "手机竖版游戏大厅背景",
+  "intendedUse": "H5 游戏大厅 720 CSS px 及以下断点；为手机竖屏专门构图，桌面继续使用横版大厅背景",
+  "generationTool": "built-in image_gen",
+  "prompt": "Vertical portrait 9:16 mobile game lobby background illustration. Premium casual 3D game art: rounded smooth deep teal and emerald enamel architecture, warm ivory stone, restrained antique gold trim, soft upper-left lighting, gentle shadows. A friendly stylized game hall with broad arches only at far left/right edges and lower corners. Keep top 18%, center 45%, and bottom 14% low-detail open negative space for H5 title, game card, and fixed navigation. Designed for narrow phone screen, not cropped landscape. Opaque background. No text, people, cards, logos, UI, buttons, watermark, photorealism, busy center, resort, palace photo, ocean, mountains, flat vector or watercolor.",
+  "output": {
+    "sourceFormat": "png",
+    "runtimeFormat": "webp",
+    "dimensions": "941x1672",
+    "runtimeBytes": 72354,
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "tags": ["lobby", "mobile", "portrait", "background", "cartoon"]
+}

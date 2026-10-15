@@ -1,0 +1,12 @@
+{
+  "assetKey": "icon-settings",
+  "kind": "ICON",
+  "title": "设置入口图标",
+  "intendedUse": "游戏大厅的设置入口，不包含文字和状态标记",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game settings icon: one rounded deep-teal gear with a warm-ivory circular center and a small warm-gold inset accent. Match the supplied reference's rounded enamel-like volume, softly beveled edges, controlled highlights, and upper-left light. Keep the tooth count simple and silhouette bold; center with transparent padding, readable at 64 px.",
+  "negativePrompt": "thin technical outline, flat vector, photorealism, text, letters, numbers, logos, watermark, clutter, many tiny gear teeth",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Rendering material, palette, bevel highlights and lighting only." }],
+  "tags": ["icon", "settings", "lobby"]
+}

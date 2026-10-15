@@ -1,0 +1,22 @@
+{
+  "name": "@gameing/server",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "node --import tsx --test src/*.test.ts"
+  },
+  "dependencies": {
+    "@gameing/contracts": "workspace:*",
+    "@koa/router": "15.7.0",
+    "@sinclair/typebox": "0.34.52",
+    "koa": "3.2.1"
+  },
+  "devDependencies": {
+    "@types/koa": "3.0.3",
+    "@types/node": "24.19.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}

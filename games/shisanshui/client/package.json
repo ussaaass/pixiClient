@@ -1,0 +1,21 @@
+{
+  "name": "@gameing/shisanshui-client",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./practice-audio": "./src/practice-audio.ts"
+  },
+  "dependencies": {
+    "@gameing/shisanshui-rules": "workspace:*",
+    "pixi.js": "8.22.0"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "build": "tsc --noEmit -p tsconfig.json"
+  }
+}

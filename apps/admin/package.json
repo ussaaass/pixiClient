@@ -1,0 +1,30 @@
+{
+  "name": "@gameing/admin",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism",
+    "typecheck": "vue-tsc --noEmit -p tsconfig.json",
+    "build": "vue-tsc --noEmit -p tsconfig.json && vite build"
+  },
+  "dependencies": {
+    "@gameing/admin-contracts": "workspace:*",
+    "@gameing/contracts": "workspace:*",
+    "@gameing/shisanshui-rules": "workspace:*",
+    "@sinclair/typebox": "0.34.52",
+    "idb": "^8.0.4",
+    "element-plus": "^2.14.7",
+    "vue": "^3.5.43",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-vue": "^6.0.10",
+    "fake-indexeddb": "^6.2.5",
+    "happy-dom": "20.14.6",
+    "typescript": "6.0.3",
+    "vite": "^8.3.4",
+    "vitest": "5.0.3",
+    "vue-tsc": "^3.3.13"
+  }
+}

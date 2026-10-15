@@ -1,0 +1,11 @@
+{
+  "assetKey": "avatar-sheet-male",
+  "kind": "AVATAR",
+  "title": "玩家头像男性 5×5 精灵图",
+  "intendedUse": "内部审核用的 5×5 头像精灵图；生成后按等分网格裁成 25 张独立头像候选",
+  "prompt": "Use case: illustration-story. Asset type: 25 selectable player profile avatars in a casual card game. Create one perfectly regular 5-column by 5-row contact sheet with exactly 25 distinct adult men, one centered square head-and-shoulders portrait per cell. Style: pure 2D hand-drawn animation cel art, confident clean dark ink outlines, simplified expressive facial features, flat colors with only two-step cel shading, crisp shapes and no rendered 3D depth. Give each adult man a distinct face shape, hairstyle, hair color, age impression and modest everyday clothing; facial hair may appear sparingly, with friendly approachable expressions and no glamour posing. Mostly front-facing or slight three-quarter view. Use simple varied flat-color backdrops that remain contained inside each cell and still read when circle-cropped. Keep identical portrait scale, visual weight and line quality across all 25 cells. Exact edge-aligned 5 columns by 5 rows, equal 320 by 320 cells on a 1600 by 1600 canvas; no overlap or content crossing cell boundaries.",
+  "negativePrompt": "women, children, duplicate faces, repeated hairstyles, inconsistent scale, inconsistent lighting, different art styles, photorealism, realistic Korean men or women, Korean ID-photo aesthetics, K-pop idol, Korean webtoon, manhwa, anime screencap, manga panel, 3D render, CGI, glossy plastic, sculpted surfaces, photographic skin pores, beauty filter, heavy makeup, side profiles, full body, hands, props, text, letters, numbers, labels, grid lines, gutters, borders, collage overlaps, cut-off heads, watermark, logo",
+  "output": { "size": "1600x1600", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/avatar-style-bible.md",
+  "tags": ["avatar", "sprite-sheet", "male", "player", "crop-into-25"]
+}

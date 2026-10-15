@@ -1,0 +1,12 @@
+{
+  "assetKey": "shisanshui-motion-slam",
+  "kind": "EFFECT",
+  "title": "十三张打枪结算动画关键帧",
+  "intendedUse": "4×4 序列关键帧图集，裁成 16 帧后输出透明 AVIF 与 Pixi 帧序列；以非武器化光效表现三墩全胜加成",
+  "prompt": "Create an exact 4-column by 4-row transparent sprite sheet of 16 sequential animation frames for a Shisanshui slam result. Show only a stylized emerald-and-gold table-light sweep, never a weapon or projectile: frames 1-3 a narrow gold arc forms, frames 4-6 three parallel lane-shaped glints ignite, frames 7-9 a compact impact ring blooms at their center, frames 10-13 sparks fan outward, frames 14-16 all light fades to transparent. Keep the visual centered in each equal square cell, same pivot, no crossing cell boundaries. Transparent background. Premium casual game VFX with restrained brightness. No text or score; the application supplies the result label and multiplier.",
+  "negativePrompt": "guns, bullets, weapons, people, text, letters, numbers, score, multiplier, panels, cards, suit symbols, background, grid lines, gutters, borders, effects touching neighboring cells, changing camera, inconsistent pivots, violent explosion, casino chips, harsh bloom, photorealism, watermark, logo",
+  "output": { "size": "1600x1600", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/games/shisanshui/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/candidates/shisanshui-effect-atlas/cccafa9e-c1e5-4a03-99d5-bf882369586e/source.webp", "purpose": "Match the established effect texture/color while making a new light-sweep sequence." }],
+  "tags": ["shisanshui", "animation", "sprite-sheet", "slam", "result"]
+}

@@ -1,0 +1,20 @@
+{
+  "name": "@gameing/admin-contracts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./system-config": "./src/system-config.ts",
+    "./agent-domain-review": "./src/agent-domain-review.ts",
+    "./announcement-template": "./src/announcement-template.ts",
+    "./admin-permissions": "./src/admin-permissions.ts",
+    "./admin-audit": "./src/admin-audit.ts",
+    "./admin-users": "./src/admin-users.ts",
+    "./admin-game-operations": "./src/admin-game-operations.ts",
+    "./admin-referrals": "./src/admin-referrals.ts"
+  },
+  "dependencies": {
+    "@gameing/contracts": "workspace:*",
+    "@sinclair/typebox": "0.34.52"
+  }
+}

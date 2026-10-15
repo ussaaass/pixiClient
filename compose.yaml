@@ -1,0 +1,175 @@
+name: gameing-hall-pixi
+
+services:
+  mysql:
+    image: mysql:9.7.2
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
+      MYSQL_USER: ${MYSQL_USER:-gameing}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_0900_ai_ci
+      - --default-time-zone=+00:00
+    ports:
+      - "127.0.0.1:${MYSQL_HOST_PORT:-10306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 30s
+
+  redis:
+    image: redis:8.10.2
+    restart: unless-stopped
+    environment:
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-10371}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" --no-auth-warning ping | grep -q PONG"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  dev:
+    profiles: ["dev"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    user: node
+    working_dir: /workspace
+    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && sleep infinity"]
+    volumes:
+      - .:/workspace
+      - dev_node_modules:/workspace/node_modules
+      - pnpm_store:/pnpm/store
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
+      MYSQL_USER: ${MYSQL_USER:-gameing}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  server:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    user: node
+    working_dir: /workspace
+    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/server dev"]
+    ports:
+      - "127.0.0.1:10300:3000"
+    volumes:
+      - .:/workspace
+      - server_node_modules:/workspace/node_modules
+      - pnpm_store:/pnpm/store
+    environment:
+      PORT: "3000"
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
+      MYSQL_USER: ${MYSQL_USER:-gameing}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  web:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    user: node
+    working_dir: /workspace
+    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/web dev --host 0.0.0.0"]
+    ports:
+      - "127.0.0.1:10373:5173"
+    volumes:
+      - .:/workspace
+      - web_node_modules:/workspace/node_modules
+      - pnpm_store:/pnpm/store
+    environment:
+      VITE_API_BASE_URL: /api/v1
+    depends_on:
+      server:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+  admin:
+    profiles: ["full"]
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    init: true
+    user: node
+    working_dir: /workspace
+    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/admin dev --host 0.0.0.0"]
+    ports:
+      - "127.0.0.1:10374:5174"
+    volumes:
+      - .:/workspace
+      - admin_node_modules:/workspace/node_modules
+      - pnpm_store:/pnpm/store
+    environment:
+      VITE_ADMIN_API_BASE_URL: /admin-api/v1
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5174').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  mysql_data:
+    name: gameing-hall-pixi_mysql_data
+    external: true
+  redis_data:
+    name: gameing-hall-pixi_redis_data
+    external: true
+  pnpm_store:
+    name: gameing-hall-pixi_pnpm_store
+  dev_node_modules:
+    name: gameing-hall-pixi_dev_node_modules
+  server_node_modules:
+    name: gameing-hall-pixi_server_node_modules
+  web_node_modules:
+    name: gameing-hall-pixi_web_node_modules
+  admin_node_modules:
+    name: gameing-hall-pixi_admin_node_modules

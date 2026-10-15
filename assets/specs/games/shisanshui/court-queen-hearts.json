@@ -1,0 +1,21 @@
+{
+  "assetKey": "shisanshui-court-queen-hearts",
+  "kind": "OTHER",
+  "title": "Traditional Hearts Queen Court Illustration",
+  "intendedUse": "Standard playing-card Queen double-ended court illustration only; no border, index, rank, suit glyph or text",
+  "prompt": "Use case: illustration-story. Asset type: central court illustration for one conventional Anglo-American playing card, composited by code into a standard double-ended J/Q/K card. Create the complete traditional mirrored court-card panel for the Queen of Hearts: a recognizable conventional queen court figure in historical European court dress, shown as two matching half-length figures meeting back-to-back at the exact horizontal center, with the lower half rotated 180 degrees so the design reads correctly from either end. Use the familiar printed playing-card woodcut / engraved line illustration language: fine black ink outlines, clean flat areas, restrained traditional red, deep blue, yellow, black and paper-cream colors, simple ornamental costume details, balanced symmetry, crisp small-scale readability. Keep all art within the central rectangular panel. This is generic traditional playing-card artwork, not a modern cartoon character design and not a portrait. Transparent background.",
+  "negativePrompt": "modern custom character, cartoon mascot, anime, manga, webtoon, photoreal person, 3D, glossy gradients, dramatic perspective, ornate fantasy armor, weapon, scenery, card border, card silhouette, index corner, any letters, any numbers, any suit glyph, text, logo, watermark",
+  "output": {
+    "size": "768x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/games/shisanshui/traditional-card-style.md",
+  "tags": [
+    "shisanshui",
+    "court-card",
+    "queen",
+    "hearts"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "assetKey": "icon-customer-service",
+  "kind": "ICON",
+  "title": "在线客服入口图标",
+  "intendedUse": "大厅在线客服按钮图标；透明背景，适配手机和桌面端",
+  "prompt": "Create a transparent-background, polished stylized 3D casual-game icon for customer support: one rounded deep-teal chat bubble, an ivory over-ear headset, and one small warm-gold sparkle. Match the supplied style reference's smooth dimensional surfaces, softly beveled edges, controlled glossy highlights, and gentle upper-left lighting. Strong simple silhouette, centered with safe transparent padding; it must remain legible at 64 px. Do not copy the reference's playing cards or medallion.",
+  "negativePrompt": "flat vector, thin outline icon, photorealism, hard metallic chrome, realistic human face, tiny detail, clutter, letters, numbers, logos, watermark",
+  "output": {
+    "size": "1024x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Rendering style, material finish, palette and lighting only." }],
+  "tags": ["icon", "support", "chat", "lobby"]
+}

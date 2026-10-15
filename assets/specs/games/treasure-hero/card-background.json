@@ -1,0 +1,14 @@
+{
+  "assetKey": "game-card-treasure-hero-poster",
+  "kind": "BACKGROUND",
+  "title": "夺宝奇侠 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；动态标题、多线说明、积分、按钮均由 H5 绘制",
+  "prompt": "Use case: stylized-concept. Asset type: premium casual game lobby card background. Primary request: create a polished wide 16:9 background for 夺宝奇侠, a three-reel multi-line slot game with a points feature. Scene/backdrop: a welcoming stylized jade-green and warm-ivory treasure chamber with exactly three prominent softly glowing reel windows integrated into a rounded game stage; use abstract gems, ancient-map shapes and a few tasteful gold accents to suggest a lighthearted treasure adventure. Subject: three large vertical reels as the visual focal point, no character or human face. Style/medium: polished rounded 3D casual mobile-game illustration matching the supplied visual reference's smooth enamel/resin surfaces, soft bevels and clean premium finish; teal and jade dominate, warm ivory highlights, restrained gold. Composition/framing: wide 16:9 landscape, art focus at center-right; preserve the lower-left 35 percent as darker quiet negative space for H5 title, description and CTA; keep important forms away from outer 8 percent crop zones. Lighting/mood: curious, adventurous, friendly, softly lit from upper-left with gentle contact shadows and restrained highlights. Constraints: no readable text, no letters, no numerals, no logos, no UI, no buttons, no coin piles, no casino photography, no people, no real currency. The reels show abstract non-letter symbols only and must not imply a winning outcome.",
+  "negativePrompt": "photorealism, casino photography, realistic gambling, people, characters, readable text, Chinese characters, letters, numerals, logos, watermark, UI, interface frame, buttons, currency banknotes, excessive coins, clutter, harsh cinematic bloom, flat vector, watercolor, rough grain",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Style/material/color reference only: match the friendly rounded 3D casual-game finish, soft bevels, teal/ivory/gold restraint and soft lighting. Do not copy cards, medallion, or composition." }
+  ],
+  "tags": ["treasure-hero", "slot", "multi-line", "points", "pc-card", "background"]
+}

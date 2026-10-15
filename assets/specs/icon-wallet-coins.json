@@ -1,0 +1,17 @@
+{
+  "assetKey": "icon-wallet-coins",
+  "kind": "ICON",
+  "title": "金币钱包图标",
+  "intendedUse": "大厅资产入口的小尺寸图标；透明背景，缩小到约64像素仍可辨认",
+  "prompt": "Create a transparent-background polished stylized 3D casual-game icon of a compact deep-teal wallet with three warm-gold coins peeking out. Match the supplied reference's rounded dimensional geometry, smooth enamel-like surfaces, softly beveled edges, controlled glossy highlights, and gentle upper-left lighting. Add warm-ivory highlights; center a clear silhouette with transparent padding so it reads at 64 px. Do not copy the reference's cards or medallion.",
+  "negativePrompt": "flat vector, photorealism, tiny details, clutter, currency symbols, letters, numbers, logos, watermark",
+  "output": {
+    "size": "1024x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "transparent"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Match rendering style, palette, materials, bevels and light only." }],
+  "tags": ["icon", "wallet", "coins", "lobby"]
+}

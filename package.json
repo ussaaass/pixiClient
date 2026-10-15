@@ -1,0 +1,16 @@
+{
+  "name": "gameing-hall-pixi",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@12.10.1",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @gameing/web dev",
+    "dev:server": "pnpm --filter @gameing/server dev",
+    "typecheck": "pnpm -r --if-present typecheck",
+    "test": "pnpm -r --workspace-concurrency=1 --if-present test",
+    "build": "pnpm -r --if-present build"
+  }
+}

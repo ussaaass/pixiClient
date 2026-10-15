@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#102b27" />
+    <title>Lottery Game</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #071d19; }
+      * { box-sizing: border-box; }
+      html, body { width: 100%; min-width: 320px; min-height: 100%; margin: 0; }
+      body { min-height: 100vh; background: #071d19; }
+      #boot-screen { position: fixed; z-index: 9999; inset: 0; display: grid; place-items: center; overflow: hidden; padding: max(24px, env(safe-area-inset-top)) 22px max(24px, env(safe-area-inset-bottom)); color: #f5efdc; background: radial-gradient(ellipse at 50% 43%, #145140 0%, #0b3028 35%, #071d19 76%); opacity: 1; transition: opacity 240ms ease; }
+      #boot-screen::before, #boot-screen::after { position: absolute; top: 50%; left: 50%; width: min(78vw, 510px); aspect-ratio: 1; border: 1px solid #d9ba751c; border-radius: 50%; content: ""; transform: translate(-50%, -58%); pointer-events: none; }
+      #boot-screen::after { width: min(61vw, 400px); border-color: #d9ba7512; }
+      #boot-screen.is-ready { opacity: 0; pointer-events: none; }
+      .boot-content { position: relative; z-index: 1; width: min(100%, 390px); text-align: center; }
+      .boot-emblem { display: grid; width: 76px; height: 76px; place-items: center; margin: 0 auto 15px; border: 1px solid #e3c575a8; border-radius: 24px; color: #f2d58c; background: linear-gradient(145deg, #17654f, #0a3028); box-shadow: 0 0 34px #e0bf5730, inset 0 1px #ffffff35; font-family: Georgia, serif; font-size: 35px; font-weight: 800; letter-spacing: -.12em; text-shadow: 0 2px 14px #f5d98955; animation: boot-glow 3.2s ease-in-out infinite; }
+      .boot-wordmark { margin: 0; color: #f5efdc; font-size: 14px; font-weight: 800; letter-spacing: .2em; }
+      .boot-wordmark span { color: #e2bd68; }
+      .boot-title { margin: 38px 0 0; font-size: 16px; font-weight: 650; letter-spacing: .04em; }
+      .boot-progress-copy { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-top: 22px; color: #e8d7a5; font-size: 12px; text-align: left; }
+      #boot-percent { flex: 0 0 auto; color: #f5d989; font-variant-numeric: tabular-nums; font-size: 14px; font-weight: 750; }
+      .boot-track { position: relative; height: 8px; overflow: hidden; margin-top: 10px; border: 1px solid #ffffff1a; border-radius: 99px; background: #031511aa; box-shadow: inset 0 1px 3px #0008; }
+      #boot-fill { position: relative; width: 3%; height: 100%; overflow: hidden; border-radius: inherit; background: linear-gradient(90deg, #bd964a, #f3d989 72%, #fff1ba); box-shadow: 0 0 14px #eac96780; transition: width 260ms ease-out; }
+      #boot-fill::after { position: absolute; inset: 0; background: linear-gradient(100deg, transparent 15%, #fff9d9bb 50%, transparent 85%); content: ""; animation: boot-sheen 1.7s ease-in-out infinite; }
+      #boot-status { min-height: 19px; margin: 14px 0 0; color: #a9c3b4; font-size: 11px; line-height: 1.6; }
+      #boot-slow { display: none; margin-top: 15px; color: #c7c8ae; font-size: 11px; line-height: 1.7; }
+      #boot-slow.is-visible { display: block; }
+      .boot-actions { display: flex; justify-content: center; gap: 9px; margin-top: 12px; }
+      .boot-actions button { min-height: 44px; padding: 8px 14px; border: 1px solid #d9ba7555; border-radius: 10px; color: #f4d991; background: #d9ba7512; font: inherit; font-size: 12px; cursor: pointer; }
+      .boot-actions button:hover { background: #d9ba7526; }
+      @keyframes boot-sheen { from { transform: translateX(-110%); } to { transform: translateX(220%); } }
+      @keyframes boot-glow { 50% { box-shadow: 0 0 46px #e0bf5745, inset 0 1px #ffffff45; } }
+      @media (max-width: 480px) { .boot-emblem { width: 68px; height: 68px; border-radius: 21px; font-size: 32px; } .boot-title { margin-top: 32px; font-size: 15px; } .boot-content { width: min(100%, 340px); } }
+      @media (prefers-reduced-motion: reduce) { #boot-screen, #boot-fill { transition: none; } .boot-emblem, #boot-fill::after { animation: none; } }
+    </style>
+  </head>
+  <body>
+    <div id="boot-screen" role="status" aria-live="polite" aria-label="游戏大厅启动中">
+      <div class="boot-content">
+        <div class="boot-emblem" aria-hidden="true">LG</div>
+        <p class="boot-wordmark">LOTTERY <span>GAME</span></p>
+        <h1 class="boot-title">正在准备游戏大厅</h1>
+        <div class="boot-progress-copy"><span id="boot-phase">正在连接游戏大厅</span><span id="boot-percent">约 3%</span></div>
+        <div class="boot-track" role="progressbar" aria-label="大厅启动进度" aria-valuemin="0" aria-valuemax="100" aria-valuenow="3"><div id="boot-fill"></div></div>
+        <p id="boot-status">正在准备启动资源…</p>
+        <div id="boot-slow">
+          <span id="boot-slow-copy">网络较慢也没关系，我们正在继续尝试。</span>
+          <div class="boot-actions"><button id="boot-wait" type="button">继续等待</button><button id="boot-retry" type="button">重新加载</button></div>
+        </div>
+      </div>
+    </div>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+    <script>
+      (() => {
+        const screen = document.getElementById('boot-screen');
+        const phase = document.getElementById('boot-phase');
+        const percent = document.getElementById('boot-percent');
+        const status = document.getElementById('boot-status');
+        const fill = document.getElementById('boot-fill');
+        const track = document.querySelector('.boot-track');
+        const slow = document.getElementById('boot-slow');
+        const slowCopy = document.getElementById('boot-slow-copy');
+        const entry = document.querySelector('script[type="module"]');
+        const startedAt = performance.now();
+        const connection = navigator.connection;
+        const downlink = Number(connection && connection.downlink);
+        const readRateSample = () => {
+          try {
+            const sample = JSON.parse(localStorage.getItem('lg.bootRate.v1') || 'null');
+            if (sample && sample.origin === location.origin && Date.now() - sample.at < 7 * 86400000 && Number(sample.bytesPerSecond) > 0) return Number(sample.bytesPerSecond);
+          } catch { /* Storage may be disabled; the current launch must still work. */ }
+          return 0;
+        };
+        const saveRateSample = (bytesPerSecond) => {
+          try {
+            const previous = readRateSample();
+            const smoothed = previous > 0 ? previous * 0.7 + bytesPerSecond * 0.3 : bytesPerSecond;
+            localStorage.setItem('lg.bootRate.v1', JSON.stringify({ origin: location.origin, bytesPerSecond: smoothed, at: Date.now() }));
+          } catch { /* Progress falls back to browser network hints when storage is unavailable. */ }
+        };
+        const recentRate = readRateSample();
+        const estimatedMbps = recentRate > 0 ? recentRate * 8 / 1000000 * 0.7 : downlink > 0 ? Math.min(downlink, 10) * 0.7 : ({ 'slow-2g': 0.05, '2g': 0.08, '3g': 0.45, '4g': 1.1 }[connection && connection.effectiveType] || 0.4) * 0.7;
+        const bootstrapTransferEstimateBytes = 230 * 1024;
+        const estimateMs = Math.max(2500, (bootstrapTransferEstimateBytes * 8) / (estimatedMbps * 1000000) * 1800);
+        let value = 3;
+        let slowShown = false;
+        let progressTimer = 0;
+        const setProgress = (next, label, detail) => {
+          value = Math.max(value, Math.min(100, next));
+          percent.textContent = `${value < 100 ? '约 ' : ''}${Math.round(value)}%`;
+          fill.style.width = `${value}%`;
+          track.setAttribute('aria-valuenow', String(Math.round(value)));
+          if (label) phase.textContent = label;
+          if (detail) status.textContent = detail;
+        };
+        window.__LG_BOOT__ = {
+          mounted() { setProgress(78, '正在布置游戏大厅', '正在准备大厅界面…'); },
+          painted() { setProgress(92, '大厅即将就绪', '正在完成最后一步'); },
+          ready() {
+            setProgress(100, '大厅已就绪', '马上进入游戏大厅');
+            window.clearInterval(progressTimer);
+            screen.classList.add('is-ready');
+            window.setTimeout(() => screen.remove(), 280);
+          },
+        };
+        entry && entry.addEventListener('error', () => {
+          slowShown = true;
+          slow.classList.add('is-visible');
+          slowCopy.textContent = '启动资源没有完整加载，请检查网络后重试。';
+          setProgress(Math.min(value, 72), '大厅没有加载成功', '可以重试启动；此操作不会影响账号资产。');
+        });
+        entry && entry.addEventListener('load', () => {
+          const resource = performance.getEntriesByName(entry.src, 'resource').find((item) => item.entryType === 'resource');
+          if (!resource || !resource.encodedBodySize || !resource.transferSize || resource.duration < 100) return;
+          const bodySeconds = Math.max(0.1, (resource.responseEnd - resource.responseStart) / 1000);
+          if (resource.encodedBodySize >= 4096) saveRateSample(resource.encodedBodySize / bodySeconds);
+        });
+        let waitChosen = false;
+        document.getElementById('boot-wait').addEventListener('click', () => {
+          slow.classList.remove('is-visible');
+          slowShown = false;
+          waitChosen = true;
+          status.textContent = '仍在尝试连接，进度会在启动阶段完成后继续校准。';
+        });
+        document.getElementById('boot-retry').addEventListener('click', () => location.reload());
+        progressTimer = window.setInterval(() => {
+          if (value >= 78) return;
+          const elapsed = performance.now() - startedAt;
+          const estimated = 3 + 69 * (1 - Math.exp(-elapsed / estimateMs));
+          setProgress(estimated, '正在加载大厅核心程序', '网络较慢也没关系，我们正在继续尝试。');
+          if (elapsed >= 15000 && !slowShown && !waitChosen) {
+            slowShown = true;
+            slow.classList.add('is-visible');
+          }
+          if (elapsed >= 15000 && slowShown && !slowCopy.textContent.includes('没有完整加载')) {
+            slowCopy.textContent = '连接仍在尝试。可以继续等候，或重新加载页面。';
+          }
+        }, 220);
+      })();
+    </script>
+  </body>
+</html>

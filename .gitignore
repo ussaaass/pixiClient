@@ -1,0 +1,20 @@
+.env
+.env.*
+!.env.example
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+coverage/
+.turbo/
+.pnpm-store/
+*.log
+
+# Local tool secrets
+tools/asset-generation/.env
+tools/asset-generation/.env.*
+!tools/asset-generation/.env.example
+
+# Unreviewed generated files and local task scratch
+assets/candidates/
+assets/provenance/jobs/

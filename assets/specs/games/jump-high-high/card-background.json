@@ -1,0 +1,14 @@
+{
+  "assetKey": "game-card-jump-high-high-poster",
+  "kind": "BACKGROUND",
+  "title": "跳高高 PC 游戏卡片背景母图",
+  "intendedUse": "PC 大厅 16:9 游戏卡片静态背景；动态标题、积分、多线说明、按钮均由 H5 绘制",
+  "prompt": "Use case: stylized-concept. Asset type: premium casual game lobby card background. Primary request: create a polished wide 16:9 background for 跳高高, a five-reel multi-line slot game with a points feature. Scene/backdrop: a playful deep teal and indigo game stage with five large softly glowing reel windows, abstract jewel-like symbols and upward-springing light trails suggesting height and momentum. Subject: five clearly readable vertical reels as the central-right focal group, no characters. Style/medium: polished rounded 3D casual mobile-game illustration matching the supplied visual reference's soft bevels, enamel-like surfaces, clean premium finish and broad soft lighting; use teal, blue-violet, ivory highlights and restrained warm gold. Composition/framing: wide 16:9 landscape, central-right art focus; preserve the lower-left 35 percent as darker quiet negative space for H5 title, description and CTA; keep important forms away from outer 8 percent crop zones. Lighting/mood: upbeat, energetic, welcoming, controlled bloom, soft upper-left key light. Constraints: no readable text, no letters, no numerals, no logos, no UI, no buttons, no coin piles, no casino photography, no people, no real currency. The reels show abstract non-letter symbols only and must not imply a winning outcome.",
+  "negativePrompt": "photorealism, casino photography, realistic gambling, people, characters, readable text, Chinese characters, letters, numerals, logos, watermark, UI, interface frame, buttons, currency banknotes, excessive coins, clutter, harsh cinematic bloom, flat vector, watercolor, rough grain",
+  "output": { "size": "1536x864", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Style/material/color reference only: match the friendly rounded 3D casual-game finish, soft bevels, teal/ivory/gold restraint and soft lighting. Do not copy cards, medallion, or composition." }
+  ],
+  "tags": ["jump-high-high", "slot", "multi-line", "points", "pc-card", "background"]
+}

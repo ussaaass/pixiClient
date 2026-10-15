@@ -1,0 +1,22 @@
+{
+  "assetKey": "lobby-background",
+  "kind": "BACKGROUND",
+  "title": "横向游戏大厅背景",
+  "intendedUse": "横向 H5 游戏大厅主背景；标题、游戏卡片、余额和按钮由界面单独渲染",
+  "prompt": "Create a wide 3D casual-mobile-game lobby environment in the exact rendering style of the supplied visual reference: polished rounded game-art volumes, smooth teal enamel surfaces, warm ivory stone, restrained gold bevel trim, soft upper-left light, gentle contact shadows, clean simplified shapes. Show a welcoming stylized game-hall interior with a few broad arches and subtle table-inspired details at the outer edges. Keep the central 60 percent of the canvas calm, open, and low-detail for H5 game cards and controls. Keep the lower center open too. Use a shallow readable perspective; make it feel like a carefully crafted game illustration, not a real palace or travel vista.",
+  "negativePrompt": "photorealism, realistic mountains, ocean, resort, palace photography, cinematic environment concept art, flat vector, watercolor, rough texture, tiny ornaments, excessive gold, text, letters, numbers, logos, watermark, UI screenshot, buttons, card ranks, people",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "purpose": "Match only the stylized 3D rendering, teal/ivory/gold palette, smooth materials, bevel highlights and soft lighting. Do not copy the card medallion or icon composition."
+    }
+  ],
+  "tags": ["lobby", "background", "landscape", "cartoon"]
+}

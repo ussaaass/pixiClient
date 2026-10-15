@@ -1,0 +1,12 @@
+{
+  "assetKey": "gameing-hall-emblem",
+  "kind": "ICON",
+  "title": "Gameing Hall 品牌徽记",
+  "intendedUse": "大厅页眉、登录/恢复页和加载状态使用的独立图形徽记；品牌文字由 H5 绘制",
+  "prompt": "Create an original transparent-background emblem for a friendly premium casual game platform. Combine a simple rounded arch or doorway silhouette with one ivory game-card shape and a restrained warm-gold glint, using the supplied reference's polished dimensional teal/ivory/gold finish. Keep the emblem geometric, balanced and recognizable at 48 px, without copying its exact card fan or medallion. Leave generous transparent padding; no wordmark because interface text is rendered separately.",
+  "negativePrompt": "letters, words, Chinese characters, numbers, copied playing-card fan, copied medallion, real brand marks, photorealism, flat vector, watermark, signature",
+  "output": { "size": "1024x1024", "format": "webp", "quality": "high", "background": "transparent" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Palette, dimensional finish, soft lighting and bevel style only." }],
+  "tags": ["brand", "emblem", "lobby", "transparent"]
+}
