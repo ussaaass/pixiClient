@@ -1,0 +1,45 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "wallet-mobile-casino-background-motion-v4",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页平行推筹码与美元无缝循环动态 v4 AVIF 清晰版",
+  "jobId": "e6171631-9148-41f1-8487-9e73823f2a47",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "promptVersion": "kling-mp4-to-avif-v5-ping-pong",
+  "sourceSha256": "694de2ee8e4270b68fafc86dbbebd240329b4135b0cea6309e8091c01320efc8",
+  "mime": "image/avif",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+      "sha256": "e7c821a128ff330fc46c98be3b3c326370a0daac35437eab91d9e1f9eddfe63b"
+    }
+  ],
+  "derivedFrom": {
+    "jobId": "d300d841-2430-4b52-a8e6-ed144af79364",
+    "sourceSha256": "a01fcd60dba52b89445dd1bb0c2c9edc15d435f25e86dad00bc77a1cc8f38ab0",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 720,
+      "height": 1280
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation + ping-pong loop"
+  },
+  "animation": {
+    "frameCount": 78,
+    "columns": 78,
+    "rows": 1,
+    "frameWidth": 540,
+    "frameHeight": 960,
+    "framesPerSecond": 8,
+    "repeatCount": 0,
+    "loopMode": "ping-pong"
+  },
+  "width": 540,
+  "height": 960,
+  "bytes": 196253,
+  "releasePath": "assets/releases/wallet-mobile-casino-background-motion-v4/e6171631-9148-41f1-8487-9e73823f2a47/source.avif",
+  "publishedAt": "2026-10-18T09:42:32.452Z",
+  "reviewer": "Codex visual review"
+}

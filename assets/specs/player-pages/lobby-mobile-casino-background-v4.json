@@ -1,0 +1,15 @@
+{
+  "assetKey": "lobby-mobile-casino-background-v4",
+  "kind": "BACKGROUND",
+  "title": "手机游戏首页赌场街机背景 v4",
+  "intendedUse": "H5 手机游戏 Index 竖屏背景；延续原大厅拱廊构图，同时清楚展现老虎机、转轴、金币与暖色灯光",
+  "generationTool": "OpenAI Images API via assetgen",
+  "prompt": "Use case: stylized-concept. Asset type: portrait mobile game-index background illustration. Input image: Image 1 is a composition and style reference; retain its welcoming symmetrical emerald-and-ivory casino arcade arches and polished gold trim, but turn the empty hall into a lively electronic game arcade. Scene: a bright, welcoming mobile casino game hall. Across the upper third, place several vivid slot machines inside the original archway setting; show their colorful reels, jewel-like cabinet lights and a few gold coins just spilling from their trays. Add warm light glints and soft emerald reflections on the floor. Composition: portrait 9:16, preserve visible architectural framing along both outer edges. Keep one main cabinet's crown and reel window in the upper 12–34%; place supporting cabinets along both sides so some detail remains visible around the central game-card area; add a modest coin trail near the lower 72–82%, above a quiet bottom navigation safe zone. Do not put the only important subjects behind the center overlay. The overall image must be brighter than the reference's teal center: lift midtones, use warm ivory and gold highlights, and avoid a dark vignette. Style: friendly premium casual mobile game 3D illustration, rounded polished forms and the same emerald/ivory/gold material language as the reference. No text, people, brand names, buttons, or UI. Opaque background.",
+  "negativePrompt": "empty hall, large blank dark center, underexposed, black shadows, heavy vignette, dull gold, slot machines hidden behind central card region, machines cut off at edges, unreadable or malformed reels, readable text, numbers, logos, UI, buttons, people, faces, watermark, photorealistic photography, flat vector, clutter",
+  "output": { "size": "944x1680", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/lobby-background-mobile.webp", "purpose": "Preserve its symmetrical casino-hall arches, friendly emerald/ivory/gold style, and portrait framing; add clear slot-game activity." }
+  ],
+  "tags": ["lobby", "game-index", "mobile", "portrait", "casino", "slots", "v4"]
+}

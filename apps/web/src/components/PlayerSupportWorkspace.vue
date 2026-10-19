@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue';
+import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { SupportCategoryType, SupportConversationStatus, type CreateSupportConversationRequestDto, type SupportConversationDto, type SupportMessageDto } from '@gameing/contracts/support';
 import type { SupportClientApplication } from '../platform/support/support-application';
 
@@ -23,11 +23,77 @@ const subject = ref('');
 const firstMessage = ref('');
 const replyDraft = ref('');
 const closeConfirmOpen = ref(false);
+const categoryMenuOpen = ref(false);
+const categorySelectRoot = ref<HTMLElement>();
+const categoryMenu = ref<HTMLElement>();
+const categoryTrigger = ref<HTMLButtonElement>();
+const categoryMenuStyle = ref<Record<string, string>>({ top: '0px', left: '0px', width: '240px' });
 let pendingCreate: { signature: string; key: string } | undefined;
 let pendingReply: { signature: string; key: string } | undefined;
 
 const categoryLabel = (value: number) => categories.find((item) => item.id === value)?.label ?? '客服咨询';
 const statusLabel = (value: number) => value === SupportConversationStatus.CLOSED ? '已关闭' : value === SupportConversationStatus.WAITING_USER ? '等待你回复' : '等待客服回复';
+
+function updateCategoryMenuPosition(): void {
+  const trigger = categoryTrigger.value;
+  if (!trigger) return;
+  const rect = trigger.getBoundingClientRect();
+  const width = Math.min(rect.width, window.innerWidth - 16);
+  const maxHeight = Math.min(240, window.innerHeight - 24);
+  const below = window.innerHeight - rect.bottom;
+  const top = below >= maxHeight + 8 || below >= rect.top ? rect.bottom + 6 : Math.max(8, rect.top - maxHeight - 6);
+  const left = Math.min(Math.max(8, rect.left), window.innerWidth - width - 8);
+  categoryMenuStyle.value = { top: `${top}px`, left: `${left}px`, width: `${width}px`, maxHeight: `${maxHeight}px` };
+}
+
+async function openCategoryMenu(focusSelected = false): Promise<void> {
+  categoryMenuOpen.value = true;
+  await nextTick();
+  updateCategoryMenuPosition();
+  if (focusSelected) categoryMenu.value?.querySelector<HTMLElement>(`[data-category-option="${categoryType.value}"]`)?.focus();
+}
+
+function closeCategoryMenu(returnFocus = false): void {
+  categoryMenuOpen.value = false;
+  if (returnFocus) categoryTrigger.value?.focus();
+}
+
+function chooseCategory(value: number): void {
+  categoryType.value = value;
+  closeCategoryMenu(true);
+}
+
+function onCategoryTriggerKeydown(event: KeyboardEvent): void {
+  if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+    event.preventDefault();
+    void openCategoryMenu(true);
+  } else if (event.key === 'Escape' && categoryMenuOpen.value) {
+    event.preventDefault();
+    closeCategoryMenu(true);
+  }
+}
+
+function onCategoryOptionKeydown(event: KeyboardEvent, index: number): void {
+  if (event.key === 'Escape') {
+    event.preventDefault();
+    closeCategoryMenu(true);
+    return;
+  }
+  if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp' && event.key !== 'Home' && event.key !== 'End') return;
+  event.preventDefault();
+  const nextIndex = event.key === 'Home'
+    ? 0
+    : event.key === 'End'
+      ? categories.length - 1
+      : (index + (event.key === 'ArrowDown' ? 1 : categories.length - 1)) % categories.length;
+  categoryMenu.value?.querySelector<HTMLElement>(`[data-category-option="${categories[nextIndex]!.id}"]`)?.focus();
+}
+
+function onCategoryOutsidePointerDown(event: PointerEvent): void {
+  const target = event.target;
+  if (!(target instanceof Node) || categorySelectRoot.value?.contains(target) || categoryMenu.value?.contains(target)) return;
+  closeCategoryMenu();
+}
 
 async function loadConversations(): Promise<void> {
   loading.value = true;
@@ -38,6 +104,33 @@ async function loadConversations(): Promise<void> {
     conversations.value = result.value;
   } catch { error.value = '会话列表暂时无法读取，请重试。'; }
   finally { loading.value = false; }
+}
+
+async function refreshWorkspace(): Promise<void> {
+  if (!activeConversation.value) {
+    await loadConversations();
+    return;
+  }
+  loading.value = true;
+  error.value = '';
+  try {
+    const conversationId = activeConversation.value.conversationId;
+    const [conversationResult, messagesResult] = await Promise.all([
+      props.application.listConversations(),
+      props.application.listMessages(conversationId),
+    ]);
+    if (conversationResult.ok) conversations.value = conversationResult.value;
+    if (!messagesResult.ok) {
+      error.value = messagesResult.code === 'CONVERSATION_NOT_FOUND' ? '会话已不可用。' : '消息暂时无法读取，请重试。';
+      return;
+    }
+    activeConversation.value = messagesResult.value.conversation;
+    messages.value = messagesResult.value.messages;
+  } catch {
+    error.value = '会话消息暂时无法读取，请重试。';
+  } finally {
+    loading.value = false;
+  }
 }
 
 async function openConversation(conversation: SupportConversationDto): Promise<void> {
@@ -125,7 +218,18 @@ function backToList(): void {
   void loadConversations();
 }
 
-onMounted(() => { void loadConversations(); });
+onMounted(() => {
+  void loadConversations();
+  document.addEventListener('pointerdown', onCategoryOutsidePointerDown);
+  document.addEventListener('scroll', updateCategoryMenuPosition, true);
+  window.addEventListener('resize', updateCategoryMenuPosition);
+});
+onBeforeUnmount(() => {
+  document.removeEventListener('pointerdown', onCategoryOutsidePointerDown);
+  document.removeEventListener('scroll', updateCategoryMenuPosition, true);
+  window.removeEventListener('resize', updateCategoryMenuPosition);
+});
+defineExpose({ refresh: refreshWorkspace });
 </script>
 
 <template>
@@ -157,7 +261,22 @@ onMounted(() => { void loadConversations(); });
       <div class="support-heading"><div><strong>最近会话</strong><small>账号问题会由客服通过会话跟进。</small></div><button class="support-primary" type="button" @click="composeOpen = !composeOpen">{{ composeOpen ? '返回列表' : '新建咨询' }}</button></div>
       <p class="support-system-note">请勿发送密码、验证码或 TOTP 密钥。丢失验证器时，客服只能协助人工核验，不会重置 TOTP。</p>
       <form v-if="composeOpen" class="support-create-form" @submit.prevent="submitConversation">
-        <label>问题分类<select v-model.number="categoryType"><option v-for="item in categories" :key="item.id" :value="item.id">{{ item.label }}</option></select></label>
+        <label class="support-category-field">问题分类
+          <div ref="categorySelectRoot" class="support-category-select">
+            <button ref="categoryTrigger" class="support-category-trigger" type="button" aria-haspopup="listbox" :aria-expanded="categoryMenuOpen" @click="categoryMenuOpen ? closeCategoryMenu() : openCategoryMenu()" @keydown="onCategoryTriggerKeydown">
+              <span>{{ categoryLabel(categoryType) }}</span><span class="support-category-chevron" aria-hidden="true">⌄</span>
+            </button>
+          </div>
+          <Teleport to="body">
+            <Transition name="support-category-popover">
+              <div v-if="categoryMenuOpen" ref="categoryMenu" class="support-category-menu" role="listbox" aria-label="问题分类" :style="categoryMenuStyle">
+                <button v-for="(item, index) in categories" :key="item.id" :data-category-option="item.id" type="button" role="option" :aria-selected="categoryType === item.id" @click="chooseCategory(item.id)" @keydown="onCategoryOptionKeydown($event, index)">
+                  <span>{{ item.label }}</span><span v-if="categoryType === item.id" aria-hidden="true">✓</span>
+                </button>
+              </div>
+            </Transition>
+          </Teleport>
+        </label>
         <label>问题标题<input v-model="subject" maxlength="160" minlength="3" required placeholder="简要描述你需要的帮助" /></label>
         <label>问题描述<textarea v-model="firstMessage" maxlength="4000" minlength="1" rows="5" required placeholder="请说明发生了什么，以及你希望获得什么帮助"></textarea></label>
         <div><small>{{ firstMessage.length }}/4000</small><button class="support-primary" type="submit" :disabled="saving || !subject.trim() || !firstMessage.trim()">{{ saving ? '提交中…' : '提交咨询' }}</button></div>
@@ -183,7 +302,17 @@ onMounted(() => { void loadConversations(); });
 .support-system-note { margin:0; padding:10px 12px; border-left:2px solid #d9bd78; border-radius:6px; color:#c1c8b8; background:#ffffff08; font-size:10px; line-height:1.6; }
 .support-create-form,.support-reply-form { display:grid; gap:10px; }
 .support-create-form label,.support-reply-form label { display:grid; gap:6px; color:#cbd5c9; font-size:11px; }
-.support-create-form input,.support-create-form select,.support-create-form textarea,.support-reply-form textarea { width:100%; min-height:40px; border:1px solid #ffffff24; border-radius:8px; padding:10px; color:#eee7d6; background:#061b18; font:inherit; font-size:12px; }
+.support-create-form input,.support-create-form textarea,.support-reply-form textarea { width:100%; min-height:40px; border:1px solid #ffffff24; border-radius:8px; padding:10px; color:#eee7d6; background:#061b18; font:inherit; font-size:12px; }
+.support-category-select { position:relative; width:100%; }
+.support-category-trigger { display:flex; align-items:center; justify-content:space-between; width:100%; min-height:40px; border:1px solid #d9bd7840; border-radius:8px; padding:0 11px; color:#eee7d6; background:linear-gradient(180deg,#12332b,#0b241f); font:inherit; font-size:12px; text-align:left; cursor:pointer; }
+.support-category-trigger:focus-visible,.support-category-menu button:focus-visible { outline:2px solid #d9bd78; outline-offset:2px; }
+.support-category-chevron { color:#d9bd78; font-size:16px; line-height:1; }
+.support-category-menu { position:fixed; z-index:10000; display:grid; gap:3px; overflow:auto; padding:5px; border:1px solid #d9bd7866; border-radius:10px; color:#eee7d6; background:#0c241f; box-shadow:0 14px 36px #0009; transform-origin:top center; }
+.support-category-menu button { display:flex; align-items:center; justify-content:space-between; min-height:40px; border:0; border-radius:6px; padding:0 10px; color:#dedbce; background:transparent; font:inherit; font-size:12px; text-align:left; cursor:pointer; }
+.support-category-menu button:hover,.support-category-menu button[aria-selected="true"] { color:#f4dfaa; background:#d9bd7818; }
+.support-category-menu button[aria-selected="true"] { font-weight:700; }
+.support-category-popover-enter-active,.support-category-popover-leave-active { transition:opacity .12s ease,transform .12s ease; }
+.support-category-popover-enter-from,.support-category-popover-leave-to { opacity:0; transform:translateY(-4px) scale(.985); }
 .support-create-form textarea,.support-reply-form textarea { resize:vertical; }
 .support-create-form label:last-of-type textarea { min-height:110px; }
 .support-create-form > div,.support-reply-form > div { display:flex; align-items:center; justify-content:space-between; gap:10px; }

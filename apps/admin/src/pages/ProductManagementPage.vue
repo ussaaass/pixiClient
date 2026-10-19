@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const productFields = [
   { title: '商品身份', detail: '商品编码、名称、分类与可售状态由 Product API 返回。' },
   { title: '价格与币种', detail: '金额使用精确十进制字符串；支付币种和展示价格不可由浏览器换算。' },
@@ -17,9 +19,9 @@ const productFields = [
       <div class="product-panel-heading"><div><h2>商品目录</h2><p>按商品信息、分类、可售状态与交付类型筛选。</p></div><button type="button" disabled>＋ 新建商品</button></div>
       <div class="product-filter-grid">
         <label>商品名称 / 编码<input disabled placeholder="输入精确名称或编码"></label>
-        <label>商品分类<select disabled><option>全部分类</option></select></label>
-        <label>可售状态<select disabled><option>全部状态</option></select></label>
-        <label>交付类型<select disabled><option>全部类型</option></select></label>
+        <label>商品分类<el-select disabled><AdminSelectOption value="">全部分类</AdminSelectOption></el-select></label>
+        <label>可售状态<el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
+        <label>交付类型<el-select disabled><AdminSelectOption value="">全部类型</AdminSelectOption></el-select></label>
         <button type="button" disabled>查询商品</button>
       </div>
       <div class="product-empty-state"><span>▤</span><strong>暂无可读取的商品</strong><p>接入商品 API 后，列表显示商品版本、支付价格、交付摘要和可售状态。敏感支付配置不在此页回显。</p></div>

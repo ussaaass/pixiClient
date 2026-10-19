@@ -43,6 +43,26 @@ describe('player wallet transfer workspace', () => {
     expect(transferCoins).toHaveBeenCalledWith(expect.objectContaining({ quote, idempotencyKey: expect.stringMatching(/^[0-9a-f-]{36}$/) }));
     expect(host.querySelector('[role="status"]')?.textContent).toContain('已向 收款玩家 转账 100 金币');
   });
+
+  it('shows a one-tap local transfer recipient fixture in development', async () => {
+    host = document.createElement('div'); document.body.append(host);
+    const lookup = vi.fn(async (value: string) => value === 'demo-transfer' ? [{ userId: '980000000000000006', displayName: '转账练习号', friendCode: 'ZQ8M4K2D9P' }] : []);
+    app = createApp(PlayerWalletTransferWorkspace, {
+      wallet: {} as WalletApplication,
+      friends: { lookup } as unknown as SocialFriendsApplication,
+      canTransfer: true,
+      turnoverRemaining: '0',
+      availableCoins: '1000',
+    });
+    app.mount(host);
+
+    const fixture = host.querySelector<HTMLButtonElement>('.player-transfer-demo-recipient button');
+    expect(host.querySelector('.player-transfer-demo-recipient')?.textContent).toContain('ZQ8M4K2D9P');
+    fixture?.click();
+    await waitFor(() => host.querySelector('.player-transfer-candidates') !== null);
+    expect(lookup).toHaveBeenCalledWith('demo-transfer');
+    expect(host.querySelector('.player-transfer-candidates')?.textContent).toContain('转账练习号');
+  });
 });
 
 async function setField(element: HTMLInputElement, value: string): Promise<void> {

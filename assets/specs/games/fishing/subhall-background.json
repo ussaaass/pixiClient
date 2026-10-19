@@ -1,0 +1,12 @@
+{
+  "assetKey": "fishing-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "捕鱼专属游戏厅背景",
+  "intendedUse": "捕鱼街机游戏专属子厅背景；网页覆盖游戏介绍与档位 UI。",
+  "prompt": "Create a wide 3:2 premium casual 3D underwater arcade game room environment. A luminous turquoise reef canyon with colorful friendly fish silhouettes swimming in a curved school across the upper half, bubbles and soft caustic light rays, coral and pearl-like details framing the edges. No weapons or aggressive fishing gear. Keep the lower middle 45 percent darker, calm and uncluttered for HTML difficulty cards. Match the shared Gameing Hall art direction: smooth rounded 3D forms, polished friendly materials, deep teal/blue-green water, ivory glints and restrained warm-gold accents, soft upper-left light, clean readable silhouettes.",
+  "negativePrompt": "photorealism, real ocean photography, realistic predation, blood, hook closeups, guns, people, readable text, letters, numbers, logos, watermark, buttons, UI, cash, clutter lower center, harsh bloom, flat vector",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared rendering quality and gentle polished material treatment only; use underwater palette and original scene." }],
+  "tags": ["fishing", "subhall", "background"]
+}

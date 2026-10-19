@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import {
   MockPaymentEventOutcome,
@@ -191,15 +193,15 @@ watch(requestedChannelId, () => { void reloadChannels(); });
       <div class="agent-domain-section-heading"><div><h2 id="mock-order-context-title">本机测试订单</h2><p>订单只存在于当前页面会话；刷新后清空。</p></div><span class="record-count">{{ orders.length }} 个</span></div>
       <form class="mock-order-query" @submit.prevent="createTestOrder">
         <label><span>模拟订单金额（CNY）</span><input v-model="amountCny" inputmode="decimal" autocomplete="off" maxlength="11" placeholder="例如 200.00" /></label>
-        <label><span>关联可用支付渠道</span><select v-model="selectedChannelId"><option value="">请选择渠道</option><option v-for="channel in channels" :key="channel.channelId" :value="channel.channelId">{{ channel.providerName }} · {{ paymentMethodLabel(channel.paymentMethod) }}</option></select></label>
+        <label><span>关联可用支付渠道</span><el-select v-model="selectedChannelId"><AdminSelectOption value="">请选择渠道</AdminSelectOption><AdminSelectOption v-for="channel in channels" :key="channel.channelId" :value="channel.channelId">{{ channel.providerName }} · {{ paymentMethodLabel(channel.paymentMethod) }}</AdminSelectOption></el-select></label>
         <button class="mock-create-order" type="submit" :disabled="busy || !selectedChannelId">{{ busy ? '处理中…' : '创建本机测试单' }}</button>
       </form>
       <p v-if="!channels.length" class="mock-order-empty">没有已启用的本机渠道。<RouterLink to="/admin/payments/channels">返回渠道目录并添加渠道</RouterLink></p>
       <div v-if="orders.length" class="mock-order-selection">
         <label for="mock-order-select">选择测试订单</label>
-        <select id="mock-order-select" v-model="selectedOrderId" @change="message = ''; error = ''">
-          <option v-for="order in orders" :key="order.orderId" :value="order.orderId">{{ order.orderId }} · ¥{{ order.amountCny }} · {{ orderStatusLabel(order.status) }}</option>
-        </select>
+        <el-select id="mock-order-select" v-model="selectedOrderId" @change="message = ''; error = ''">
+          <AdminSelectOption v-for="order in orders" :key="order.orderId" :value="order.orderId">{{ order.orderId }} · ¥{{ order.amountCny }} · {{ orderStatusLabel(order.status) }}</AdminSelectOption>
+        </el-select>
       </div>
       <dl v-if="selectedOrder" class="mock-selected-order">
         <div><dt>订单 ID</dt><dd>{{ selectedOrder.orderId }}</dd></div>

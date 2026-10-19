@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-three-fast-kling-v2",
+  "title": "3快 Mobile 游戏卡片号码球动效纠错版（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-three-fast-openai-v2/e70d8026-066c-43bc-83c9-36b918f14ffb/source.png",
+  "prompt": "Create a seamless, suspenseful 5-second portrait lottery-draw loop from this exact transparent lottery machine. Keep the camera, glass chamber, and machine fixed. The six existing numbered balls collide and bounce clearly inside the drum, changing positions in a natural tumbling motion. Preserve each ball's exact two-digit number and color throughout every frame: 03, 11, 18, 27, 36, 44. Numbers must stay upright, crisp, and attached to their own balls while the balls rotate; do not erase, replace, duplicate, or distort any digit. Balls remain inside the glass and return to the supplied arrangement at the end.",
+  "negativePrompt": "blank balls, missing digits, changed numbers, illegible numbers, duplicated numbers, extra balls, balls leaving chamber, camera movement, zoom, scene cut, layout change, text outside balls, logos, blur, flicker, sudden motion, broken glass",
+  "duration": "5",
+  "mode": "std"
+}

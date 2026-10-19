@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const reviewSteps = [
   { title: '核验申请', text: '确认身份资格、流水完成、金额整数倍门槛和收款账户版本。' },
   { title: '审核决定', text: '通过或拒绝均要求权限与处理理由；审核通过不等于资金已出款。' },
@@ -27,7 +29,7 @@ const reviewSteps = [
       <div class="withdrawal-query-grid">
         <label><span>提现单号</span><input type="text" inputmode="numeric" placeholder="完整提现单号" disabled /></label>
         <label><span>用户 ID</span><input type="text" inputmode="numeric" placeholder="完整用户 ID" disabled /></label>
-        <label><span>处理阶段</span><select disabled><option>全部阶段</option></select></label>
+        <label><span>处理阶段</span><el-select disabled><AdminSelectOption value="">全部阶段</AdminSelectOption></el-select></label>
         <label><span>申请时间</span><input type="text" placeholder="等待审核服务" disabled /></label>
         <button type="button" disabled>查询</button>
       </div>

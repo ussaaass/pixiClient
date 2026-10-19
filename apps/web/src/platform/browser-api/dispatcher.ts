@@ -24,8 +24,14 @@ import { RewardType } from '@gameing/contracts/referral';
 import { WalletFundingDevelopmentEndpoint, WalletFundingEndpoint, FundingErrorCode } from '@gameing/contracts/wallet-funding';
 import { WalletFundingUseCases } from '../../wallet-funding/wallet-funding-application';
 import { IndexedDbWalletFundingRepository } from './wallet/indexeddb-wallet-funding-repository';
+import { GameCatalogEndpoint } from '@gameing/contracts/game-catalog';
+import { GameExperienceEndpoint, GameExperienceDtoSchema, GameExperienceListResponseSchema, GamePreflightResponseSchema } from '@gameing/contracts/game-experience';
+import { LOBBY_GAME_EXPERIENCE_REFERENCE, LOBBY_GAME_REFERENCE } from '@gameing/contracts/lobby-game-reference';
+import { CoinMarketEndpoint, CoinMarketErrorCode, type CoinMarketPriceQuoteRequestDto } from '@gameing/contracts/coin-market';
+import { CoinMarketPricingError, quoteCoinMarketPrice } from '../coin-market/coin-market-pricing';
+import { IndexedDbCoinMarketRepository } from './coin-market/indexeddb-coin-market-repository';
 
-type IdentityBody = { identifier?: string; password?: string; currentPassword?: string; newPassword?: string; username?: string; fingerprintVersion?: string; deviceCode?: string; deviceSummary?: { platform: string; browser: string }; credentialId?: string; recoverySecret?: string; totp?: string; setupId?: string; challengeId?: string; code?: string };
+type IdentityBody = { identifier?: string; password?: string; currentPassword?: string; newPassword?: string; username?: string; email?: string; currentEmail?: string; phone?: string; currentPhone?: string; fingerprintVersion?: string; deviceCode?: string; deviceSummary?: { platform: string; browser: string }; credentialId?: string; recoverySecret?: string; totp?: string; setupId?: string; challengeId?: string; code?: string };
 function json(status: number, body: unknown, cookies?: LocalIdentityCookieState): Response {
   const headers = new Headers({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   if (cookies) headers.set('x-local-cookie-state', JSON.stringify(cookies));
@@ -110,7 +116,9 @@ export class BrowserApiServer {
   async handle(request: Request): Promise<Response> {
     const requestId = request.headers.get('x-request-id')?.slice(0, 64) || crypto.randomUUID();
     const url = new URL(request.url);
-    const routes = [...Object.values(IdentityEndpoint), WalletEndpoint.summary, WalletEndpoint.activity, WalletEndpoint.transferQuote, WalletEndpoint.transfer, WalletEndpoint.exchangeQuote, WalletEndpoint.exchange, WalletEndpoint.payoutAccounts, WalletEndpoint.createPayoutAccount, WalletEndpoint.withdrawalQuote, WalletEndpoint.withdrawals, WalletEndpoint.createWithdrawal, ...Object.values(WalletFundingEndpoint), WalletFundingDevelopmentEndpoint.simulatePayment, SupportEndpoint.listConversations, SupportEndpoint.createConversation, SocialEndpoint.access, SocialEndpoint.profile, SocialEndpoint.lookup, SocialEndpoint.friends, SocialEndpoint.request, SocialEndpoint.conversation, ...Object.values(InviteAgentEndpoint)];
+    const routes = [...Object.values(IdentityEndpoint), WalletEndpoint.summary, WalletEndpoint.activity, WalletEndpoint.transferQuote, WalletEndpoint.transfer, WalletEndpoint.exchangeQuote, WalletEndpoint.exchange, WalletEndpoint.payoutAccounts, WalletEndpoint.createPayoutAccount, WalletEndpoint.withdrawalQuote, WalletEndpoint.withdrawals, WalletEndpoint.createWithdrawal, ...Object.values(WalletFundingEndpoint), WalletFundingDevelopmentEndpoint.simulatePayment, SupportEndpoint.listConversations, SupportEndpoint.createConversation, SocialEndpoint.access, SocialEndpoint.profile, SocialEndpoint.lookup, SocialEndpoint.friends, SocialEndpoint.request, SocialEndpoint.conversations, SocialEndpoint.conversation, CoinMarketEndpoint.priceQuote, CoinMarketEndpoint.listings, CoinMarketEndpoint.myListings, CoinMarketEndpoint.createListing, CoinMarketEndpoint.myTrades, ...Object.values(InviteAgentEndpoint), GameCatalogEndpoint.list, GameExperienceEndpoint.list];
+    const gameExperienceMatch = /^\/api\/v1\/games\/([a-z][a-z0-9-]{1,63})\/experience$/.exec(url.pathname);
+    const gamePreflightMatch = /^\/api\/v1\/games\/([a-z][a-z0-9-]{1,63})\/difficulties\/([a-z][a-z0-9_-]{1,47})\/preflight$/.exec(url.pathname);
     const contactConfirmMatch = /^\/api\/v1\/me\/identity\/contact-challenges\/([A-Za-z0-9-]{1,128})\/confirm$/.exec(url.pathname);
     const recoveryActivateMatch = /^\/api\/v1\/me\/security\/recovery-credentials\/([1-9][0-9]{0,19})\/activate$/.exec(url.pathname);
     const supportMessagesMatch = /^\/api\/v1\/me\/support\/conversations\/([1-9][0-9]{0,19})\/messages$/.exec(url.pathname);
@@ -121,6 +129,9 @@ export class BrowserApiServer {
     const socialMessagesMatch = /^\/api\/v1\/me\/social\/conversations\/([1-9][0-9]{0,19})\/messages$/.exec(url.pathname);
     const payoutAccountDeleteMatch = /^\/api\/v1\/me\/wallet\/payout-accounts\/([1-9][0-9]{0,19})$/.exec(url.pathname);
     const withdrawalCancelMatch = /^\/api\/v1\/me\/wallet\/withdrawals\/([1-9][0-9]{0,19})\/cancel$/.exec(url.pathname);
+    const coinMarketListingMatch = /^\/api\/v1\/coin-market\/listings\/([1-9][0-9]{0,19})$/.exec(url.pathname);
+    const coinMarketTradeMatch = /^\/api\/v1\/me\/coin-market\/trades\/([1-9][0-9]{0,19})\/(payment-proof|appeals|buyer-evidence|seller-evidence|confirm-receipt)$/.exec(url.pathname);
+    const coinMarketCreateTradeMatch = /^\/api\/v1\/coin-market\/listings\/([1-9][0-9]{0,19})\/trades$/.exec(url.pathname);
     const endpoint = routes.find((item) => item.path === url.pathname && item.method === request.method)
       ?? (contactConfirmMatch && request.method === IdentityEndpoint.confirmContactChallenge.method ? IdentityEndpoint.confirmContactChallenge : undefined);
     const dynamicEndpoint = supportMessagesMatch
@@ -135,7 +146,12 @@ export class BrowserApiServer {
         : undefined;
     const matchedEndpoint = endpoint
       ?? (recoveryActivateMatch && request.method === IdentityEndpoint.recoveryCredentialActivate.method ? IdentityEndpoint.recoveryCredentialActivate : undefined)
-      ?? dynamicEndpoint ?? socialDynamicEndpoint ?? walletDynamicEndpoint;
+      ?? dynamicEndpoint ?? socialDynamicEndpoint ?? walletDynamicEndpoint
+      ?? (coinMarketListingMatch && request.method === 'PATCH' ? CoinMarketEndpoint.updateListing : undefined)
+      ?? (coinMarketCreateTradeMatch && request.method === 'POST' ? CoinMarketEndpoint.createTrade : undefined)
+      ?? (coinMarketTradeMatch && request.method === 'POST' ? ({ 'payment-proof': CoinMarketEndpoint.paymentProof, appeals: CoinMarketEndpoint.appeal, 'buyer-evidence': CoinMarketEndpoint.buyerEvidence, 'seller-evidence': CoinMarketEndpoint.sellerEvidence, 'confirm-receipt': CoinMarketEndpoint.confirmReceipt } as const)[coinMarketTradeMatch[2] as 'payment-proof' | 'appeals' | 'buyer-evidence' | 'seller-evidence' | 'confirm-receipt'] : undefined)
+      ?? (gameExperienceMatch && request.method === 'GET' ? GameExperienceEndpoint.detail : undefined)
+      ?? (gamePreflightMatch && request.method === 'GET' ? GameExperienceEndpoint.preflight : undefined);
     if (!matchedEndpoint) return failure(404, 'NOT_FOUND', 'The requested endpoint was not found.', requestId);
     const walletActivityCursor = url.pathname === WalletEndpoint.activity.path ? url.searchParams.get('cursor') ?? undefined : undefined;
     if (url.pathname === WalletEndpoint.activity.path && ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (walletActivityCursor !== undefined && !Value.Check(WalletActivityCursorSchema, walletActivityCursor)))) {
@@ -152,6 +168,24 @@ export class BrowserApiServer {
     if ('request' in matchedEndpoint && !Value.Check(matchedEndpoint.request, body)) return failure(400, 'VALIDATION_FAILED', 'Request does not match the shared schema.', requestId);
 
     try {
+      if (url.pathname === GameCatalogEndpoint.list.path && request.method === 'GET') {
+        return success(matchedEndpoint.successStatus, LOBBY_GAME_REFERENCE, requestId, matchedEndpoint.response);
+      }
+      if (url.pathname === GameExperienceEndpoint.list.path && request.method === 'GET') {
+        return success(matchedEndpoint.successStatus, LOBBY_GAME_EXPERIENCE_REFERENCE, requestId, GameExperienceListResponseSchema);
+      }
+      if (gameExperienceMatch && request.method === 'GET') {
+        const item = LOBBY_GAME_EXPERIENCE_REFERENCE.find((entry) => entry.game.gameKey === gameExperienceMatch[1]);
+        if (!item) return failure(404, 'GAME_NOT_FOUND', 'The game hall was not found.', requestId);
+        return success(200, item, requestId, GameExperienceDtoSchema);
+      }
+      if (gamePreflightMatch && request.method === 'GET') {
+        const item = LOBBY_GAME_EXPERIENCE_REFERENCE.find((entry) => entry.game.gameKey === gamePreflightMatch[1]);
+        const hall = item?.difficultyHalls.find((entry) => entry.difficultyKey === gamePreflightMatch[2] && entry.enabled);
+        if (!item || !hall) return failure(404, 'GAME_DIFFICULTY_NOT_FOUND', 'The selected difficulty hall was not found.', requestId);
+        const preflight = { gameKey: item.game.gameKey, difficultyKey: hall.difficultyKey, availability: item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable ? 'READY' as const : 'MODULE_UNAVAILABLE' as const, source: 'LOCAL_DEMO' as const, message: item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable ? '本地练习可用；不扣金币、不进行真实结算。' : '该游戏模块尚未接入，当前不会扣除资产或创建游戏局。' };
+        return success(200, preflight, requestId, GamePreflightResponseSchema);
+      }
       const database = await openBrowserDevelopmentDatabase();
       const identity = new LocalIdentityApplication(new IndexedDbLocalIdentityRepository(database), localContactChallengeInbox);
       if (url.pathname === InviteAgentEndpoint.captureAttribution.path && request.method === 'POST') {
@@ -249,6 +283,30 @@ export class BrowserApiServer {
         return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).cancelWithdrawal(actor.userId, withdrawalCancelMatch[1]!), requestId, matchedEndpoint.response);
       }
 
+      if (url.pathname === InviteAgentEndpoint.invitees.path) {
+        const actor = await requireActor(request, database);
+        const cursor = url.searchParams.get('cursor');
+        if ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (cursor !== null && !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))) return failure(400, 'VALIDATION_FAILED', 'The referral cursor is invalid.', requestId);
+        const bindings = await database.getAllFromIndex('referral_bindings', 'by-parent-1', actor.userId);
+        const ordered = bindings.sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.userId.localeCompare(left.userId));
+        const afterCursor = cursor ? ordered.filter((item) => `${item.createdAt}~${item.userId}` < cursor) : ordered;
+        const page = afterCursor.slice(0, 21);
+        const items = await Promise.all(page.slice(0, 20).map(async (binding) => {
+          const invitee = await database.get('users', binding.userId);
+          const firstCharacter = Array.from(invitee?.displayName.trim().normalize('NFC') ?? '')[0];
+          return { userLabel: firstCharacter ? `${firstCharacter}**` : '受邀用户', boundAt: binding.createdAt, rewardCnyFen: '0' };
+        }));
+        const last = page.length > 20 ? page[19] : undefined;
+        const nextCursor = last ? `${last.createdAt}~${last.userId}` : null;
+        return success(matchedEndpoint.successStatus, { items, totalCount: String(bindings.length), nextCursor }, requestId, matchedEndpoint.response);
+      }
+      if (url.pathname === InviteAgentEndpoint.rewards.path) {
+        const actor = await requireActor(request, database);
+        const user = await database.get('users', actor.userId);
+        const cursor = url.searchParams.get('cursor');
+        if ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (cursor !== null && !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))) return failure(400, 'VALIDATION_FAILED', 'The reward cursor is invalid.', requestId);
+        return success(matchedEndpoint.successStatus, { items: [], rewardType: user?.rewardType ?? RewardType.RECHARGE_REBATE, totalRewardCnyFen: '0', frozenRewardCnyFen: '0', availableRewardCnyFen: '0', nextCursor: null }, requestId, matchedEndpoint.response);
+      }
       if (url.pathname === InviteAgentEndpoint.inviteLink.path || url.pathname === InviteAgentEndpoint.issueInviteLink.path) {
         const actor = await requireActor(request, database);
         const user = await database.get('users', actor.userId);
@@ -298,6 +356,57 @@ export class BrowserApiServer {
         const actor = await requireActor(request, database);
         return success(matchedEndpoint.successStatus, { enabled: await socialAccessEnabled(database, actor.userId) }, requestId, matchedEndpoint.response);
       }
+      if (url.pathname === CoinMarketEndpoint.priceQuote.path && request.method === 'POST') {
+        await requireSocialActor(request, database);
+        const [ratio, minimumConfig] = await Promise.all([
+          database.get('settings', 'system_config:cny_to_coin_ratio'),
+          database.get('settings', 'system_config:coin_market.minimum_listing_coins'),
+        ]);
+        const [yuanValue, coinValue] = typeof ratio?.value === 'string' && /^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/.test(ratio.value) ? ratio.value.split(':') : ['1', '10'];
+        const minimum = typeof minimumConfig?.value === 'string' && /^[1-9][0-9]{0,18}$/.test(minimumConfig.value) ? minimumConfig.value : '1000';
+        const data = quoteCoinMarketPrice(body as CoinMarketPriceQuoteRequestDto, { rateCoinUnits: BigInt(coinValue!), rateCashFen: BigInt(yuanValue!) * 100n }, minimum);
+        return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
+      }
+      if (url.pathname === CoinMarketEndpoint.myListings.path && request.method === 'GET') {
+        const actor = await requireSocialActor(request, database);
+        const data = await new IndexedDbCoinMarketRepository(database).listMine(actor.userId);
+        return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
+      }
+      if (url.pathname === CoinMarketEndpoint.listings.path && request.method === 'GET') {
+        const actor = await requireSocialActor(request, database);
+        const cursor = url.searchParams.get('cursor') ?? undefined;
+        if ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (cursor !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))) return failure(400, 'VALIDATION_FAILED', 'The market cursor is invalid.', requestId);
+        return success(matchedEndpoint.successStatus, await new IndexedDbCoinMarketRepository(database).listPublic(cursor), requestId, matchedEndpoint.response);
+      }
+      if (url.pathname === CoinMarketEndpoint.createListing.path && request.method === 'POST') {
+        const actor = await requireSocialActor(request, database);
+        const data = await new IndexedDbCoinMarketRepository(database).create(actor.userId, body as import('@gameing/contracts/coin-market').CoinMarketListingCreateRequestDto);
+        return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
+      }
+      if (coinMarketListingMatch && request.method === 'PATCH') {
+        const actor = await requireSocialActor(request, database);
+        if ((body as { action?: string } | undefined)?.action !== 'CANCEL') return failure(400, 'VALIDATION_FAILED', 'Unsupported listing action.', requestId);
+        const data = await new IndexedDbCoinMarketRepository(database).cancel(actor.userId, coinMarketListingMatch[1]!);
+        return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
+      }
+      if (url.pathname === CoinMarketEndpoint.myTrades.path && request.method === 'GET') {
+        const actor = await requireSocialActor(request, database);
+        return success(matchedEndpoint.successStatus, await new IndexedDbCoinMarketRepository(database).listTrades(actor.userId), requestId, matchedEndpoint.response);
+      }
+      if (coinMarketCreateTradeMatch && request.method === 'POST') {
+        const actor = await requireSocialActor(request, database);
+        const data = await new IndexedDbCoinMarketRepository(database).createTrade(actor.userId, coinMarketCreateTradeMatch[1]!, body as import('@gameing/contracts/coin-market').CoinMarketTradeCreateRequestDto);
+        return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
+      }
+      if (coinMarketTradeMatch && request.method === 'POST') {
+        const actor = await requireSocialActor(request, database); const repository = new IndexedDbCoinMarketRepository(database); const tradeId = coinMarketTradeMatch[1]!; const action = coinMarketTradeMatch[2]!;
+        const data = action === 'payment-proof' ? await repository.submitPaymentProof(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
+          : action === 'appeals' ? await repository.appeal(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
+            : action === 'buyer-evidence' ? await repository.submitBuyerEvidence(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
+              : action === 'seller-evidence' ? await repository.submitSellerEvidence(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
+                : await repository.confirmReceipt(actor.userId, tradeId);
+        return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
+      }
       if (url.pathname === SocialEndpoint.profile.path) {
         const actor = await requireSocialActor(request, database);
         return success(matchedEndpoint.successStatus, await social.ownProfile(actor.userId), requestId, matchedEndpoint.response);
@@ -329,6 +438,7 @@ export class BrowserApiServer {
       }
       if (url.pathname === SocialEndpoint.conversation.path) {
         const actor = await requireSocialActor(request, database);
+        if (request.method === 'GET') return success(matchedEndpoint.successStatus, await social.listConversations(actor.userId), requestId, matchedEndpoint.response);
         return success(matchedEndpoint.successStatus, await social.openConversation(actor.userId, (body as { userId: string }).userId), requestId, matchedEndpoint.response);
       }
       if (socialMessagesMatch && request.method === 'GET') {
@@ -336,9 +446,9 @@ export class BrowserApiServer {
         return success(matchedEndpoint.successStatus, await social.listMessages(actor.userId, socialMessagesMatch[1]!), requestId, matchedEndpoint.response);
       }
       if (socialMessagesMatch && request.method === 'POST') {
-        const actor = await requireActor(request, database);
-        const input = body as { clientMessageId: string; body: string };
-        return success(matchedEndpoint.successStatus, await social.sendMessage(actor.userId, socialMessagesMatch[1]!, input.clientMessageId, input.body), requestId, matchedEndpoint.response);
+        const actor = await requireSocialActor(request, database);
+        const input = body as { clientMessageId: string; body: string; attachments?: import('@gameing/contracts/social').SocialMessageAttachmentDto[] };
+        return success(matchedEndpoint.successStatus, await social.sendMessage(actor.userId, socialMessagesMatch[1]!, input.clientMessageId, input.body, input.attachments), requestId, matchedEndpoint.response);
       }
       if (url.pathname === SupportEndpoint.listConversations.path && request.method === 'GET') {
         const actor = await requireActor(request, database);
@@ -465,6 +575,18 @@ export class BrowserApiServer {
         return success(matchedEndpoint.successStatus, await identity.createContactChallenge(actor.userId, input), requestId, matchedEndpoint.response);
       }
 
+      if (url.pathname === IdentityEndpoint.setPhoneContact.path && request.method === IdentityEndpoint.setPhoneContact.method) {
+        const actor = await requireActor(request, database);
+        const input = body as { phone: string; currentPhone?: string; password?: string; totp?: string };
+        return success(matchedEndpoint.successStatus, await identity.setPhoneContact(actor.userId, input), requestId, matchedEndpoint.response);
+      }
+
+      if (url.pathname === IdentityEndpoint.setEmailContact.path && request.method === IdentityEndpoint.setEmailContact.method) {
+        const actor = await requireActor(request, database);
+        const input = body as { email: string; currentEmail?: string; password?: string; totp?: string };
+        return success(matchedEndpoint.successStatus, await identity.setEmailContact(actor.userId, input), requestId, matchedEndpoint.response);
+      }
+
       if (contactConfirmMatch && request.method === IdentityEndpoint.confirmContactChallenge.method) {
         const actor = await requireActor(request, database);
         const input = body as { code: string };
@@ -474,6 +596,23 @@ export class BrowserApiServer {
       return failure(404, 'NOT_FOUND', 'The requested endpoint was not found.', requestId);
     } catch (error) {
       if (error instanceof IdentityUseCaseError) return failure(error.status, error.code, error.message, requestId, error.code === 'REFRESH_INVALID' ? { refresh: null } : undefined);
+      if (error instanceof CoinMarketPricingError) {
+        const status = error.code === 'INVALID_EXCHANGE_RATE' ? 503 : 400;
+        return failure(status, error.code, 'The requested coin market price cannot be calculated.', requestId);
+      }
+      if (error instanceof Error && Object.values(CoinMarketErrorCode).includes(error.message as typeof CoinMarketErrorCode[keyof typeof CoinMarketErrorCode])) {
+        const code = error.message as typeof CoinMarketErrorCode[keyof typeof CoinMarketErrorCode];
+        const status = code === CoinMarketErrorCode.LISTING_NOT_FOUND || code === CoinMarketErrorCode.TRADE_NOT_FOUND ? 404
+          : code === CoinMarketErrorCode.TURNOVER_INCOMPLETE || code === CoinMarketErrorCode.INSUFFICIENT_AVAILABLE_BALANCE || code === CoinMarketErrorCode.IDEMPOTENCY_KEY_REUSED || code === CoinMarketErrorCode.LISTING_NOT_CANCELLABLE || code === CoinMarketErrorCode.TRADE_STATE_INVALID || code === CoinMarketErrorCode.TRADE_DEADLINE_PASSED || code === CoinMarketErrorCode.TRADE_BELOW_MINIMUM ? 409
+            : code === CoinMarketErrorCode.LISTING_HOLD_INCONSISTENT || code === CoinMarketErrorCode.PAYMENT_HANDLER_UNAVAILABLE ? 503 : code === CoinMarketErrorCode.TRADE_NOT_ALLOWED ? 403 : 400;
+        const message = code === CoinMarketErrorCode.TURNOVER_INCOMPLETE ? 'Complete the required game turnover before listing coins.'
+          : code === CoinMarketErrorCode.INSUFFICIENT_AVAILABLE_BALANCE ? 'There are not enough available coins.'
+            : code === CoinMarketErrorCode.LISTING_BELOW_MINIMUM ? 'The listing is below the configured minimum.'
+          : code === CoinMarketErrorCode.LISTING_NOT_FOUND || code === CoinMarketErrorCode.TRADE_NOT_FOUND ? 'The listing or trade was not found.'
+                : code === CoinMarketErrorCode.LISTING_NOT_CANCELLABLE ? 'The listing cannot be cancelled in its current state.'
+                  : 'The coin market request conflicts with current state.';
+        return failure(status, code, message, requestId);
+      }
       if (error instanceof Error && Object.values(FundingErrorCode).includes(error.message as typeof FundingErrorCode[keyof typeof FundingErrorCode])) {
         const notFound = error.message === FundingErrorCode.FUNDING_ORDER_NOT_FOUND;
         const conflict = error.message === FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE || error.message === FundingErrorCode.FUNDING_ORDER_EXPIRED || error.message === FundingErrorCode.FUNDING_ORDER_AMOUNT_MISMATCH || error.message === FundingErrorCode.FUNDING_IDEMPOTENCY_KEY_REUSED || error.message === FundingErrorCode.USDT_INVOICE_CAPACITY_REACHED;
@@ -485,9 +624,9 @@ export class BrowserApiServer {
             : error.message === WalletErrorCode.WALLET_STORAGE_UNAVAILABLE || error.message === WalletErrorCode.WITHDRAWAL_CONFIG_INVALID ? 503 : 400;
         return failure(status, error.message, walletErrorMessage(error.message), requestId);
       }
-      if (error instanceof Error && ['SELF_FRIEND_REQUEST', 'SOCIAL_MESSAGE_INVALID'].includes(error.message)) return failure(400, error.message, 'The social request is invalid.', requestId);
+      if (error instanceof Error && ['SELF_FRIEND_REQUEST', 'SOCIAL_MESSAGE_INVALID', 'SOCIAL_ATTACHMENT_INVALID'].includes(error.message)) return failure(400, error.message, 'The social request is invalid.', requestId);
       if (error instanceof Error && ['SOCIAL_USER_NOT_FOUND', 'FRIEND_REQUEST_NOT_FOUND', 'SOCIAL_CONVERSATION_NOT_FOUND'].includes(error.message)) return failure(404, error.message, 'The social item is unavailable.', requestId);
-      if (error instanceof Error && ['SOCIAL_FRIENDSHIP_REQUIRED', 'IDEMPOTENCY_KEY_REUSED'].includes(error.message)) return failure(409, error.message, 'The social action conflicts with the current state.', requestId);
+      if (error instanceof Error && ['SOCIAL_FRIENDSHIP_REQUIRED', 'SOCIAL_FRIENDSHIP_REMOVED', 'SOCIAL_FIRST_CONTACT_WAITING_FOR_REPLY', 'SOCIAL_ATTACHMENT_FRIENDS_ONLY', 'IDEMPOTENCY_KEY_REUSED'].includes(error.message)) return failure(409, error.message, 'The social action conflicts with the current state.', requestId);
       console.error('Browser API request failed', { requestId, code: error instanceof Error ? error.message : 'INTERNAL_ERROR' });
       return failure(500, 'INTERNAL_ERROR', 'The local development service could not complete the request.', requestId);
     }
@@ -564,7 +703,7 @@ export async function createDevelopmentTestAccount(): Promise<{ userId: string; 
   const secretHash = await derivePasswordHash(password, salt);
   const userId = await nextId(database);
   const deviceId = await nextId(database);
-  const user: LocalUser = { userId, displayName: `测试用户${userId.slice(-4)}`, roleType: 1, rewardType: RewardType.RECHARGE_REBATE, status: 'ACTIVE', authVersion: 1 };
+  const user: LocalUser = { userId, displayName: `测试用户${userId.slice(-4)}`, createdAt: new Date().toISOString(), roleType: 1, rewardType: RewardType.RECHARGE_REBATE, status: 'ACTIVE', authVersion: 1 };
   const usernameCredential: LocalCredential = { credentialId: await nextId(database), userId, kind: 'IDENTIFIER', identifierType: 'USERNAME', lookupKey, displayValue: identifier, state: 'ACTIVE' };
   const passwordCredential: LocalCredential = { credentialId: await nextId(database), userId, kind: 'PASSWORD', secretHash, salt: btoa(String.fromCharCode(...salt)), state: 'ACTIVE' };
   const deviceCode = randomToken();

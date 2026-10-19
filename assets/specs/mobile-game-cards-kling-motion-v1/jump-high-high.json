@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-jump-high-high-kling-v1",
+  "title": "跳高高 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/jump-high-high.png",
+  "prompt": "Create a seamless, energetic 5-second portrait slot-game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. The disco ball at the center rotates continuously around its vertical axis, scattering crisp moving beams and colorful reflections across the existing slot-machine surfaces. Small highlights shimmer in rhythm while all objects stay in their original places. Keep the camera fixed and the loop smooth, returning to the supplied composition at the end.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, new objects, moving machine, falling coins, text, logos, flicker, exposure pumping, blur, shaky motion, sudden movement, disco ball deformation",
+  "duration": "5",
+  "mode": "std"
+}

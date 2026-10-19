@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅麻将胡了游戏卡片的静态竖版背景；界面文案由 H5 绘制",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 麻将胡了 PC portrait art. Preserve its bright warm Chinese lounge, circular window, ivory and jade mahjong tiles and golden light, but recompose for a narrow phone card. Several recognizable mahjong tiles float in the air at different depths, gently tumbling around one larger ivory-and-jade focal tile. Use simple traditional engraved tile motifs that remain decorative and do not form malformed readable Chinese characters. Place the floating tile group in the upper-middle, with the lower 20 percent quieter for interface text. Match the PC source's polished dimensional casual-game illustration and warm jade/gold material quality. No text, names, numbers, logos, watermark, UI, people, money or photorealism.",
+  "negativePrompt": "wide crop, flat tile symbols, malformed Chinese text, tile faces fused together, logos, watermark, UI, people, currency, photorealism, unreadable dark scene, excessive glow, clutter",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule.png", "purpose": "Match the PC art's warm Chinese lounge, ivory/jade tile material, composition cues and polished 3D rendering; create a new mobile composition." }],
+  "tags": ["mobile", "portrait", "mahjong-hule", "openai-api-comparison", "static"]
+}

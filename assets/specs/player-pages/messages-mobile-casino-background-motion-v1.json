@@ -1,0 +1,9 @@
+{
+  "assetKey": "messages-mobile-casino-background-motion-v1",
+  "title": "手机消息页赌场竖版背景动态 v1",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/messages.webp",
+  "prompt": "Animate this exact portrait casino messages-page illustration as a premium mobile background. Keep the camera fixed and preserve the portrait layout, roulette-table edge, slot machine, cards, chips and coins. Make the slot reels turn visibly once and settle, let the roulette wheel rotate smoothly, and slide the two face-down cards a short distance toward one another before returning them to their initial positions. Gold coins should roll briefly and produce moving highlights. Keep the upper dark region calm for message rows. Return all objects to their original pose and position at the final frame for a clean infinite loop. No camera zoom or pan; do not add or remove objects.",
+  "negativePrompt": "landscape framing, camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated cards, unreadable slot symbols, warped roulette, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

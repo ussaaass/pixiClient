@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-kling-v1",
+  "title": "麻将胡了 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/mahjong-hule.png",
+  "prompt": "Create a seamless, lively 5-second portrait mahjong slot-game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. The existing mahjong tiles lift slightly from their current positions, rotate gently in the air to show their faces, then settle back precisely where they started. Use clear, restrained movement and small warm glints on the tile edges. Keep the camera fixed and return exactly to the supplied composition for a clean loop.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, new tiles, extra symbols, unreadable tile faces, moving background, text, logos, flicker, blur, shaky motion, sudden movement, warped tiles",
+  "duration": "5",
+  "mode": "std"
+}

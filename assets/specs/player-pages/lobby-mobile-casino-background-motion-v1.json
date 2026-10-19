@@ -1,0 +1,10 @@
+{
+  "assetKey": "lobby-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机游戏大厅明亮老虎机与金币无缝循环动态 v2",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/lobby.webp",
+  "prompt": "Animate this exact bright portrait casino arcade illustration as a seamless infinite mobile lobby background. Lock the camera completely and preserve the portrait framing, color, brightness, and all three slot cabinet identities. Keep the central cabinet crown and upper reels visible and stable in the top portion, while the side cabinet reels stay visible at the left and right margins. Animate all three sets of slot reels with clear, short spins that settle back on their exact original symbols by the final frame; sequence the cabinet bulbs in a flowing gold light chase; rotate a few existing coins and sweep their highlights in the lower coin band. Add broad, readable motion to the reels and bulbs without moving the cabinets or hiding the machine silhouettes. Maintain the bright emerald, ruby, sapphire and warm-gold illumination throughout; do not darken the scene or add a vignette. Keep the center card-safe region visually calm enough for interface cards while preserving glowing cabinet edges on both sides. The outer 8 percent on every edge stays still. First and last frames match exactly in reel symbols, light level, and object positions. No camera movement, no zoom or pan.",
+  "negativePrompt": "camera movement, zoom, pan, tilt, scene cut, dark exposure, darkened machines, heavy vignette, flicker, strobing, exposure flash, edge motion, objects touching image edges, clipped coins, composition change, added machines, removed objects, deformed slot cabinets, unreadable symbols, text, logos, watermark, UI, people, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

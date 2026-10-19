@@ -1,0 +1,10 @@
+{
+  "assetKey": "wallet-mobile-casino-background-motion-v3",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页筹码与美元分离轨迹无缝循环动态 v3",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+  "prompt": "Animate this exact portrait casino-table illustration as a seamless loop. Lock the camera; preserve the composition, all hand identities, chips, dollar bills, roulette edge, colors and exposure. Show the customer's left-side hand pushing only the existing chip stack a short distance forward along the left half of the felt. Show the casino staff member's right-side hand sliding only the existing US dollar bills a short distance toward the customer along the right half of the felt. These are two separate parallel exchange lanes: keep a clearly visible strip of green felt between the chips and the bills in every frame; they must never touch, cross, overlap, merge, transform into one another, or pass over one another. Move each hand together with its own object, pause, then return each to its exact initial pose and position. Add only a small light glint across the chips and bills; keep the roulette wheel stationary to avoid distracting movement. Both people remain entirely out of frame, hands and forearms only, with natural anatomy. Keep all motion within the center 60 percent, leave all edges still, and maintain bright readable midtones. The first and last frames must match exactly. No camera movement, no zoom, pan, tilt or scene changes.",
+  "negativePrompt": "chip touching or overlapping banknotes, red chip on dollar bill, merged objects, objects crossing lanes, money transforming, extra chips, extra banknotes, extra fingers, malformed hands, face, head, body, camera movement, zoom, pan, tilt, scene cut, darkening, vignette, flicker, strobing, blur, text, logo, watermark, UI",
+  "duration": "5",
+  "mode": "std"
+}

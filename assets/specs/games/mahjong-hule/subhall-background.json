@@ -1,0 +1,12 @@
+{
+  "assetKey": "mahjong-hule-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了专属游戏厅背景",
+  "intendedUse": "麻将胡了专属子厅背景；网页覆盖游戏标题、玩法和难度选择。",
+  "prompt": "Create a wide 3:2 premium casual 3D mahjong game room environment. Show an elegant jade-green mahjong table from a shallow elevated angle, with a few traditional ivory mahjong tiles in a gentle cascading motion across the upper half, subtle gold light trails and soft jade lantern glow. Tile faces must have simple non-readable engraved abstract marks, no invented human faces. Keep the lower middle 45 percent quiet and dark teal for HTML difficulty cards. Match the shared Gameing Hall polished 3D art direction: rounded softly beveled tile edges, deep teal and jade palette, ivory tile bodies, restrained warm-gold trim, soft upper-left light, uncluttered composition.",
+  "negativePrompt": "photorealism, casino, people, anime characters on tiles, readable Chinese text, letters, numbers, logos, watermark, buttons, UI, poker cards, cash, clutter lower center, harsh bloom, flat vector",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared rounded 3D finish and lighting quality only; do not copy playing-card imagery." }],
+  "tags": ["mahjong-hule", "subhall", "background"]
+}

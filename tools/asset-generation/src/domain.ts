@@ -40,7 +40,7 @@ export interface AssetJob {
   status: JobStatus;
   createdAt: string;
   updatedAt: string;
-  provider: "openai" | "spacebunny" | "derived";
+  provider: "openai" | "spacebunny" | "klingai" | "derived";
   model: string;
   mainModel?: string;
   imageModel?: string;
@@ -97,6 +97,13 @@ export interface AssetJob {
     frameHeight: number;
     framesPerSecond: number;
     repeatCount: number;
+    loopMode?: "forward" | "ping-pong";
+  };
+  videoTask?: {
+    taskId: string;
+    taskStatus: "submitted" | "processing" | "succeed" | "failed";
+    durationSeconds: number;
+    mode: "std" | "pro";
   };
 }
 

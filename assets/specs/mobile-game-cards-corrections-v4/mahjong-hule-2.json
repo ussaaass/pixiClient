@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-openai-v5",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 金龙五爪手形纠错候选",
+  "intendedUse": "手机大厅麻将胡了 2 卡片背景；采用拇指加四指的明确手形表现龙爪",
+  "prompt": "Create a polished portrait 9:16 mobile casual-game illustration of a golden Chinese imperial dragon rising before a moonlit palace. Retain the established deep cobalt, jade, ivory and refined gold dimensional art direction. The dragon has a continuous elegant S-shaped scaled torso, one expressive head, four attached limbs, and a long separate flowing tail. Show one front paw clearly in the foreground, palm angled three-quarter toward the viewer. This paw must have the anatomy of a five-fingered hand: exactly four long fingers grouped along the top edge of the palm plus exactly one opposing thumb on the side, five digits total. Each digit ends in one distinct curved golden talon. The five tips are separated by visible gaps and are easy to count from left to right; show no other protrusion from this paw. Do not use a radial starburst paw. Keep the other paws behind the torso or small in the distance so they do not compete with the foreground hand. Arrange five large face-up traditional mahjong tiles around the dragon with clean bamboo pips, circle pips and one red 中 honor face. Keep the dragon, paw and tiles in the upper 78 percent, with a quiet dark lower 22 percent for H5 text. Pose the head raised, mane and whiskers swept backward, tail curved in a clear arc. Crisp forms, fixed camera, no motion blur.",
+  "negativePrompt": "three claws, four claws, six claws, extra digit, extra spur, extra protrusion, radial starburst hand, missing thumb, missing finger, fused fingers, overlapping claw tips, unreadable hand, cropped paw, hidden foreground paw, extra legs, missing legs, detached limbs, twisted body, tangled dragon, body crossing, corkscrew, blank tiles, tile backs, unreadable tile symbols, text, logos, watermark, UI, people, currency, photorealism, excessive bloom, clutter",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule-2.png", "purpose": "Match the approved dragon identity, palace, moonlight, gold/jade materials, and dimensional casual-game style." },
+    { "path": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v4/d8d1983f-ddfc-44e9-81e0-ab90c4579d2c/source.png", "purpose": "Use the overall composition and legible tile faces, but replace its six-digit radial paw with one clearly countable four-fingers-plus-thumb paw." }
+  ],
+  "tags": ["mobile", "portrait", "mahjong-hule-2", "five-claw-dragon", "hand-anatomy", "correction-v5"]
+}

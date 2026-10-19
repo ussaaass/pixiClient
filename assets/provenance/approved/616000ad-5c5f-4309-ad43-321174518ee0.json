@@ -1,0 +1,61 @@
+{
+  "jobId": "616000ad-5c5f-4309-ad43-321174518ee0",
+  "assetKey": "messages-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机消息页赌场竖版背景动态 v1 AVIF 清晰版",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-17T19:48:54.514Z",
+  "updatedAt": "2026-10-17T20:19:20.858Z",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "specPath": "assets/specs/player-pages/messages-mobile-casino-background-motion-v1.json",
+  "specSha256": "40321390674067e964827899bc2bfeb54c5fe35fe2197a0268fec9d7bb7d6983",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/messages.webp",
+      "sha256": "1a91f2cac0a96957caaf1fefebabb7c465240447b3f496f7a332093ee16d3ac7"
+    }
+  ],
+  "promptSeed": "Animate this exact portrait casino messages-page illustration as a premium mobile background. Keep the camera fixed and preserve the portrait layout, roulette-table edge, slot machine, cards, chips and coins. Make the slot reels turn visibly once and settle, let the roulette wheel rotate smoothly, and slide the two face-down cards a short distance toward one another before returning them to their initial positions. Gold coins should roll briefly and produce moving highlights. Keep the upper dark region calm for message rows. Return all objects to their original pose and position at the final frame for a clean infinite loop. No camera zoom or pan; do not add or remove objects.\nDerived from review candidate b0b995f5-18c6-487d-b3cf-9cb2b0546e71; converted to a 640x960, 5 fps infinite-loop AVIF with mild sharpening.",
+  "promptVersion": "kling-mp4-to-avif-v3",
+  "candidatePath": "assets/candidates/messages-mobile-casino-background-motion-v1/616000ad-5c5f-4309-ad43-321174518ee0/source.avif",
+  "outputSha256": "28310dbd7b467ff98b2ce9d94391f9a97288ce1e9077a30a8a4f48f4a31539cb",
+  "outputBytes": 160765,
+  "outputMime": "image/avif",
+  "outputWidth": 640,
+  "outputHeight": 960,
+  "generatedAt": "2026-10-17T19:48:54.519Z",
+  "cost": {
+    "status": "ACTUAL",
+    "amount": 0,
+    "currency": "USD",
+    "basis": "local transcode; no generation API call"
+  },
+  "derivedFrom": {
+    "jobId": "b0b995f5-18c6-487d-b3cf-9cb2b0546e71",
+    "sourceSha256": "2a28da95dc69e00aa969f5917759d3eb7735fbcf0c53e81955b4479d9c2f4570",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 784,
+      "height": 1176
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 640,
+    "frameHeight": 960,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "sourcePath": "assets/source/messages-mobile-casino-background-motion-v1/616000ad-5c5f-4309-ad43-321174518ee0/source.avif",
+  "review": {
+    "reviewer": "Codex visual QA (user-directed integration)",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-17T20:19:20.549Z"
+  },
+  "releasePath": "assets/releases/messages-mobile-casino-background-motion-v1/616000ad-5c5f-4309-ad43-321174518ee0/source.avif"
+}

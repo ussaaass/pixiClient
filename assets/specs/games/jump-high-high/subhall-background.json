@@ -1,0 +1,12 @@
+{
+  "assetKey": "jump-high-high-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "跳高高专属游戏厅背景",
+  "intendedUse": "跳高高游戏专属子厅背景；网页绘制名称、规则、难度档位与操作，不在图内生成文字或 UI。",
+  "prompt": "Create a wide 3:2 premium casual 3D slot-game room environment for Jump High High. A dramatic but friendly disco stage with one large luminous golden orb visibly rotating above a polished teal dance floor, radiating fine warm-gold light rays, scattered soft spotlights and subtle abstract reel-like vertical light columns. The golden orb is the clear focal point, upper center; leave the central lower 45 percent relatively dark, calm and uncluttered for HTML difficulty cards. Match the shared Gameing Hall art direction: rounded dimensional forms, soft bevel highlights, deep teal and blue-green palette, ivory accents, restrained warm gold, smooth enamel surfaces, broad soft upper-left lighting. Independent original environment, no recognizable game-provider artwork.",
+  "negativePrompt": "photorealism, casino photography, people, recognizable copyrighted characters, actual slot machine UI, reels with readable symbols, text, letters, numbers, logos, watermark, buttons, cards, chips, cash, clutter in lower center, harsh bloom, noisy gradients, flat vector, monochrome",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared rendering quality, rounded material, highlight softness and palette only; create an independent disco-room composition." }],
+  "tags": ["jump-high-high", "subhall", "background"]
+}

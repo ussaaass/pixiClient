@@ -23,6 +23,7 @@ import { ReferralBindingStatus } from '@gameing/contracts/invite-agent';
 import { InviteAgentEndpoint } from '@gameing/contracts/invite-agent';
 import { IndexedDbWalletRepository } from './wallet/indexeddb-wallet-repository';
 import { FundingOrderStatus, FundingPaymentMethod, WalletFundingDevelopmentEndpoint, WalletFundingEndpoint } from '@gameing/contracts/wallet-funding';
+import { CoinMarketEndpoint, CoinMarketTradeStatus } from '@gameing/contracts/coin-market';
 
 describe('Browser API identity dispatcher', () => {
   afterEach(async () => { clearLocalContactChallengeInbox(); await resetBrowserDevelopmentDatabase(); });
@@ -60,6 +61,127 @@ describe('Browser API identity dispatcher', () => {
 
     await identity.logout();
     await expect(identity.getIdentitySettings()).rejects.toMatchObject({ code: 'ACCESS_TOKEN_INVALID' });
+  });
+
+  it('serves coin market price quotes through the authenticated social API and current exchange configuration', async () => {
+    const account = await createDevelopmentTestAccount();
+    const fetchPort = await createBrowserApiFetch();
+    const loginResponse = await fetchPort(IdentityEndpoint.passwordLogin.path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier: account.identifier, password: account.password }),
+    });
+    const login = await loginResponse.json() as { data: { accessToken: string } };
+    const quoteResponse = await fetchPort(CoinMarketEndpoint.priceQuote.path, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${login.data.accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coins: '1000', priceCentsPer1000Coins: '12000' }),
+    });
+    const quote = await quoteResponse.json() as { data: { coins: string; referenceCentsPer1000Coins: string; grossCents: string } };
+    expect(quoteResponse.status).toBe(200);
+    expect(quote.data).toMatchObject({ coins: '1000', referenceCentsPer1000Coins: '10000', grossCents: '12000' });
+
+    const anonymousResponse = await fetchPort(CoinMarketEndpoint.priceQuote.path, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ coins: '1000', priceCentsPer1000Coins: '12000' }),
+    });
+    expect(anonymousResponse.status).toBe(401);
+  });
+
+  it('creates an idempotent listing, freezes the seller coins, and releases them on cancellation', async () => {
+    const account = await createDevelopmentTestAccount();
+    const database = await openBrowserDevelopmentDatabase();
+    await new IndexedDbWalletRepository(database).grantWelcomeGift(account.userId);
+    await database.put('turnover_states', { userId: account.userId, remainingCoins: '0', updatedAt: new Date().toISOString() });
+    const fetchPort = await createBrowserApiFetch();
+    const loginResponse = await fetchPort(IdentityEndpoint.passwordLogin.path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: account.identifier, password: account.password }) });
+    const login = await loginResponse.json() as { data: { accessToken: string } };
+    const headers = { Authorization: `Bearer ${login.data.accessToken}`, 'Content-Type': 'application/json' };
+    const createBody = JSON.stringify({ coins: '1000', priceCentsPer1000Coins: '12000', idempotencyKey: 'market-listing-test-01', paymentMethods: [1], paymentInstructions: '本机开发测试收款资料' });
+    const createdResponse = await fetchPort(CoinMarketEndpoint.createListing.path, { method: 'POST', headers, body: createBody });
+    const created = await createdResponse.json() as { data: { listingId: string; status: number; coins: string } };
+    expect(createdResponse.status).toBe(201);
+    expect(created.data).toMatchObject({ status: 1, coins: '1000', availableCoins: '1000' });
+
+    const duplicateResponse = await fetchPort(CoinMarketEndpoint.createListing.path, { method: 'POST', headers, body: createBody });
+    expect(((await duplicateResponse.json()) as { data: { listingId: string } }).data.listingId).toBe(created.data.listingId);
+    const frozenAccount = await database.getFromIndex('asset_accounts', 'by-user-asset', [account.userId, 1]);
+    expect(frozenAccount).toMatchObject({ amount: '1000', frozenAmount: '1000' });
+    const myListingsResponse = await fetchPort(CoinMarketEndpoint.myListings.path, { headers });
+    expect(((await myListingsResponse.json()) as { data: unknown[] }).data).toHaveLength(1);
+
+    const cancelPath = CoinMarketEndpoint.updateListing.path.replace(':listingId', created.data.listingId);
+    const cancelledResponse = await fetchPort(cancelPath, { method: 'PATCH', headers, body: JSON.stringify({ action: 'CANCEL' }) });
+    expect(cancelledResponse.status).toBe(200);
+    expect(((await cancelledResponse.json()) as { data: { status: number; availableCoins: string } }).data).toMatchObject({ status: 4, availableCoins: '0' });
+    const releasedAccount = await database.getFromIndex('asset_accounts', 'by-user-asset', [account.userId, 1]);
+    expect(releasedAccount).toMatchObject({ amount: '1000', frozenAmount: '0' });
+    const activityResponse = await fetchPort(WalletEndpoint.activity.path, { headers });
+    const activity = ((await activityResponse.json()) as { data: { items: Array<{ activityType: number; frozenDelta?: string }> } }).data.items;
+    expect(activity.filter((item) => item.frozenDelta !== undefined).map((item) => item.frozenDelta)).toEqual(['-1000', '1000']);
+
+    await database.put('turnover_states', { userId: account.userId, remainingCoins: '1', updatedAt: new Date().toISOString() });
+    const blocked = await fetchPort(CoinMarketEndpoint.createListing.path, { method: 'POST', headers, body: JSON.stringify({ coins: '1000', priceCentsPer1000Coins: '12000', idempotencyKey: 'market-listing-test-02', paymentMethods: [1], paymentInstructions: '本机开发测试收款资料' }) });
+    expect(blocked.status).toBe(409);
+    expect(((await blocked.json()) as { code: string }).code).toBe('TURNOVER_INCOMPLETE');
+    const stillAvailable = await database.getFromIndex('asset_accounts', 'by-user-asset', [account.userId, 1]);
+    expect(stillAvailable).toMatchObject({ frozenAmount: '0' });
+  });
+
+  it('keeps public listing data private, reserves partial inventory, and transfers frozen coins only after seller confirmation', async () => {
+    const seller = await createDevelopmentTestAccount(); const buyer = await createDevelopmentTestAccount();
+    const database = await openBrowserDevelopmentDatabase(); const wallet = new IndexedDbWalletRepository(database);
+    await wallet.grantWelcomeGift(seller.userId); await wallet.grantWelcomeGift(buyer.userId);
+    for (const userId of [seller.userId, buyer.userId]) await database.put('turnover_states', { userId, remainingCoins: '0', updatedAt: new Date().toISOString() });
+    const fetchPort = await createBrowserApiFetch();
+    const login = async (identifier: string, password: string) => {
+      const response = await fetchPort(IdentityEndpoint.passwordLogin.path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier, password }) });
+      return (await response.json() as { data: { accessToken: string } }).data.accessToken;
+    };
+    const sellerToken = await login(seller.identifier, seller.password); const buyerToken = await login(buyer.identifier, buyer.password);
+    const auth = (token: string) => ({ Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' });
+    const listingResponse = await fetchPort(CoinMarketEndpoint.createListing.path, { method: 'POST', headers: auth(sellerToken), body: JSON.stringify({ coins: '1000', priceCentsPer1000Coins: '12000', idempotencyKey: 'market-flow-listing-01', paymentMethods: [1], paymentInstructions: 'DEMO: 银行卡资料' }) });
+    const listing = (await listingResponse.json() as { data: { listingId: string } }).data;
+    const publicResponse = await fetchPort(CoinMarketEndpoint.listings.path, { headers: auth(buyerToken) });
+    const publicPage = await publicResponse.json() as { data: { items: Array<Record<string, unknown>> } };
+    expect(publicPage.data.items[0]).toMatchObject({ paymentMethods: [1], availableCoins: '1000' });
+    expect(publicPage.data.items[0]).not.toHaveProperty('paymentInstructions');
+    expect(publicPage.data.items[0]).not.toHaveProperty('sellerUserId');
+    const tradeEndpoint = CoinMarketEndpoint.createTrade.path.replace(':listingId', listing.listingId);
+    const tradeResponse = await fetchPort(tradeEndpoint, { method: 'POST', headers: auth(buyerToken), body: JSON.stringify({ coins: '1000', paymentMethod: 1, idempotencyKey: 'market-flow-trade-0001' }) });
+    const trade = (await tradeResponse.json() as { data: { tradeId: string; status: number } }).data;
+    expect(tradeResponse.status).toBe(201); expect(trade.status).toBe(CoinMarketTradeStatus.PAYMENT_PENDING);
+    const sellerTrades = await fetchPort(CoinMarketEndpoint.myTrades.path, { headers: auth(sellerToken) });
+    expect(((await sellerTrades.json()) as { data: Array<{ paymentInstructions: string; actorRole: string }> }).data[0]).toMatchObject({ paymentInstructions: 'DEMO: 银行卡资料', actorRole: 'SELLER' });
+    const tradePath = (suffix: string) => `/api/v1/me/coin-market/trades/${trade.tradeId}/${suffix}`;
+    const proof = await fetchPort(tradePath('payment-proof'), { method: 'POST', headers: auth(buyerToken), body: JSON.stringify({ text: '本地测试付款凭证说明' }) });
+    expect(((await proof.json()) as { data: { status: number } }).data.status).toBe(CoinMarketTradeStatus.SELLER_CONFIRMATION_PENDING);
+    const confirm = await fetchPort(tradePath('confirm-receipt'), { method: 'POST', headers: auth(sellerToken), body: '{}' });
+    expect(((await confirm.json()) as { data: { status: number; actorRole: string } }).data).toMatchObject({ status: CoinMarketTradeStatus.RELEASED, actorRole: 'SELLER' });
+    const sellerAccount = await database.getFromIndex('asset_accounts', 'by-user-asset', [seller.userId, 1]);
+    const buyerAccount = await database.getFromIndex('asset_accounts', 'by-user-asset', [buyer.userId, 1]);
+    expect(sellerAccount).toMatchObject({ amount: '0', frozenAmount: '0' }); expect(buyerAccount).toMatchObject({ amount: '2000', frozenAmount: '0' });
+    const tradeOperation = (await database.getAll('asset_operations')).find((operation) => operation.operationType === 7);
+    const entries = tradeOperation ? await database.getAllFromIndex('asset_entries', 'by-operation', tradeOperation.operationId) : [];
+    expect(entries.map((entry) => entry.delta).sort()).toEqual(['-1000', '1000']);
+
+    const disputeSeller = await createDevelopmentTestAccount(); await wallet.grantWelcomeGift(disputeSeller.userId);
+    await database.put('turnover_states', { userId: disputeSeller.userId, remainingCoins: '0', updatedAt: new Date().toISOString() });
+    const disputeSellerToken = await login(disputeSeller.identifier, disputeSeller.password);
+    const disputeListingResponse = await fetchPort(CoinMarketEndpoint.createListing.path, { method: 'POST', headers: auth(disputeSellerToken), body: JSON.stringify({ coins: '1000', priceCentsPer1000Coins: '12000', idempotencyKey: 'market-dispute-listing01', paymentMethods: [1], paymentInstructions: 'DEMO dispute payout' }) });
+    const disputeListing = (await disputeListingResponse.json() as { data: { listingId: string } }).data;
+    const disputeTradeResponse = await fetchPort(CoinMarketEndpoint.createTrade.path.replace(':listingId', disputeListing.listingId), { method: 'POST', headers: auth(buyerToken), body: JSON.stringify({ coins: '1000', paymentMethod: 1, idempotencyKey: 'market-dispute-trade01' }) });
+    const disputeTrade = (await disputeTradeResponse.json() as { data: { tradeId: string } }).data;
+    const submit = (path: string, token: string, text: string) => fetchPort(`/api/v1/me/coin-market/trades/${disputeTrade.tradeId}/${path}`, { method: 'POST', headers: auth(token), body: JSON.stringify({ text }) });
+    await submit('payment-proof', buyerToken, 'Buyer says payment sent');
+    const appeal = await submit('appeals', disputeSellerToken, 'Seller has not received payment');
+    expect(((await appeal.json()) as { data: { status: number } }).data.status).toBe(CoinMarketTradeStatus.DISPUTED);
+    await submit('buyer-evidence', buyerToken, 'Buyer submits bank receipt description');
+    const sellerEvidence = await submit('seller-evidence', disputeSellerToken, 'Seller response evidence description');
+    expect(((await sellerEvidence.json()) as { data: { status: number } }).data.status).toBe(CoinMarketTradeStatus.PLATFORM_REVIEW);
+    const stillEscrowedSeller = await database.getFromIndex('asset_accounts', 'by-user-asset', [disputeSeller.userId, 1]);
+    expect(stillEscrowedSeller).toMatchObject({ amount: '1000', frozenAmount: '1000' });
   });
 
   it('supports authenticated friend lookup by friend code and username, requests, acceptance, and persistent direct messages', async () => {
@@ -172,6 +294,37 @@ describe('Browser API identity dispatcher', () => {
 
     const created = await ensureLocalDeviceRegistration(fetchPort, randomToken());
     expect(await database.get('referral_bindings', created.user.userId)).toMatchObject({ userId: created.user.userId, parent1UserId: inviter.userId, status: ReferralBindingStatus.ACTIVE });
+    const invitees = await fetchPort(InviteAgentEndpoint.invitees.path, { headers: { Authorization: `Bearer ${token}` } });
+    expect(((await invitees.json()) as { data: { totalCount: string; items: Array<{ userLabel: string; rewardCnyFen: string }> } }).data).toMatchObject({ totalCount: '1', items: [{ userLabel: '游**', rewardCnyFen: '0' }] });
+    const rewards = await fetchPort(InviteAgentEndpoint.rewards.path, { headers: { Authorization: `Bearer ${token}` } });
+    expect(((await rewards.json()) as { data: { totalRewardCnyFen: string; items: unknown[] } }).data).toMatchObject({ totalRewardCnyFen: '0', items: [] });
+  });
+
+  it('binds a phone without an SMS code and requires the exact old phone when replacing it', async () => {
+    const fetchPort = await createBrowserApiFetch();
+    const fixture = await createDevelopmentTestAccount();
+    const identity = new BrowserPlayerIdentityAdapter(fetchPort);
+    await identity.passwordLogin({ identifier: fixture.identifier, password: fixture.password });
+    await expect(identity.setPhoneContact({ phone: '+14155550123', password: fixture.password })).resolves.toMatchObject({ phone: { maskedValue: '+14••••123', verified: false } });
+    await expect(identity.setPhoneContact({ phone: '+14155550124', currentPhone: '+14155550999', password: fixture.password })).rejects.toMatchObject({ code: 'CURRENT_PHONE_MISMATCH' });
+    await expect(identity.setPhoneContact({ phone: '+14155550124', currentPhone: '+14155550123', password: fixture.password })).resolves.toMatchObject({ phone: { maskedValue: '+14••••124', verified: false } });
+    const database = await openBrowserDevelopmentDatabase();
+    expect(await database.getFromIndex('credentials', 'by-lookup', '+14155550123')).toBeUndefined();
+    expect(await database.getFromIndex('credentials', 'by-lookup', '+14155550124')).toMatchObject({ userId: fixture.userId, state: 'ACTIVE' });
+  });
+
+  it('binds email without a code and requires the exact old email when replacing it', async () => {
+    const fetchPort = await createBrowserApiFetch();
+    const fixture = await createDevelopmentTestAccount();
+    const identity = new BrowserPlayerIdentityAdapter(fetchPort);
+    await identity.passwordLogin({ identifier: fixture.identifier, password: fixture.password });
+    await expect(identity.setEmailContact({ email: 'player@example.test', password: fixture.password })).resolves.toMatchObject({ email: { verified: false } });
+    await expect(identity.setEmailContact({ email: 'new@example.test', currentEmail: 'wrong@example.test', password: fixture.password })).rejects.toMatchObject({ code: 'CURRENT_EMAIL_MISMATCH' });
+    await expect(identity.setEmailContact({ email: 'new@example.test', currentEmail: 'player@example.test', password: fixture.password })).resolves.toMatchObject({ email: { verified: false } });
+    const database = await openBrowserDevelopmentDatabase();
+    expect(await database.getFromIndex('credentials', 'by-lookup', 'player@example.test')).toBeUndefined();
+    expect(await database.getFromIndex('credentials', 'by-lookup', 'new@example.test')).toMatchObject({ userId: fixture.userId, state: 'ACTIVE' });
+    await expect(identity.passwordLogin({ identifier: 'new@example.test', password: fixture.password })).resolves.toMatchObject({ outcome: 'PASSWORD_AUTHENTICATED' });
   });
 
   it('hides and rejects social access when the direct parent uses customer-loss rewards', async () => {
@@ -290,7 +443,7 @@ describe('Browser API identity dispatcher', () => {
     const database = await openBrowserDevelopmentDatabase();
     const walletRepository = new IndexedDbWalletRepository(database);
     await walletRepository.grantWelcomeGift(account.userId);
-    await database.put('turnover_states', { userId: account.userId, remainingCoins: '0', updatedAt: new Date().toISOString() });
+    await database.put('turnover_states', { userId: account.userId, remainingCoins: '500', updatedAt: new Date().toISOString() });
     await database.put('asset_accounts', { accountId: `${account.userId}:2`, userId: account.userId, assetType: 2, amount: '20000', frozenAmount: '0', version: 1, status: 1 });
     const fetchPort = await createBrowserApiFetch();
     const login = await fetchPort(IdentityEndpoint.passwordLogin.path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ identifier: account.identifier, password: account.password }) });
@@ -312,6 +465,11 @@ describe('Browser API identity dispatcher', () => {
     const quote = ((await quoteResponse.json()) as { data: import('@gameing/contracts/wallet').WithdrawalQuoteDto }).data;
     expect(quote).toMatchObject({ netCnyFen: '10000', feeCnyFen: '500', debitCnyFen: '10500' });
     const request = { quote, idempotencyKey: crypto.randomUUID() };
+    const blockedResponse = await fetchPort(WalletEndpoint.createWithdrawal.path, { method: 'POST', headers, body: JSON.stringify(request) });
+    expect(blockedResponse.status).toBe(409);
+    expect(((await blockedResponse.json()) as { code: string }).code).toBe('TURNOVER_INCOMPLETE');
+    expect(await database.count('wallet_withdrawals')).toBe(0);
+    await database.put('turnover_states', { userId: account.userId, remainingCoins: '0', updatedAt: new Date().toISOString() });
     const createdResponse = await fetchPort(WalletEndpoint.createWithdrawal.path, { method: 'POST', headers, body: JSON.stringify(request) });
     expect(createdResponse.status, await createdResponse.clone().text()).toBe(201);
     const created = ((await createdResponse.json()) as { data: import('@gameing/contracts/wallet').WithdrawalDto }).data;
@@ -946,5 +1104,32 @@ describe('Browser API identity dispatcher', () => {
     expect(await generateTotp(secret, 59_000)).toBe('287082');
     expect(await verifyTotp(secret, '287082', 59_000)).toBe(true);
     expect(await verifyTotp(secret, '12345', 59_000)).toBe(false);
+  });
+
+  it('serves the game catalog, hall details and module-aware difficulty preflight through the local HTTP adapter', async () => {
+    const fetchPort = await createBrowserApiFetch(new BrowserApiServer());
+    const [catalogResponse, listResponse, detailsResponse, preflightResponse, missingResponse] = await Promise.all([
+      fetchPort('/api/v1/games'),
+      fetchPort('/api/v1/games/experience'),
+      fetchPort('/api/v1/games/mahjong-hule/experience'),
+      fetchPort('/api/v1/games/slot3/difficulties/regular/preflight'),
+      fetchPort('/api/v1/games/mahjong-hule/difficulties/unknown/preflight'),
+    ]);
+    const catalog = await catalogResponse.json() as { data: Array<{ gameKey: string }> };
+    const list = await listResponse.json() as { data: Array<{ difficultyHalls: unknown[]; references: Array<{ url: string }>; subhallBackgroundAssetId: string; subhallBackgroundUrl: string }> };
+    const details = await detailsResponse.json() as { data: { title: string; gameplay: Array<{ title: string }> } };
+    const preflight = await preflightResponse.json() as { data: { availability: string; source: string } };
+
+    expect(catalogResponse.status).toBe(200);
+    expect(listResponse.status).toBe(200);
+    expect(detailsResponse.status).toBe(200);
+    expect(catalog.data).toHaveLength(8);
+    expect(list.data.every((item) => item.difficultyHalls.length === 3)).toBe(true);
+    expect(new Set(list.data.map((item) => item.subhallBackgroundAssetId)).size).toBe(8);
+    expect(list.data.every((item) => item.subhallBackgroundUrl.startsWith('/assets/game-subhalls/'))).toBe(true);
+    expect(list.data.every((item) => item.references.length === 0)).toBe(true);
+    expect(details.data).toMatchObject({ title: '麻将胡了', gameplay: expect.arrayContaining([expect.objectContaining({ title: '卷轴与 ways' })]) });
+    expect(preflight.data).toEqual(expect.objectContaining({ availability: 'MODULE_UNAVAILABLE', source: 'LOCAL_DEMO' }));
+    expect(missingResponse.status).toBe(404);
   });
 });

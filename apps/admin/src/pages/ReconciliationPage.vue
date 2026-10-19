@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const handlingSteps = [
   { title: '打开原始证据', text: '查看 provider 对账文件/事件、外部交易定位和来源时间，不在页面编辑原始内容。' },
   { title: '核对内外记录', text: '并列对照 external_settlement 与内部订单/asset_operation；原币金额和 CNY 估值分开。' },
@@ -26,8 +28,8 @@ const handlingSteps = [
     <section class="reconciliation-filter-panel" aria-labelledby="reconciliation-filter-title">
       <div class="agent-domain-section-heading"><div><h2 id="reconciliation-filter-title">异常队列</h2><p>按 provider、异常类型、日期或关联订单/交易定位；处理范围由服务端授权。</p></div><span class="record-count">未查询</span></div>
       <div class="reconciliation-filter-grid">
-        <label><span>Provider</span><select disabled><option>全部渠道</option></select></label>
-        <label><span>异常类型</span><select disabled><option>全部类型</option></select></label>
+        <label><span>Provider</span><el-select disabled><AdminSelectOption value="">全部渠道</AdminSelectOption></el-select></label>
+        <label><span>异常类型</span><el-select disabled><AdminSelectOption value="">全部类型</AdminSelectOption></el-select></label>
         <label><span>订单 / 外部交易</span><input type="search" placeholder="等待对账服务" disabled /></label>
         <label><span>发生日期</span><input type="text" placeholder="选择时间范围" disabled /></label>
         <button type="button" disabled>查询</button>

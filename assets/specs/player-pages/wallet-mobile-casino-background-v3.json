@@ -1,0 +1,15 @@
+{
+  "assetKey": "wallet-mobile-casino-background-v3",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页筹码兑换美元赌场背景 v3",
+  "intendedUse": "钱包页竖屏背景；主题明确呈现筹码交易及美金到账，背景主体放在上半段和两侧，兼容页面控件覆盖",
+  "generationTool": "OpenAI Images API via assetgen",
+  "prompt": "Use case: stylized-concept. Asset type: portrait mobile casino wallet background illustration. Input image: Image 1 is a style/material reference only; keep its premium emerald felt, warm gold casino lighting, and polished game-illustration finish, but create a new composition. Scene: a close, richly detailed green casino tabletop with a gold-lit roulette wheel edge and soft slot-machine bokeh in the upper background. Primary request: clearly depict a casino-chip-to-cash exchange. In the upper-middle action area, one anonymous customer's hand slides a small neat stack of colorful casino chips forward across the felt; from the opposite side, the cuffed hand of a casino staff member slides several recognizable US dollar banknotes back toward the customer. Only hands and forearms are visible; both people remain completely outside the frame, with no faces or bodies. Keep chips and bills separated and unmistakable, in crisp focus, with visible green felt between them. Surround the transaction with a few neatly stacked red, black and emerald chips and restrained gold coins. Composition: portrait 9:16. Put the exchange action between 22% and 46% of the image height, keep both hands fully inside the central 70% safe width, and leave the bottom 15% visually quiet for mobile navigation. Keep the subject large enough to remain recognizable beneath translucent app panels. Style: premium casual 3D game illustration, rounded polished materials, emerald green and warm gold with restrained red/black chip accents, bright readable midtones, crisp silhouettes and soft casino lighting. No text or interface. Opaque background.",
+  "negativePrompt": "faces, heads, visible bodies, identifiable person, extra fingers, malformed hands, floating money, banknotes fused with chips, unreadable paper clutter, gambling text, readable serial numbers, casino logo, watermark, UI, buttons, dark exposure, heavy vignette, motion blur, photorealistic photo, flat vector, empty center, hands cut off at frame edge",
+  "output": { "size": "944x1680", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp", "purpose": "Style/material and casino-table reference only; replace its scene composition with a clear chip-for-US-dollar exchange." }
+  ],
+  "tags": ["player-page", "wallet", "mobile", "portrait", "casino", "chips", "cash", "v3"]
+}

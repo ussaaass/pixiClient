@@ -1,0 +1,15 @@
+{
+  "assetKey": "social-casino-background-v2",
+  "kind": "BACKGROUND",
+  "title": "社区页赌场牌桌背景 v2",
+  "intendedUse": "玩家社区一级页面背景；论坛内容由 H5 单独渲染。牌桌、筹码和社交牌位需清楚可辨",
+  "prompt": "Create a wide 3:2 polished stylized 3D casino-game background for the Community page. A large oval poker TABLE is the clear foreground subject, taking about 65% of the composition and viewed from slightly above. The complete padded rail and bounded deep-green felt surface must be visible. Arrange several distinct player positions around the table with traditional playing cards, small stacks of colorful casino chips, and warm gold coins on the felt. In the background, show subtle slot-machine lights. A small cascade of ivory mahjong tiles falls from the top edge toward one side of the table. Make it feel like a lively premium card-game gathering without showing people; visible seats can suggest players. The table and gaming objects must remain large and recognizable behind interface overlays. Rich emerald, teal and warm gold, polished casual-game 3D illustration, refined lighting, clear silhouettes, not photorealistic. The green surface must read as a tabletop, never as carpet or floor; casino architecture is secondary. No text, letters, numbers, logos, UI, or watermark.",
+  "negativePrompt": "empty salon, empty floor, carpet, pool, green void, table only in distant background, tiny cards or chips, architecture dominating, mailboxes, photorealistic casino photography, readable text, numerals, logos, watermark, UI, buttons, people, clutter hiding table rail",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "tags": ["player-page", "social", "casino", "poker-table", "background", "v2"]
+}

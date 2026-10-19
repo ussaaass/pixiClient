@@ -17,16 +17,29 @@ import { openBrowserDevelopmentDatabase } from './database';
 import { IndexedDbSocialRepository } from './social/indexeddb-social-repository';
 import { InviteAgentEndpoint } from '@gameing/contracts/invite-agent';
 import type { WalletFundingApplication } from '../../wallet-funding/wallet-funding-application';
+import { createCoinMarketApplication } from '../coin-market/coin-market-application';
+import { createSocialMessageAssetApplication } from '../assets/social-message-asset-application';
 
 export async function createBrowserDevelopmentIdentity() {
   const fetchPort = await createBrowserApiFetch();
   const sessionState = shallowRef<SessionResponseDto>();
   const adapter = new BrowserPlayerIdentityAdapter(fetchPort, (session) => { sessionState.value = session; });
   const api = createApiClient(fetchPort);
+  const coinMarketApplication = createCoinMarketApplication({
+    quote: (request) => adapter.withValidAccessToken((token) => api.coinMarketPriceQuote(request, token)),
+    myListings: () => adapter.withValidAccessToken((token) => api.coinMarketMyListings(token)),
+    createListing: (request) => adapter.withValidAccessToken((token) => api.coinMarketCreateListing(request, token)),
+    cancelListing: (listingId) => adapter.withValidAccessToken((token) => api.coinMarketCancelListing(listingId, token)),
+    publicListings: (cursor) => adapter.withValidAccessToken((token) => api.coinMarketListings(token, cursor)),
+    myTrades: () => adapter.withValidAccessToken((token) => api.coinMarketMyTrades(token)),
+    createTrade: (listingId, request) => adapter.withValidAccessToken((token) => api.coinMarketCreateTrade(listingId, request, token)),
+    tradeCommand: (action, tradeId, request) => adapter.withValidAccessToken((token) => api.coinMarketTradeCommand(action, tradeId, request, token)),
+  });
   const socialRepository = new IndexedDbSocialRepository(await openBrowserDevelopmentDatabase(), () => {
     const user = adapter.currentSession?.user;
     return user ? { userId: user.userId, displayName: user.displayName } : null;
   });
+  const socialMessageAssetApplication = createSocialMessageAssetApplication(socialRepository, () => adapter.currentSession?.user.userId);
   const socialApplication = createSocialApplication(socialRepository);
   const walletApplication = createWalletApplication(
     () => adapter.withValidAccessToken((accessToken) => api.walletSummary(accessToken)),
@@ -64,10 +77,11 @@ export async function createBrowserDevelopmentIdentity() {
     acceptFriend: (userId) => adapter.withValidAccessToken((token) => api.acceptSocialFriend(userId, token)),
     rejectFriend: (userId) => adapter.withValidAccessToken((token) => api.rejectSocialFriend(userId, token)),
     removeFriend: (userId) => adapter.withValidAccessToken((token) => api.removeSocialFriend(userId, token)),
+    listConversations: () => adapter.withValidAccessToken((token) => api.listSocialConversations(token)),
     openConversation: (userId) => adapter.withValidAccessToken((token) => api.openSocialConversation(userId, token)),
     listMessages: (conversationId) => adapter.withValidAccessToken((token) => api.listSocialMessages(conversationId, token)),
     sendMessage: (conversationId, request) => adapter.withValidAccessToken((token) => api.sendSocialMessage(conversationId, request, token)),
-  });
+  }, socialMessageAssetApplication);
   const notificationSummaryApplication = createNotificationSummaryApplication({
     announcements: getActivePlatformAnnouncements,
     walletActivity: async () => (await adapter.withValidAccessToken((token) => api.walletActivity(token))).items,
@@ -81,17 +95,26 @@ export async function createBrowserDevelopmentIdentity() {
   const inviteAgentApplication = createInviteAgentApplication({
     getInviteLink: () => adapter.withValidAccessToken((token) => api.getInviteLink(token)),
     issueInviteLink: () => adapter.withValidAccessToken((token) => api.issueInviteLink(token)),
+    listInvitees: (cursor) => adapter.withValidAccessToken((token) => api.listReferralInvitees(token, cursor)),
+    listRewards: (cursor) => adapter.withValidAccessToken((token) => api.listReferralRewards(token, cursor)),
     getAgentDomain: () => adapter.withValidAccessToken((token) => api.getAgentDomain(token)),
     applyAgentDomain: () => adapter.withValidAccessToken((token) => api.applyAgentDomain(token)),
     withdrawAgentDomain: () => adapter.withValidAccessToken((token) => api.withdrawAgentDomain(token)),
   });
   const application = createPlayerEntryApplication(adapter);
   return {
+    gameExperienceApi: {
+      gameCatalog: () => api.gameCatalog(),
+      gameExperiences: () => api.gameExperiences(),
+      gameExperience: (gameKey: string) => api.gameExperience(gameKey),
+      gamePreflight: (gameKey: string, difficultyKey: string) => api.gamePreflight(gameKey, difficultyKey),
+    },
     application,
     walletApplication,
     walletFundingApplication,
     supportApplication,
     socialApplication,
+    coinMarketApplication,
     socialFriendsApplication,
     checkSocialAccess: () => adapter.withValidAccessToken((token) => api.socialAccess(token)),
     notificationSummaryApplication,

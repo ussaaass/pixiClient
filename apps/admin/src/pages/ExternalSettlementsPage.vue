@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const flowTypes = [
   { name: 'IN · 入款', description: '必须关联有效充值订单和支付证据。' },
   { name: 'OUT · 出款', description: '必须关联有效 payout_attempt；用户退款也沿用提现出款链路。' },
@@ -21,8 +23,8 @@ const flowTypes = [
         <label><span>结算记录 ID</span><input type="text" inputmode="numeric" placeholder="完整记录 ID" disabled /></label>
         <label><span>外部交易号</span><input type="text" placeholder="交易号 / 链事件定位" disabled /></label>
         <label><span>订单 / 出款 ID</span><input type="text" inputmode="numeric" placeholder="业务引用 ID" disabled /></label>
-        <label><span>Flow type</span><select disabled><option>全部类型</option></select></label>
-        <label><span>渠道 / 原币</span><select disabled><option>全部渠道与币种</option></select></label>
+        <label><span>Flow type</span><el-select disabled><AdminSelectOption value="">全部类型</AdminSelectOption></el-select></label>
+        <label><span>渠道 / 原币</span><el-select disabled><AdminSelectOption value="">全部渠道与币种</AdminSelectOption></el-select></label>
         <button type="button" disabled>查询</button>
       </div>
     </section>

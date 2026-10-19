@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-jump-high-high-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "跳高高 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅跳高高游戏卡片的静态竖版背景；由 H5 叠加游戏名、说明和难度",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 跳高高 PC portrait art. Preserve its violet-indigo disco arcade identity, gold mirrored disco ball and gold pedestal, but recompose for a narrow phone card. Make one large disco ball the unmistakable central subject in the upper-middle; its many mirror facets reflect vivid beams and colored light streaks across a stylish arcade hall, suggesting a lively rotating dance-floor moment in one crisp still image. Keep the lower 20 percent calmer and darker for UI text. Match the PC source's polished dimensional casual-game illustration, rich enamel-like materials, clear silhouettes and premium gold/violet contrast. No text, numbers, symbols, logos, watermark, UI, reels, people, cash, clutter or photoreal casino photography.",
+  "negativePrompt": "wide crop, small disco ball, static empty room, unreadable text, numbers, slot UI, logos, watermark, people, cash, photorealism, excessive bloom, muddy purple, clutter",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/jump-high-high.png", "purpose": "Match the PC art's disco ball, gold pedestal, purple-blue palette, polished materials and light language; make a distinct vertical composition." }],
+  "tags": ["mobile", "portrait", "jump-high-high", "openai-api-comparison", "static"]
+}

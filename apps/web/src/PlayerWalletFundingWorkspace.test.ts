@@ -21,7 +21,7 @@ describe('player wallet funding workspace', () => {
     app.mount(host);
     await waitFor(() => host.querySelector('.player-wallet-funding-form') !== null);
 
-    const amount = host.querySelector<HTMLInputElement>('.player-wallet-funding-form input')!;
+    const amount = host.querySelector<HTMLInputElement>('.player-wallet-funding-form input[placeholder="例如 10 或 10.50"]')!;
     amount.value = '10'; amount.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
     host.querySelector<HTMLButtonElement>('.player-wallet-funding-form button[type="submit"]')!.click();
     await waitFor(() => createOrder.mock.calls.length === 1);
@@ -56,9 +56,8 @@ describe('player wallet funding workspace', () => {
     app = createApp(PlayerWalletFundingWorkspace, { application: { listChannels, listOrders, createOrder, simulatePayment } as WalletFundingApplication, onCompleted: completed });
     app.mount(host);
     await waitFor(() => host.querySelector('.player-wallet-funding-form') !== null);
-    const select = host.querySelector<HTMLSelectElement>('select')!;
-    select.value = 'local-usdt-tron'; select.dispatchEvent(new Event('change', { bubbles: true })); await nextTick();
-    const amount = host.querySelector<HTMLInputElement>('.player-wallet-funding-form input')!;
+    host.querySelector<HTMLInputElement>('.player-wallet-channel-picker input[value="local-usdt-tron"]')!.click(); await nextTick();
+    const amount = host.querySelector<HTMLInputElement>('.player-wallet-funding-form input[placeholder="例如 10 或 10.50"]')!;
     amount.value = '100'; amount.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
     host.querySelector<HTMLButtonElement>('.player-wallet-funding-form button[type="submit"]')!.click();
     await waitFor(() => createOrder.mock.calls.length === 1);

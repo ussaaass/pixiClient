@@ -1,0 +1,12 @@
+{
+  "assetKey": "treasure-hero-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "夺宝奇侠专属游戏厅背景",
+  "intendedUse": "夺宝奇侠游戏专属子厅背景；网页绘制标题、玩法、难度档位和按钮。",
+  "prompt": "Create a wide 3:2 premium casual 3D treasure-adventure game room environment for Treasure Hero. A mysterious opened treasure chest glows with turquoise and warm-gold light inside an ancient but welcoming expedition chamber; a rolled blank map, a few softly glowing gemstones and carved stone arches frame the sides. Keep all objects generic and original, no hero character. Put the chest in the upper-middle background, with the lower middle 45 percent calm and uncluttered for HTML difficulty cards. Match the shared Gameing Hall art direction: polished rounded 3D forms, deep teal/blue-green dominant palette, ivory surfaces and restrained gold trim, soft broad upper-left lighting, clear silhouettes, friendly premium casual game mood.",
+  "negativePrompt": "photorealism, realistic ruin, human character, copyrighted character, pirate skull, readable map, text, letters, numbers, logos, watermark, buttons, interface panels, slot reels, poker cards, cash, clutter in lower center, harsh bloom, flat vector",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared rendering quality and materials only; do not copy composition or card motifs." }],
+  "tags": ["treasure-hero", "subhall", "background"]
+}

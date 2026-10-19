@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-treasure-hero-kling-v1",
+  "title": "夺宝奇侠 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/treasure-hero.png",
+  "prompt": "Create a seamless, adventurous 5-second portrait slot-game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. Only the mechanical compass mechanism already inside the original compass rotates steadily; its needle turns smoothly while small gold reflections travel along the existing engraved details. Keep the rest of the scene and camera completely still. Return to the supplied composition at the end for a clean loop.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, new objects, moving background, extra compass, text, logos, flicker, blur, shaky motion, sudden movement, warped compass, changing symbols",
+  "duration": "5",
+  "mode": "std"
+}

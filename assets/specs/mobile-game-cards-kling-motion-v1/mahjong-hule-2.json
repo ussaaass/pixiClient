@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-kling-v1",
+  "title": "麻将胡了 2 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/mahjong-hule-2.png",
+  "prompt": "Create a seamless, dramatic 5-second portrait mahjong slot-game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. The dragon already present rises and coils gracefully through the existing scene while the existing mahjong tiles lift and rotate around it, then all return to their original positions. Keep the action broad enough to read clearly but contained within the current image boundaries. The camera remains fixed; end on the supplied composition for a clean loop.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, new dragon, extra tiles, objects leaving frame, changed tile symbols, text, logos, flicker, blur, shaky motion, sudden movement, deformed dragon, violent motion",
+  "duration": "5",
+  "mode": "std"
+}

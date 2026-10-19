@@ -12,6 +12,7 @@ export interface LocalIdentityRepository {
   createChallenge(challenge: LocalChallenge): Promise<void>;
   recordChallengeFailure(challengeId: string, maxAttempts: number): Promise<boolean>;
   bindVerifiedContact(challenge: LocalChallenge, credential: LocalCredential): Promise<void>;
+  replaceContact(credential: LocalCredential): Promise<void>;
   createUserWithCredentials(user: LocalUser, credentials: LocalCredential[]): Promise<void>;
   saveCredential(credential: LocalCredential): Promise<void>;
   savePreparedRecoveryCredential(credential: LocalCredential): Promise<void>;

@@ -29,6 +29,7 @@ packages/contracts/src/
   support/
   platform-events/
     announcement.ts
+  agent-announcements.ts
 
 packages/admin-contracts/src/
   common/
@@ -77,13 +78,17 @@ export type TransferReceipt = Static<typeof TransferReceiptSchema>;
 
 平台公告共享 schema 位于 `packages/contracts/src/platform-events/announcement.ts`，H5 端 HTTP 访问器位于 `apps/web/src/platform/announcements-api.ts`。`GET /api/v1/platform/announcements/active` 与 `GET /api/v1/platform/announcements/:announcementId` 使用本文件规定的 envelope；请求/响应字段、主体排除和受众过滤见[平台事件与广播系统设计](../03_game_systems/平台事件与广播系统设计.md)。当前 Koa 已实现 active 路径并返回契约有效的空列表，避免客户端启动请求落到 404；公告持久化/受众过滤、详情读取、JWT filter 与 Socket.IO 投递仍未实现，不能把空列表 stub 视为公告业务闭环。开发阶段公告 client 仍可读取 Browser API/mock 数据；真实快照上线前需补 projector 与 Koa contract test。
 
+游戏大厅目录与子厅体验共享 TypeBox schema 位于 `packages/contracts/src/game-experience.ts`，引用 `GameCatalogDto`，H5 API client 从 `/api/v1/games`、`/api/v1/games/experience`、`/api/v1/games/:gameKey/experience` 读取目录/体验 DTO，并以 `GET /api/v1/games/:gameKey/difficulties/:difficultyKey/preflight` 校验档位入口。体验 DTO 包含标题、描述、玩法段落、子厅背景 `assetId`/本地演示 URL、难度厅最低投入/当前倍率/最高倍率、模块可用性、资料归属及来源链接。浏览器开发 API 与 Koa 都通过同一 TypeBox schema 和统一 envelope；当前 Koa 返回代码内 `LOCAL_DEMO` 目录快照，正式数据库配置查询、AssetClient 加密传输、权限/金币资格、quote、占座或开局命令尚未实现。客户端不得用档位按钮直接创建房间，也不得把 `MODULE_STUB` 解释成可玩的模块。演示 URL 指向构建内公开静态 WebP；生产资源上线前必须由 Asset 服务按 CTR+HMAC 方案交付密文并由显式 AssetClient 解密，不能因本地演示而视作已满足资源加密。
+
 钱包只读摘要 endpoint 为 `GET /api/v1/me/wallet/summary`，只读明细 endpoint 为 `GET /api/v1/me/wallet/activity`，响应 DTO 均定义于 `packages/contracts/src/wallet.ts`。摘要返回 COIN、CNY 两种资产的有符号总额、冻结额、可用额及余额版本，并附剩余有效下注流水和本账号 welcome gift 摘要；明细返回最多 50 条当前用户资产账户分录并按时间倒序，通过 ISO UTC 时间和 entry ID 复合游标读取更早记录。两个 endpoint 均须 Bearer access token 认证，只能读取本人账户。金额以十进制整数字符串传输，人民币单位为分。共享 schema 不代表生产钱包 API 已实现；当前 Browser API 只作 IndexedDB 离线开发适配器。
 
 金币转账使用 `POST /api/v1/me/wallet/transfers/quote` 生成 `WalletTransferQuoteDto`，再由 `POST /api/v1/me/wallet/transfers` 提交报价快照与 UUID 幂等键。报价记录收款人、本金、当前 feeBps、向上取整手续费、总扣款、报价时间及有效期；提交时服务端重新校验费率和收款人快照。响应为 `WalletTransferResultDto`。失败使用 400 金额校验、404 收款账号、409 自转账/流水未完成/余额不足/报价过期或变化/幂等冲突、503 钱包存储不可用。两个端点仅在当前 Browser API 实现，生产 Koa/账本事务待接。
 
 金币兑换使用 `POST /api/v1/me/wallet/exchanges/quote` 与 `POST /api/v1/me/wallet/exchanges`。请求金额为金币正整数字符串，报价返回兑换比例快照、金币数、人民币分数及有效期；人民币分以配置比例精确计算后向下取整到分，配置变更或过期报价必须重新确认。提交使用 UUID 幂等键，响应为 `WalletExchangeResultDto`。执行需校验流水、可用金币、直属上级模式和系统人民币可用余额，并在单一事务内提交 COIN/CNY 两侧分录；Browser API 复用已有 IndexedDB `asset_operations/asset_entries`，生产端使用 `coin_exchange` 业务实体。错误码涵盖无兑换资格、流水未完成、余额不足、报价过期/变化、金额无效和幂等冲突。生产 Koa handler、MySQL 事务及代理模式权限校验待接。
 
-邀请/代理 DTO 定义于 `packages/contracts/src/invite-agent.ts`：`GET/POST /api/v1/me/invite-link` 读取或签发当前用户两年有效的邀请码链接；`GET /api/v1/me/agent-domain` 读取申请/域状态；`POST /api/v1/me/agent-domain/application` 提交申请；`DELETE /api/v1/me/agent-domain/application` 撤回待审申请。所有 endpoint 均要求 Bearer access token。生产签发写入 user 邀请码字段，真实归因仍由直连 IP/Redis 服务完成；Admin 审批由管理端权限 API 执行，不由玩家 DTO 模拟。
+邀请/代理 DTO 定义于 `packages/contracts/src/invite-agent.ts`：`GET/POST /api/v1/me/invite-link` 读取或签发当前用户两年有效的邀请码链接；`GET /api/v1/me/referrals/direct-invitees` 按 cursor 查询实际绑定的直属下线；`GET /api/v1/me/referrals/rewards` 返回当前 user 的返佣模式、真实返佣汇总及冻结/释放明细；`GET /api/v1/me/agent-domain` 读取申请/域状态；`POST /api/v1/me/agent-domain/application` 提交申请；`DELETE /api/v1/me/agent-domain/application` 撤回待审申请。所有 endpoint 均要求 Bearer access token。Production rewards 只读 `referral_reward_allocation` 和资产冻结/分录，不把 `CUSTOMER_LOSS_REBATE` 线下结算伪装成平台流水；Browser API 返回真实本地关系与真实空奖励集。生产签发写入 user 邀请码字段，真实归因仍由直连 IP/Redis 服务完成；Admin 审批由管理端权限 API 执行，不由玩家 DTO 模拟。
+
+邮箱使用 `PUT /api/v1/me/identity/email` 与 `SetEmailContactRequestDto`，手机号使用 `PUT /api/v1/me/identity/phone` 与 `SetPhoneContactRequestDto`。两者首次绑定均不发验证码；换绑分别携带完整 `currentEmail` 或 `currentPhone`，由服务端规范化后与当前绑定精确匹配，再于同一事务替换和释放旧值。手机前端展示旧号末三位作为提示。若已设置密码需重新验证当前密码；启用 TOTP 时还需当前 TOTP。Browser API 已完成本机流程，生产身份 handler 和安全审计仍待接入。
 
 好友与私信的共享 contract 位于 `packages/contracts/src/social.ts`：`GET /api/v1/me/social/access` 返回 `SocialAccessResponseDto`；`GET /profile` 返回本人随机 `friendCode`；`POST /friends/lookup` 仅接受好友码/二维码载荷或完整用户名；`GET /friends`、`POST /friend-requests`、`POST /friend-requests/:userId/accept|reject` 管理申请，`POST /friends/:userId/remove` 删除关系；`POST /conversations` 建立双方好友的一对一会话，`GET/POST /conversations/:conversationId/messages` 拉取/发送文字消息。私信携带 UUID `clientMessageId` 做幂等，响应携带 sender 和服务端时间。Browser API 以 `SocialAccessPolicy` 检查直属上级 `reward_type`：客损模式返回 disabled capability，其他社交私有端点返回 403 `SOCIAL_ACCESS_DISABLED`；H5 登录后读取 DTO 并隐藏导航。生产 SocialAccessPolicy、域授权、Koa handlers、Socket.IO/outbox、完整游标和限流尚未实现。
 
@@ -212,6 +217,36 @@ Content-Type: application/json
 
 DTO 只包含该调用者能看到并完成该 UI 所需的数据。列表与详情使用不同 DTO；私人牌局状态、TOTP/recovery secret、支付签名、代理隐私数据和管理审计内部 snapshot 不能顺手拼入通用 profile。
 
+### 7.1 Agent 域公告契约
+
+Agent 域公告的 TypeBox schema 和 endpoint registry 唯一来源为 `packages/contracts/src/agent-announcements.ts`，包入口为 `@gameing/contracts/agent-announcements`。当前登记以下路径：
+
+| Method | Path | Body/query | 成功响应 | 生产服务端 |
+| --- | --- | --- | --- | --- |
+| `GET` | `/api/v1/agent/announcements` | 可选非零公告状态筛选 | `AgentAnnouncementListResponseDto` | 待实现 |
+| `POST` | `/api/v1/agent/announcements` | `AgentAnnouncementCreateRequestDto` | `201` + `AgentAnnouncementCreateResponseDto` | 待实现 |
+| `POST` | `/api/v1/agent/announcements/:announcementId/publish` | `AgentAnnouncementPublishRequestDto` | `200` + `AgentAnnouncementPublishResponseDto` | 待实现 |
+| `POST` | `/api/v1/agent/announcements/:announcementId/retract` | `AgentAnnouncementRetractRequestDto` | `200` + `AgentAnnouncementRetractResponseDto` | 待实现 |
+
+写命令 body 携带 `requestKey`，服务端 adapter 应在入口将其映射为统一幂等键语义，规范化完整 payload；重复键同 payload 返回原业务结果，不同 payload 返回 `409 IDEMPOTENCY_KEY_REUSED`。请求不得带 `agentDomainId` 或操作者 ID；服务端必须从 JWT、有效 `agent_domain` 和 `AGENT_ANNOUNCEMENT_MANAGE` capability 推导范围。所有读取和写入都校验资源域归属。发布仅允许由草稿进入定时/展示状态；撤回仅允许对尚未过期的定时/展示公告执行。草稿、发布、撤回和审计事件必须同一事务提交，审计为 append-only。纯文字、安全模板/内容校验及受众范围遵循[代理域设计](../04_domains/代理域设计.md)和[平台事件与广播系统设计](../03_game_systems/平台事件与广播系统设计.md)。
+
+现有 Admin 前端 adapter 是 `LOCAL_DEMO` IndexedDB 实现，并非 API client，也不能代表生产 endpoint 已可调用；浏览器本机的审核快照只用于离线演练。生产阶段增加 Koa controller/application/repository/API client 时复用以上 schema，不复制 DTO，不把本地 `source=LOCAL_DEMO` 记录送入玩家公告 feed。真实广播需要通过平台事件投影和 Socket.IO/HTTP 补拉完成，不能把 Agent 草稿状态直接当成已送达状态。
+
+### 7.2 Agent 域社交读取契约
+
+Agent 域社交摘要和私聊详情读取的 TypeBox 唯一来源为 `packages/contracts/src/agent-social.ts`，包入口为 `@gameing/contracts/agent-social`：
+
+| Method | Path | 请求 | 成功响应 | 写入/权限 |
+| --- | --- | --- | --- | --- |
+| `GET` | `/api/v1/agent/social/conversations` | 空 query object | `AgentSocialConversationListResponseDto` | JWT + `AGENT_SOCIAL_READ_PRIVATE_MESSAGES`；域从会话上下文派生；列表不含正文或消息摘要 |
+| `POST` | `/api/v1/agent/social/conversations/:conversationId/detail-reads` | `AgentSocialConversationReadRequestDto` | `AgentSocialConversationReadResponseDto` | 复验域/会话/capability，requestKey 幂等；成功或拒绝读取均追加 `agent_audit_event`，审计不含正文 |
+| `GET` | `/api/v1/agent/social/moderation-cases` | 复用 `SocialModerationQueryDto` | `SocialModerationListResponseDto` | `AGENT_SOCIAL_MODERATE`；域 scope 固定于当前认证代理，不接受 domain filter |
+| `POST` | `/api/v1/agent/social/moderation-cases/:caseId/decisions` | 复用 `SocialModerationDecisionRequestDto` | `AgentSocialModerationDecisionResponseDto` | 共用 domain transition；案件状态与带统一 user actor 的 `SOCIAL_MODERATION_DECISION` 审计原子提交 |
+
+用户直属上级客损 gate 管的是该用户自身的社交访问，不自动撤销代理的独立管理 capability；但代理只能访问当前授权域，跨域或迁移中的会话/案件以不可枚举 404 处理。私聊详情读取 body 要求填写目的；requestKey 与 conversation/目的绑定，复用到不同内容冲突。实现可将正文与审计作为一个事务写入/完成授权读取后一起返回，审计字段只允许资源类型、ID、目的、结果和消息条数。社区管理复用已登记的帖子/回复审核 DTO 和状态机，但 Agent 操作者始终使用 `agent_audit_event` 而非伪造 Admin reviewer；案件列表和决定都强制 domain scope。客服会话不属于此 DTO/endpoint。
+
+开发 adapter 使用代码内合成 `LOCAL_DEMO` 内容，不从玩家本机数据库取数、不新增 IndexedDB store；仅向现有 Agent audit store 追加演练记录。其作用是验证交互/权限分支/审计协议，不能表示生产授权或真实消息读取已闭环。生产 Koa API client/controller/repository 仍待施工。
+
 ## 8. 列表、筛选、校验和错误细节
 
 列表统一使用 `PageDto<T> = { items: T[]; nextCursor: string | null; hasMore: boolean }`；仅在确需显示总数且查询成本可控时定义 `totalCount`。游标不透明、签名或服务器可校验；客户端不能构造任意 SQL sort/filter。筛选字段由 endpoint schema 白名单列出；缺省 filter 用字段省略，数值 0 不作为业务状态或任意查询开关。
@@ -270,7 +305,7 @@ endpoint registry 与 TypeBox schema 生成 OpenAPI 3.x 文档；CI 检查生成
 - ⬜ 选择并验证 TypeBox 到 OpenAPI 3.x 的生成器，生成 endpoint registry 与版本 diff 检查。
 - ⬜ 创建 `httpClient` 与 Koa envelope/error middleware；覆盖 2xx/400/401/403/404/409/422/429/5xx 和结果未知重查。
 - ⬜ 选转账、创建订单、round snapshot、Admin config publish 四条 endpoint 做 contract/e2e 测试，确认 body/schema/状态码/幂等行为端到端一致。
-- 🟡 Identity settings、用户名/密码、邮箱/手机 challenge 与 TOTP setup/confirm/disable endpoint 已进入共享 TypeBox registry；登录响应使用 `SessionResponse | LoginChallengeResponse`，TOTP 登录接受 6 位动态码或 16 位备用码，备用码仅摘要存储且原子单次消费。Browser API 走统一 envelope 与 Bearer JWT；Koa handlers、生产速率限制和 OpenAPI 生成仍待补。
+- 🟡 Identity settings、用户名/密码、邮箱/手机免验证码绑定与 TOTP setup/confirm/disable endpoint 已进入共享 TypeBox registry；登录响应使用 `SessionResponse | LoginChallengeResponse`，TOTP 登录接受 6 位动态码或 16 位备用码，备用码仅摘要存储且原子单次消费。Browser API 走统一 envelope 与 Bearer JWT；Koa handlers、生产速率限制和 OpenAPI 生成仍待补。
 - 🟡 好友码/精确用户名查找、好友申请/通过、一对一文字私信的共享 Social DTO 与本地 JWT Browser API 已实现并通过双账号幂等恢复测试；生产 gate/域权限/Socket.IO 和游标仍待补。
 - 🟡 邀请链接读取/签发与代理申请/撤回已登记共享 TypeBox DTO 和 JWT endpoint；Browser API 的 IP/Redis 归因及 Admin 审批仍由生产服务实现。
 
@@ -304,3 +339,9 @@ endpoint registry 与 TypeBox schema 生成 OpenAPI 3.x 文档；CI 检查生成
 | 2026-10-15 | 登记好友码/用户名查找、好友申请/通过/拒绝/删除与文字私信的共享 DTO、Bearer JWT endpoint 和 Browser API 离线实现边界。 |
 | 2026-10-15 | 增加无持久化通知摘要读模型 DTO，明确多领域来源聚合、来源跳转与不提供跨领域统一已读。 |
 | 2026-10-15 | 增加 SocialAccessResponseDto 与 `/me/social/access` contract，记录直属上级 reward_type 策略和离线 Browser API 的 403 门禁。 |
+| 2026-10-16 | 登记 Agent 域公告共享 TypeBox DTO、list/create/publish/retract endpoint、域权限/幂等/事务规则；明确当前 IndexedDB LOCAL_DEMO 与生产 API/广播的边界。 |
+| 2026-10-16 | 登记 Agent 域社交会话摘要/敏感详情读取与社区举报处理 endpoint，明确 capability、域隔离、幂等和 user actor 审计不保存私聊正文。 |
+| 2026-10-16 | 增加游戏目录/体验/档位 preflight 的 TypeBox DTO 与 H5/Koa/Browser API 路径，明确 LOCAL_DEMO 快照和未实现的生产准入/房间命令边界。 |
+| 2026-10-16 | 在游戏体验 DTO 中加入子厅背景 `assetId`，注明公开静态演示图与生产 AssetClient CTR+HMAC 资源链路之间尚有实现缺口。 |
+| 2026-10-16 | 登记直属邀请/返佣查询端点与免短信手机号绑定/旧号校验 DTO，标明生产服务端未闭环部分。 |
+| 2026-10-18 | 增加邮箱联系方式更新 DTO/API，邮箱/手机统一免验证码换绑并精确校验旧值；同步共享协议说明。 |

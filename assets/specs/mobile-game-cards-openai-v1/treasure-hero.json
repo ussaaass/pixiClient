@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-treasure-hero-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "夺宝奇侠 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅夺宝奇侠游戏卡片的静态竖版背景；由 H5 绘制游戏信息和难度入口",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 夺宝奇侠 PC portrait art. Preserve its tropical ruin, mossy stone, glowing treasure chest and emerald-brass compass identity, but recompose for a narrow phone card. The large compass should dominate the center-upper area; clearly show its concentric inner mechanism and jewel needle, with a subtle visual sense of spinning, while a smaller treasure chest glows in the background. Use lush jungle foliage, stepped temple stone and warm shafts of sunlight. Keep the lower 20 percent visually quiet for interface text. Match the PC source's polished dimensional casual-game illustration and green-gold material palette, with clear readable forms. No text, letters, map writing, logos, watermark, UI, people, currency or photorealism.",
+  "negativePrompt": "wide crop, compass too small, chest obscures compass, unreadable runes or lettering, maps with text, logos, watermark, UI, people, banknotes, photorealism, harsh bloom, clutter",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/treasure-hero.png", "purpose": "Preserve the PC art's large emerald compass, treasure chest, tropical ruin and warm gold/jade palette while creating a fresh vertical crop." }],
+  "tags": ["mobile", "portrait", "treasure-hero", "openai-api-comparison", "static"]
+}

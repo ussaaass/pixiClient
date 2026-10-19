@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "mahjong-hule-2-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 专属游戏厅背景",
+  "jobId": "4e6ced5b-f002-4c42-b7fd-13f5c46f1cef",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "promptVersion": "asset-prompt-v2",
+  "sourceSha256": "eb462e828e0579e285998c4f63f891b82e54aec9759921488ea35e2217bb4298",
+  "mime": "image/webp",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "width": 1536,
+  "height": 1024,
+  "bytes": 1530954,
+  "releasePath": "assets/releases/mahjong-hule-2-subhall-background/4e6ced5b-f002-4c42-b7fd-13f5c46f1cef/source.webp",
+  "publishedAt": "2026-10-15T16:15:52.088Z",
+  "reviewer": "Codex visual review"
+}

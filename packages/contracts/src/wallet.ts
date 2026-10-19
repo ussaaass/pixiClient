@@ -2,7 +2,7 @@ import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
 
 export const WalletAssetType = { COIN: 1, CNY_BALANCE: 2 } as const;
-export const WalletActivityType = { WELCOME_GIFT: 1, TRANSFER_SENT: 2, TRANSFER_RECEIVED: 3, CURRENCY_EXCHANGE: 4, PAYMENT_PURCHASE: 5 } as const;
+export const WalletActivityType = { WELCOME_GIFT: 1, TRANSFER_SENT: 2, TRANSFER_RECEIVED: 3, CURRENCY_EXCHANGE: 4, PAYMENT_PURCHASE: 5, COIN_MARKET_HOLD: 6, COIN_MARKET_RELEASE: 7 } as const;
 export const PayoutChannelType = { ALIPAY: 1, WECHAT_PAY: 2, BANK_TRANSFER: 3, UNIONPAY_QR: 4, DIGITAL_CNY: 5 } as const;
 export const WithdrawalStatus = { REQUESTED: 1, REVIEWING: 2, APPROVED: 3, PAYING: 4, SUCCEEDED: 5, REJECTED: 6, CANCELLED: 7, PAYMENT_UNKNOWN: 8, FAILED: 9 } as const;
 export const WalletErrorCode = { TRANSFER_NOT_FOUND: 'TRANSFER_NOT_FOUND', RECIPIENT_NOT_FOUND: 'RECIPIENT_NOT_FOUND', SELF_TRANSFER: 'SELF_TRANSFER', INVALID_TRANSFER_AMOUNT: 'INVALID_TRANSFER_AMOUNT', TURNOVER_INCOMPLETE: 'TURNOVER_INCOMPLETE', INSUFFICIENT_AVAILABLE_BALANCE: 'INSUFFICIENT_AVAILABLE_BALANCE', TRANSFER_QUOTE_EXPIRED: 'TRANSFER_QUOTE_EXPIRED', TRANSFER_QUOTE_CHANGED: 'TRANSFER_QUOTE_CHANGED', EXCHANGE_NOT_AVAILABLE: 'EXCHANGE_NOT_AVAILABLE', EXCHANGE_QUOTE_EXPIRED: 'EXCHANGE_QUOTE_EXPIRED', EXCHANGE_QUOTE_CHANGED: 'EXCHANGE_QUOTE_CHANGED', INVALID_EXCHANGE_AMOUNT: 'INVALID_EXCHANGE_AMOUNT', INSUFFICIENT_EXCHANGE_BALANCE: 'INSUFFICIENT_EXCHANGE_BALANCE', PAYOUT_ACCOUNT_NOT_FOUND: 'PAYOUT_ACCOUNT_NOT_FOUND', PAYOUT_ACCOUNT_IN_USE: 'PAYOUT_ACCOUNT_IN_USE', INVALID_PAYOUT_ACCOUNT: 'INVALID_PAYOUT_ACCOUNT', WITHDRAWAL_CONFIG_INVALID: 'WITHDRAWAL_CONFIG_INVALID', WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID: 'WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID', WITHDRAWAL_QUOTE_EXPIRED: 'WITHDRAWAL_QUOTE_EXPIRED', WITHDRAWAL_QUOTE_CHANGED: 'WITHDRAWAL_QUOTE_CHANGED', WITHDRAWAL_NOT_FOUND: 'WITHDRAWAL_NOT_FOUND', WITHDRAWAL_NOT_CANCELLABLE: 'WITHDRAWAL_NOT_CANCELLABLE', IDEMPOTENCY_KEY_REUSED: 'IDEMPOTENCY_KEY_REUSED', WALLET_STORAGE_UNAVAILABLE: 'WALLET_STORAGE_UNAVAILABLE' } as const;
@@ -21,7 +21,7 @@ export const WalletAssetSummarySchema = Type.Object({
 export const WalletActivityItemSchema = Type.Object({
   entryId: Type.String({ pattern: '^[1-9][0-9]{0,19}$' }),
   operationId: Type.String({ pattern: '^[1-9][0-9]{0,19}$' }),
-  activityType: Type.Union([Type.Literal(WalletActivityType.WELCOME_GIFT), Type.Literal(WalletActivityType.TRANSFER_SENT), Type.Literal(WalletActivityType.TRANSFER_RECEIVED), Type.Literal(WalletActivityType.CURRENCY_EXCHANGE), Type.Literal(WalletActivityType.PAYMENT_PURCHASE)]),
+  activityType: Type.Union(Object.values(WalletActivityType).map((value) => Type.Literal(value))),
   assetType: WalletAssetTypeSchema,
   currency: Type.Union([Type.Literal('COIN'), Type.Literal('CNY')]),
   delta: Type.String({ pattern: '^-?(?:0|[1-9][0-9]*)$' }),
@@ -34,6 +34,7 @@ export const WalletActivityItemSchema = Type.Object({
   exchangeCnyFen: Type.Optional(Type.String({ pattern: '^(?:0|[1-9][0-9]*)$' })),
   purchaseOrderNo: Type.Optional(Type.String({ minLength: 8, maxLength: 48 })),
   purchaseAmountCnyFen: Type.Optional(Type.String({ pattern: '^[1-9][0-9]*$' })),
+  frozenDelta: Type.Optional(Type.String({ pattern: '^-?(?:0|[1-9][0-9]*)$' })),
 }, { additionalProperties: false });
 
 const PositiveCoinsSchema = Type.String({ pattern: '^[1-9][0-9]{0,18}$' });

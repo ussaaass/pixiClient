@@ -1,0 +1,61 @@
+{
+  "jobId": "1d28ade6-4c64-4620-a010-d92d86dbf4ab",
+  "assetKey": "wallet-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页赌场竖版背景动态 v1 AVIF 清晰版",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-17T19:49:46.603Z",
+  "updatedAt": "2026-10-17T20:19:19.551Z",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "specPath": "assets/specs/player-pages/wallet-mobile-casino-background-motion-v1.json",
+  "specSha256": "6a781cf7dc0ec0e20ee54a72dfe13e2a393a3cd03b7a3d7c08bd95d83937e5aa",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+      "sha256": "4bce676d265b65bb2907892559277175166b49722ba0b417819ac673eea0f3ee"
+    }
+  ],
+  "promptSeed": "Animate this exact portrait casino roulette-table illustration as a premium mobile page background. Lock the camera completely and preserve portrait framing, layout, all table and object identities, colors and materials. Make the roulette wheel spin clearly, let two or three chip stacks rotate and slide a short distance across the felt, and make gold coins roll and flash with moving highlights. A few ivory mahjong tiles descend from the upper edge, bounce once on the far side of the table, then return to their original pose. Distant slot lights pulse in layered waves. Use broad visible object motion without camera zoom, pan, tilt or scene changes. Return moved objects to their exact starting pose and position by the final frame for a clean infinite loop. Do not add or remove objects.\nDerived from review candidate 863ea8c8-74ec-4069-bbb8-1dd91f75584b; converted to a 640x960, 5 fps infinite-loop AVIF with mild sharpening.",
+  "promptVersion": "kling-mp4-to-avif-v3",
+  "candidatePath": "assets/candidates/wallet-mobile-casino-background-motion-v1/1d28ade6-4c64-4620-a010-d92d86dbf4ab/source.avif",
+  "outputSha256": "b93b47ae62fb4f4667a2a9743e9b6db25e51c7b37c9afa064c0116b26b8c94cf",
+  "outputBytes": 197031,
+  "outputMime": "image/avif",
+  "outputWidth": 640,
+  "outputHeight": 960,
+  "generatedAt": "2026-10-17T19:49:46.611Z",
+  "cost": {
+    "status": "ACTUAL",
+    "amount": 0,
+    "currency": "USD",
+    "basis": "local transcode; no generation API call"
+  },
+  "derivedFrom": {
+    "jobId": "863ea8c8-74ec-4069-bbb8-1dd91f75584b",
+    "sourceSha256": "8ebdb7d75a229c70cf5fc3536f9630e8ba4610cf53b35691aea6af2ac11db727",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 784,
+      "height": 1176
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 640,
+    "frameHeight": 960,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "sourcePath": "assets/source/wallet-mobile-casino-background-motion-v1/1d28ade6-4c64-4620-a010-d92d86dbf4ab/source.avif",
+  "review": {
+    "reviewer": "Codex visual QA (user-directed integration)",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-17T20:19:19.218Z"
+  },
+  "releasePath": "assets/releases/wallet-mobile-casino-background-motion-v1/1d28ade6-4c64-4620-a010-d92d86dbf4ab/source.avif"
+}

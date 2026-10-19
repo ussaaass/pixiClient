@@ -4,8 +4,7 @@ import { openBrowserDevelopmentDatabase, type BrowserDevelopmentDatabase } from 
 import { sha256 } from '../crypto';
 import { createExchangeQuote, createTransferQuote, createWithdrawalQuote, DEFAULT_COIN_TRANSFER_FEE_BPS, DEFAULT_EXCHANGE_RATE_CASH_FEN, DEFAULT_EXCHANGE_RATE_COIN_UNITS, DEFAULT_MINIMUM_WITHDRAWAL_COINS, DEFAULT_TRANSFER_QUOTE_TTL_SECONDS, DEFAULT_WITHDRAWAL_FEE_BPS, exchangeQuoteMatches, transferQuoteMatches, withdrawalQuoteMatches } from '../../wallet/wallet-domain';
 
-export const LocalAssetType = { COIN: 1, CNY_BALANCE: 2 } as const;
-export const LocalAssetOperationType = { INITIAL_GIFT: 1, COIN_TRANSFER: 2, COIN_EXCHANGE: 3, COIN_PURCHASE: 4 } as const;
+import { LocalAssetOperationType, LocalAssetType } from './local-asset-constants';
 const SYSTEM_ROLE_TYPE = 8;
 const DEFAULT_GIFT_COINS = 1_000n;
 const DEFAULT_TURNOVER_MULTIPLIER = 5;
@@ -134,14 +133,12 @@ export class IndexedDbWalletRepository {
   }
 
   async quoteWithdrawal(userId: string, request: WithdrawalQuoteRequestDto): Promise<WithdrawalQuoteDto> {
-    const [account, cash, turnover, settings] = await Promise.all([
+    const [account, cash, settings] = await Promise.all([
       this.database.get('payout_accounts', request.payoutAccountId),
       this.database.getFromIndex('asset_accounts', 'by-user-asset', [userId, LocalAssetType.CNY_BALANCE]),
-      this.database.get('turnover_states', userId),
       this.database.getAll('settings'),
     ]);
     if (!account || account.userId !== userId || account.status !== 1) throw new Error(WalletErrorCode.PAYOUT_ACCOUNT_NOT_FOUND);
-    if (BigInt(turnover?.remainingCoins ?? '0') > 0n) throw new Error(WalletErrorCode.TURNOVER_INCOMPLETE);
     const config = new Map(settings.map((item) => [item.key, item.value]));
     const rate = exchangeRateConfig(config.get('system_config:cny_to_coin_ratio'));
     const minimumCoins = positiveConfig(config.get('system_config:minimum_withdrawal_coins'), DEFAULT_MINIMUM_WITHDRAWAL_COINS);
@@ -567,6 +564,20 @@ export class IndexedDbWalletRepository {
           delta: entry.delta, balanceAfter: entry.balanceAfter, occurredAt: entry.createdAt,
           ...(extra.orderNo ? { purchaseOrderNo: extra.orderNo } : {}),
           ...(extra.amountCnyFen ? { purchaseAmountCnyFen: extra.amountCnyFen } : {}),
+        };
+      }
+      if (operation.operationType === LocalAssetOperationType.COIN_MARKET_LISTING_HOLD || operation.operationType === LocalAssetOperationType.COIN_MARKET_LISTING_RELEASE) {
+        if (operation.extra?.userId !== userId || account.assetType !== LocalAssetType.COIN) return undefined;
+        return {
+          entryId: entry.entryId,
+          operationId: entry.operationId,
+          activityType: operation.operationType === LocalAssetOperationType.COIN_MARKET_LISTING_HOLD ? WalletActivityType.COIN_MARKET_HOLD : WalletActivityType.COIN_MARKET_RELEASE,
+          assetType: account.assetType,
+          currency: 'COIN' as const,
+          delta: entry.delta,
+          frozenDelta: entry.frozenDelta ?? '0',
+          balanceAfter: entry.balanceAfter,
+          occurredAt: entry.createdAt,
         };
       }
       if (operation.operationType !== LocalAssetOperationType.INITIAL_GIFT) return undefined;

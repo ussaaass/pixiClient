@@ -1,0 +1,12 @@
+{
+  "assetKey": "mahjong-hule-2-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 专属游戏厅背景",
+  "intendedUse": "麻将胡了 2 专属子厅背景；网页覆盖标题、玩法介绍和难度选择。",
+  "prompt": "Create a wide 3:2 premium casual 3D mahjong game room environment for a sequel, visually distinct from a simple jade table. A luminous imperial jade pavilion with ivory-and-gold mahjong tiles floating in a graceful cascading arc through the upper half, layered jade-green screens and soft warm lanterns at the far sides. Tiles remain traditional rectangular mahjong forms with simple non-readable abstract markings. Leave the lower middle 45 percent calm and dark teal for HTML difficulty cards. Match the shared Gameing Hall style: rounded dimensional shapes, smooth polished surfaces, deep teal/jade, ivory and restrained gold, soft upper-left lighting, clean silhouettes, premium friendly casual-game finish.",
+  "negativePrompt": "photorealism, realistic palace, humans, anime tile portraits, readable Chinese text, letters, numbers, logos, watermark, buttons, UI, poker cards, cash, clutter lower center, harsh bloom, flat vector",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared finish, palette restraint and soft lighting only; sequel environment must be compositionally distinct." }],
+  "tags": ["mahjong-hule-2", "subhall", "background"]
+}

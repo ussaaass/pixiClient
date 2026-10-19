@@ -20,6 +20,7 @@ describe('social application local demo flow', () => {
     expect(created.value.body).toBe('先保证尾道强度，再安排前道。');
     expect(created.value.isOwnPost).toBe(true);
     expect(created.value.assetIds).toEqual([]);
+    expect(await app.getPost(created.value.postId)).toEqual(created);
 
     const reply = await app.createReply(created.value.postId, { body: '  收到，谢谢分享。  ' });
     expect(reply.ok).toBe(true);
@@ -38,6 +39,7 @@ describe('social application local demo flow', () => {
     expect(await app.createPost({ topicKey: 'SHISANSHUI_STRATEGY', title: 'title', body: '   ' })).toEqual({ ok: false, code: 'BODY_REQUIRED' });
     expect(await app.createPost({ topicKey: 'SHISANSHUI_STRATEGY', title: 'x'.repeat(81), body: 'body' })).toEqual({ ok: false, code: 'INVALID_REQUEST' });
     expect(await app.createReply('9999999999999999999', { body: 'reply' })).toEqual({ ok: false, code: 'POST_NOT_FOUND' });
+    expect(await app.getPost('9999999999999999999')).toEqual({ ok: false, code: 'POST_NOT_FOUND' });
   });
 
   it('allows one reply level and rejects a reply to a reply', async () => {

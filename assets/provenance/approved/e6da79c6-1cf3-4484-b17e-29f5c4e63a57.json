@@ -1,0 +1,71 @@
+{
+  "jobId": "e6da79c6-1cf3-4484-b17e-29f5c4e63a57",
+  "assetKey": "bounty-queen-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "赏金女王专属游戏厅背景",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-15T16:12:29.636Z",
+  "updatedAt": "2026-10-15T16:15:53.522Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/games/bounty-queen/subhall-background.json",
+  "specSha256": "ae19b08f1d9bf503d487af6a2f6fe79b2914fedd31dd5352663787b5da9beade",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "promptSeed": "Asset: 赏金女王专属游戏厅背景\nIntended use: 赏金女王主题游戏厅背景；网页绘制玩法、难度和标题。\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nVisual reference images: assets/aigen/icon-game-shisanshui.webp (Shared dimensional rendering and polished finish only; do not copy the composition.). Treat them as style references only; create the subject and composition described below.\nArt direction: Create a wide 3:2 premium casual 3D nautical treasure game room environment for Bounty Queen. An elegant original golden compass and a jewel chest on the deck of a stylized teal sailing ship at twilight, with sails and sea visible only as soft framing shapes at the far sides; a few warm-gold sparkles imply a cascading treasure hunt. No human or queen character, no recognizable franchise design. Keep lower middle 45 percent calm, dark teal and uncluttered for HTML difficulty cards. Match the shared Gameing Hall visual language: rounded dimensional forms, deep teal and blue-green, ivory sail accents, restrained warm gold, soft upper-left lighting, smooth glossy finish, friendly premium casual game mood.\nMust avoid: photorealism, realistic pirate, skull, human character, recognizable copyrighted art, readable map, text, letters, numbers, logos, watermark, buttons, UI, poker cards, cash, clutter lower center, harsh bloom, flat vector\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create an opaque 1536×1024 (3:2) background for the Bounty Queen game hall: a premium casual 3D nautical treasure room on the deck of an original stylized teal sailing ship at twilight. Place an elegant golden compass and a rounded jewel chest in the upper half, with a few restrained warm-gold sparkles suggesting a cascading treasure hunt. Let ivory sails and the sea appear only as soft framing shapes at the far sides. Keep the lower middle 45% calm, dark teal, and uncluttered for HTML difficulty cards.\n\nMatch the shared Gameing Hall visual language: friendly rounded forms, softly beveled volumes, smooth enamel/resin-like surfaces, controlled glossy highlights, deep teal and blue-green dominant, warm ivory light surfaces, restrained gold accents, soft broad upper-left lighting, gentle fill and contact shadows. Use shallow, readable perspective and clear silhouettes at phone size. Use the provided reference only for rendering quality, materials, and palette; do not copy its composition or objects.\n\nNo people or queen character, recognizable franchise design, realistic pirate imagery, skulls, readable maps, poker cards, cash, text, letters, numbers, logos, watermarks, UI, buttons, photorealism, flat vector treatment, rough grain, harsh bloom, or clutter in the lower center.",
+  "promptResponseId": "resp_098bfb222a23cc34016ad0fb6ea4cc87d0b122c7e1b9bb1cac",
+  "usage": {
+    "input_tokens": 1345,
+    "input_tokens_details": {
+      "cache_write_tokens": 1342,
+      "cached_tokens": 0
+    },
+    "output_tokens": 356,
+    "output_tokens_details": {
+      "reasoning_tokens": 83
+    },
+    "total_tokens": 1701,
+    "image": {
+      "input_tokens": 4010,
+      "input_tokens_details": {
+        "cache_write_tokens": 1713,
+        "cached_tokens": 0
+      },
+      "output_tokens": 315,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 4325
+    }
+  },
+  "imageRequestId": "req_862b647b411c42a5853ef4077083551f",
+  "outputSha256": "af21530a9f732b864e3c9cd88cef632c16efaa8d4e5caea5b2dc697b57597eba",
+  "outputBytes": 1550430,
+  "outputMime": "image/webp",
+  "outputWidth": 1536,
+  "outputHeight": 1024,
+  "generatedAt": "2026-10-15T16:13:52.571Z",
+  "candidatePath": "assets/candidates/bounty-queen-subhall-background/e6da79c6-1cf3-4484-b17e-29f5c4e63a57/source.webp",
+  "sourcePath": "assets/source/bounty-queen-subhall-background/e6da79c6-1cf3-4484-b17e-29f5c4e63a57/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-15T16:15:53.220Z"
+  },
+  "releasePath": "assets/releases/bounty-queen-subhall-background/e6da79c6-1cf3-4484-b17e-29f5c4e63a57/source.webp"
+}

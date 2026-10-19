@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅麻将胡了 2 游戏卡片的静态竖版背景；界面标题与难度由 H5 绘制",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 麻将胡了 2 PC portrait art. Preserve its moonlit Chinese palace, jade tiles and luminous golden dragon identity, but compose specifically for a narrow phone card. A majestic golden dragon rises in a graceful spiral through the central vertical scene, with several ivory-and-jade mahjong tiles flying and rotating around its path. Keep the dragon's full silhouette and tile shapes clearly separated; the upward motion should read immediately. Use deep cobalt moonlight, refined gold highlights and a quieter lower 20 percent for app text. Match the PC source's polished dimensional game illustration. No readable text or numbers, logos, watermark, UI, people, currency, photorealism or copied game screenshots.",
+  "negativePrompt": "wide crop, dragon cropped or hidden, tiles covering the dragon, malformed text, letters, numbers, logos, watermark, UI, people, money, photorealism, muddy blue, extreme bloom, clutter",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule-2.png", "purpose": "Match the PC source's golden dragon, moonlit palace, jade tile design and material/lighting style while reimagining it vertically." }],
+  "tags": ["mobile", "portrait", "mahjong-hule-2", "openai-api-comparison", "static"]
+}

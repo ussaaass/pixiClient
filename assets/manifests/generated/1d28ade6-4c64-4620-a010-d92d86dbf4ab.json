@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "wallet-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页赌场竖版背景动态 v1 AVIF 清晰版",
+  "jobId": "1d28ade6-4c64-4620-a010-d92d86dbf4ab",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "promptVersion": "kling-mp4-to-avif-v3",
+  "sourceSha256": "b93b47ae62fb4f4667a2a9743e9b6db25e51c7b37c9afa064c0116b26b8c94cf",
+  "mime": "image/avif",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+      "sha256": "4bce676d265b65bb2907892559277175166b49722ba0b417819ac673eea0f3ee"
+    }
+  ],
+  "derivedFrom": {
+    "jobId": "863ea8c8-74ec-4069-bbb8-1dd91f75584b",
+    "sourceSha256": "8ebdb7d75a229c70cf5fc3536f9630e8ba4610cf53b35691aea6af2ac11db727",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 784,
+      "height": 1176
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 640,
+    "frameHeight": 960,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "width": 640,
+  "height": 960,
+  "bytes": 197031,
+  "releasePath": "assets/releases/wallet-mobile-casino-background-motion-v1/1d28ade6-4c64-4620-a010-d92d86dbf4ab/source.avif",
+  "publishedAt": "2026-10-17T20:19:19.219Z",
+  "reviewer": "Codex visual QA (user-directed integration)"
+}

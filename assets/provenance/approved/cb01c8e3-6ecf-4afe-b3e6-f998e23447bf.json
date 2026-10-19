@@ -1,0 +1,71 @@
+{
+  "jobId": "cb01c8e3-6ecf-4afe-b3e6-f998e23447bf",
+  "assetKey": "three-fast-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "3快专属游戏厅背景",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-15T16:14:01.446Z",
+  "updatedAt": "2026-10-15T16:15:54.197Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/games/three-fast/subhall-background.json",
+  "specSha256": "b92b2c1bc37c5d99df18048cac8ea5c3969ac64f08f6bc50890a236efd6ba0d1",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "promptSeed": "Asset: 3快专属游戏厅背景\nIntended use: 3分快开游戏专属子厅背景；网页覆盖投注规则、倒计时和难度档位。\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nVisual reference images: assets/aigen/icon-game-shisanshui.webp (Shared polished dimensional finish and soft light only; create original abstract draw imagery.). Treat them as style references only; create the subject and composition described below.\nArt direction: Create a wide 3:2 premium casual 3D quick-draw game room environment. Three luminous abstract draw capsules with different simple geometric patterns sweep through a circular teal light track, with elegant motion trails and a soft clock-like halo in the distant background. Do not show digits, lottery balls with numerals, or a result. Keep the lower middle 45 percent dark, calm and uncluttered for HTML rules and difficulty cards. Match the shared Gameing Hall style: rounded polished 3D objects, deep teal and blue-green, ivory highlights, restrained warm gold, soft broad upper-left lighting, friendly premium casual-game finish.\nMust avoid: photorealism, real lottery branding, readable numbers, text, letters, logos, watermark, people, casino, betting slip, UI, buttons, cards, cash, clutter lower center, harsh bloom, flat vector\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create an original wide 3:2 (1536×1024) background for a premium casual 3D quick-draw game room. In a shallow, near-front perspective, place a circular teal light track in the upper half of the room. Exactly three luminous, rounded draw capsules sweep along it, each bearing a distinct simple abstract geometric pattern. Add elegant, controlled motion trails and a soft clock-like halo far behind the track, without numerals, readable markings, or any indication of a result.\n\nKeep the lower middle 45% dark, calm, and uncluttered as negative space for HTML rules and difficulty cards. Make the scene readable at phone size. Follow the shared Gameing Hall finish: stylized dimensional illustration, softly beveled polished enamel/resin forms, clear silhouettes, deep teal and blue-green dominant colors, warm ivory highlights, restrained warm-gold accents, soft broad upper-left lighting, gentle fill and contact shadows, and a friendly premium feel. Use the supplied reference only for its material, palette, and lighting—not its objects or composition.\n\nNo text, letters, numbers, logos, watermarks, people, lottery balls, casino imagery, betting slips, cash, cards, UI controls, photorealism, flat vector rendering, harsh bloom, or clutter in the lower center. Opaque background; high-quality WebP.",
+  "promptResponseId": "resp_041b0c17fa9edc56016ad0fbca3af487d09bd7d0af64849e95",
+  "usage": {
+    "input_tokens": 1309,
+    "input_tokens_details": {
+      "cache_write_tokens": 1306,
+      "cached_tokens": 0
+    },
+    "output_tokens": 342,
+    "output_tokens_details": {
+      "reasoning_tokens": 63
+    },
+    "total_tokens": 1651,
+    "image": {
+      "input_tokens": 4138,
+      "input_tokens_details": {
+        "cache_write_tokens": 1719,
+        "cached_tokens": 0
+      },
+      "output_tokens": 437,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 4575
+    }
+  },
+  "imageRequestId": "req_607363c00b59403586852fd212d587b6",
+  "outputSha256": "0f579119c4387c31a9c58457b609dbc550ad9945afd0dece57be0294d8440d40",
+  "outputBytes": 1085908,
+  "outputMime": "image/webp",
+  "outputWidth": 1536,
+  "outputHeight": 1024,
+  "generatedAt": "2026-10-15T16:15:13.708Z",
+  "candidatePath": "assets/candidates/three-fast-subhall-background/cb01c8e3-6ecf-4afe-b3e6-f998e23447bf/source.webp",
+  "sourcePath": "assets/source/three-fast-subhall-background/cb01c8e3-6ecf-4afe-b3e6-f998e23447bf/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-15T16:15:53.853Z"
+  },
+  "releasePath": "assets/releases/three-fast-subhall-background/cb01c8e3-6ecf-4afe-b3e6-f998e23447bf/source.webp"
+}

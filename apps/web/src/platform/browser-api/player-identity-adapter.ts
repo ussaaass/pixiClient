@@ -85,6 +85,14 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
     return this.withValidAccessToken((accessToken) => this.api.createContactChallenge(request, accessToken));
   }
 
+  async setPhoneContact(request: Parameters<PlayerIdentityPort['setPhoneContact']>[0]): Promise<IdentitySettingsResponseDto> {
+    return this.withValidAccessToken((accessToken) => this.api.setPhoneContact(request, accessToken));
+  }
+
+  async setEmailContact(request: Parameters<PlayerIdentityPort['setEmailContact']>[0]): Promise<IdentitySettingsResponseDto> {
+    return this.withValidAccessToken((accessToken) => this.api.setEmailContact(request, accessToken));
+  }
+
   async confirmContactChallenge(challengeId: string, request: Parameters<PlayerIdentityPort['confirmContactChallenge']>[1]): Promise<IdentitySettingsResponseDto> {
     return this.withValidAccessToken((accessToken) => this.api.confirmContactChallenge(challengeId, request, accessToken));
   }

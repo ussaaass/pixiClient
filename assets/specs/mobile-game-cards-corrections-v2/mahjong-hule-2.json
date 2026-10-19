@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-openai-v3",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 Mobile 金龙五爪与动作构图纠错候选",
+  "intendedUse": "手机大厅麻将胡了 2 卡片背景；供后续 Kling 动效制作和人工审核",
+  "prompt": "Create a premium portrait 9:16 mobile game-card illustration in the established polished dimensional casual-game style. Scene: a moonlit Chinese palace with a majestic golden imperial Chinese dragon and several large, clearly face-up traditional mahjong tiles. Anatomical requirement: the dragon has four limbs; show at least one complete front paw prominently, with exactly five clearly separated toes ending in five distinct curved golden claws. The paw must not be hidden, cropped, fused, or reduced to three toes. Show a second limb with a readable five-toed paw as well. Give the dragon one continuous elegant S-curved torso, a recognizable head, four attached limbs, and a long flowing tail. Compose the body, head, forelegs, paws, mane, whiskers, and tail as distinct readable forms with open space between them, so each can be animated without changing the silhouette. The dragon is in an active upward sweep: head lifted, front paw reaching forward, mane and whiskers streaming backward, tail curling behind. Mah-jong tiles show crisp recognizable red/green bamboo, circle pips, and one red 中 honor tile; no blank faces. Deep cobalt moonlight, jade accents, controlled luminous gold. Keep the complete dragon and tiles within the upper 78 percent and leave the lower 22 percent dark and quiet for H5 text. Fixed camera, clear silhouette, no motion blur.",
+  "negativePrompt": "three-toed paw, three claws, missing toes, fused toes, hidden paws, cropped limbs, extra limbs, detached paw, twisted torso, tangled body, self-crossing body, corkscrew roll, duplicate head, blank mahjong tiles, tile backs, unreadable tile marks, text, letters except the single requested 中 tile mark, logos, watermark, UI, people, currency, photorealism, excessive bloom, clutter, motion blur",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule-2.png", "purpose": "Match the approved moonlit palace, gold/jade materials, lighting, and dimensional illustration style only; improve paw visibility and make the dragon pose animation-friendly." },
+    { "path": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v2/3b125c38-d09d-4647-8e3f-f36cae870559/source.png", "purpose": "Use as a reference for visible traditional mahjong faces and current dragon identity; correct the paws and create clearer separated limbs." }
+  ],
+  "tags": ["mobile", "portrait", "mahjong-hule-2", "five-claw-dragon", "motion-friendly", "correction-v3"]
+}

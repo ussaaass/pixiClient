@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-jump-high-high-kling-v2",
+  "title": "跳高高 Mobile 游戏卡片动效加强版（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/jump-high-high.png",
+  "prompt": "Create a visibly animated, seamless 5-second portrait loop from this exact disco-slot scene. Keep the camera, framing, ball size, and all architecture fixed. The central mirrored disco ball must physically rotate a full turn around its vertical axis at a clearly visible steady speed; individual mirror facets and their colored reflections sweep continuously across the sphere. Strong beams of purple, blue, and gold light rotate across the surrounding columns and floor in sync, with bright moving reflections. The ball must remain spherical and centered. Return to the exact supplied composition at the end.",
+  "negativePrompt": "static disco ball, camera movement, zoom, scene cut, layout change, sphere deformation, changing ball size, extra objects, text, logos, flicker, exposure pumping, blur, shaky movement, sudden movement",
+  "duration": "5",
+  "mode": "std"
+}

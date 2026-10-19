@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const orderEvidence = [
   { step: '订单', text: '商品快照、支付方式、应付金额和创建时间' },
   { step: '支付事件', text: 'provider 原始事件摘要、验签/handler 结果和状态迁移' },
@@ -20,8 +22,8 @@ const orderEvidence = [
       <div class="order-query-grid">
         <label><span>订单 ID</span><input type="text" inputmode="numeric" placeholder="完整订单 ID" disabled /></label>
         <label><span>用户 ID</span><input type="text" inputmode="numeric" placeholder="完整用户 ID" disabled /></label>
-        <label><span>支付方式</span><select disabled><option>全部方式</option></select></label>
-        <label><span>订单状态</span><select disabled><option>全部状态</option></select></label>
+        <label><span>支付方式</span><el-select disabled><AdminSelectOption value="">全部方式</AdminSelectOption></el-select></label>
+        <label><span>订单状态</span><el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
         <label><span>创建时间</span><input type="text" placeholder="等待订单服务" disabled /></label>
         <button type="button" disabled>查询</button>
       </div>

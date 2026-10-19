@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "lobby-mobile-casino-background-v4",
+  "kind": "BACKGROUND",
+  "title": "手机游戏首页赌场街机背景 v4",
+  "jobId": "f3e67c37-7fa0-4051-adf7-9687717121d8",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "promptVersion": "asset-prompt-v2",
+  "sourceSha256": "e808a98719566feb2d70103fc2fbd90833b5bd66a66fa20e45857bdfcfdb18cc",
+  "mime": "image/webp",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/lobby-background-mobile.webp",
+      "sha256": "fd18efbfb2ebebf11afc39a43c5d26af09d267d43961a3d4a5e913f157d123aa"
+    }
+  ],
+  "width": 944,
+  "height": 1680,
+  "bytes": 1641636,
+  "releasePath": "assets/releases/lobby-mobile-casino-background-v4/f3e67c37-7fa0-4051-adf7-9687717121d8/source.webp",
+  "publishedAt": "2026-10-18T09:33:20.698Z",
+  "reviewer": "Codex visual review"
+}

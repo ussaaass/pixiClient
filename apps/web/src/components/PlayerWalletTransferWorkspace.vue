@@ -17,6 +17,7 @@ const loading = ref(false);
 const working = ref(false);
 const error = ref('');
 const feedback = ref('');
+const showDemoRecipient = import.meta.env.DEV;
 const parsedAmount = computed(() => /^[1-9][0-9]{0,18}$/.test(coins.value) ? BigInt(coins.value) : 0n);
 const available = computed(() => BigInt(props.availableCoins || '0'));
 const enoughAvailable = computed(() => parsedAmount.value > 0n && quote.value ? BigInt(quote.value.totalCoins) <= available.value : false);
@@ -31,6 +32,10 @@ async function findRecipient(): Promise<void> {
     if (candidates.value.length === 0) error.value = '没有找到匹配账号，请核对好友码或用户名。';
   } catch { error.value = '暂时无法查找账号，请重试。'; }
   finally { loading.value = false; }
+}
+function findDemoRecipient(): void {
+  query.value = 'demo-transfer';
+  void findRecipient();
 }
 function selectRecipient(candidate: FriendLookupResponseDto[number]): void {
   recipient.value = candidate; candidates.value = []; invalidateQuote(); error.value = '';
@@ -76,6 +81,10 @@ function formatExpiry(value: string): string { return new Intl.DateTimeFormat('z
   <section class="player-transfer-workspace" aria-label="金币转账">
     <h3>金币转账</h3>
     <p class="player-transfer-intro">通过好友码或用户名查找收款人；发送方额外支付 5% 手续费。</p>
+    <aside v-if="showDemoRecipient" class="player-transfer-demo-recipient" aria-label="本机转账测试用户">
+      <div><strong>本机样例用户：转账练习号</strong><small>用户名 demo-transfer · 好友码 ZQ8M4K2D9P</small><small>仅用于本浏览器演练，收到的金币不代表真实资产。</small></div>
+      <button type="button" :disabled="loading || working" @click="findDemoRecipient">查找样例用户</button>
+    </aside>
     <form class="player-transfer-search" @submit.prevent="findRecipient">
       <label><span>好友码 / 用户名</span><input v-model="query" autocomplete="off" maxlength="64" placeholder="输入好友码或用户名" :disabled="loading || working" /></label>
       <button type="submit" :disabled="loading || working">{{ loading ? '查找中…' : '查找' }}</button>

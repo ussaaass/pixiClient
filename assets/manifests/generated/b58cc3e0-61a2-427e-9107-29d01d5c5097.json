@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "treasure-hero-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "夺宝奇侠专属游戏厅背景",
+  "jobId": "b58cc3e0-61a2-427e-9107-29d01d5c5097",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "promptVersion": "asset-prompt-v2",
+  "sourceSha256": "594e9242ffe10fe985d4962b601d6f44a8a982877cfc7bb85c6c077fc4689ddc",
+  "mime": "image/webp",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "width": 1536,
+  "height": 1024,
+  "bytes": 1394152,
+  "releasePath": "assets/releases/treasure-hero-subhall-background/b58cc3e0-61a2-427e-9107-29d01d5c5097/source.webp",
+  "publishedAt": "2026-10-15T16:15:50.849Z",
+  "reviewer": "Codex visual review"
+}

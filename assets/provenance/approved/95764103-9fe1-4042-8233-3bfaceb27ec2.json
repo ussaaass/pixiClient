@@ -1,0 +1,71 @@
+{
+  "jobId": "95764103-9fe1-4042-8233-3bfaceb27ec2",
+  "assetKey": "jump-high-high-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "跳高高专属游戏厅背景",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-15T16:04:11.693Z",
+  "updatedAt": "2026-10-15T16:15:50.658Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/games/jump-high-high/subhall-background.json",
+  "specSha256": "ef68a944201ddea805af99c2f9438667a407e2730d1bba121286976de104aa3a",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "promptSeed": "Asset: 跳高高专属游戏厅背景\nIntended use: 跳高高游戏专属子厅背景；网页绘制名称、规则、难度档位与操作，不在图内生成文字或 UI。\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nVisual reference images: assets/aigen/icon-game-shisanshui.webp (Shared rendering quality, rounded material, highlight softness and palette only; create an independent disco-room composition.). Treat them as style references only; create the subject and composition described below.\nArt direction: Create a wide 3:2 premium casual 3D slot-game room environment for Jump High High. A dramatic but friendly disco stage with one large luminous golden orb visibly rotating above a polished teal dance floor, radiating fine warm-gold light rays, scattered soft spotlights and subtle abstract reel-like vertical light columns. The golden orb is the clear focal point, upper center; leave the central lower 45 percent relatively dark, calm and uncluttered for HTML difficulty cards. Match the shared Gameing Hall art direction: rounded dimensional forms, soft bevel highlights, deep teal and blue-green palette, ivory accents, restrained warm gold, smooth enamel surfaces, broad soft upper-left lighting. Independent original environment, no recognizable game-provider artwork.\nMust avoid: photorealism, casino photography, people, recognizable copyrighted characters, actual slot machine UI, reels with readable symbols, text, letters, numbers, logos, watermark, buttons, cards, chips, cash, clutter in lower center, harsh bloom, noisy gradients, flat vector, monochrome\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create an original wide 3:2 background (1536×1024) for the Jump High High game subhall: a premium casual 3D disco-stage room viewed in shallow perspective. Place one large luminous golden orb at the upper center, clearly the focal point; subtle curved glints and fine warm-gold light trails suggest its rotation. Below it, show a polished teal dance floor, with scattered soft spotlights and abstract reel-like vertical light columns at the sides. Keep the central lower 45% relatively dark, calm, and uncluttered for HTML difficulty cards.\n\nMatch the shared Gameing Hall art direction: friendly, rounded dimensional forms, soft bevel highlights, smooth enamel/resin-like surfaces, controlled gloss, and clean silhouettes readable at phone size. Use dominant deep teal and blue-green, warm ivory light accents, and restrained warm gold. Light the scene with a broad, soft upper-left key, gentle fill and contact shadows; keep the drama welcoming, without harsh bloom or cinematic contrast. Use `assets/aigen/icon-game-shisanshui.webp` only as a reference for rendering quality, material softness, and palette—not its objects or composition.\n\nOpaque background. No people, photorealism, casino photography, recognizable game-provider artwork, actual slot-machine UI, readable reel symbols, text, letters, numbers, logos, watermarks, buttons, cards, chips, cash, noisy gradients, flat vector rendering, or clutter in the lower center.",
+  "promptResponseId": "resp_0c1bccf0fae41a09016ad0f97d289887d0a7ff47328e12b045",
+  "usage": {
+    "input_tokens": 1405,
+    "input_tokens_details": {
+      "cache_write_tokens": 1402,
+      "cached_tokens": 0
+    },
+    "output_tokens": 348,
+    "output_tokens_details": {
+      "reasoning_tokens": 48
+    },
+    "total_tokens": 1753,
+    "image": {
+      "input_tokens": 4083,
+      "input_tokens_details": {
+        "cache_write_tokens": 1740,
+        "cached_tokens": 0
+      },
+      "output_tokens": 361,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 4444
+    }
+  },
+  "imageRequestId": "req_336fcd8f7a6c4363831395cf7aa72c74",
+  "outputSha256": "8a7222d34eb78a2c9e093d0214e89db56fc85f73ce2c30ef526f951b3141f5f0",
+  "outputBytes": 1335684,
+  "outputMime": "image/webp",
+  "outputWidth": 1536,
+  "outputHeight": 1024,
+  "generatedAt": "2026-10-15T16:05:05.356Z",
+  "candidatePath": "assets/candidates/jump-high-high-subhall-background/95764103-9fe1-4042-8233-3bfaceb27ec2/source.webp",
+  "sourcePath": "assets/source/jump-high-high-subhall-background/95764103-9fe1-4042-8233-3bfaceb27ec2/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-15T16:15:50.461Z"
+  },
+  "releasePath": "assets/releases/jump-high-high-subhall-background/95764103-9fe1-4042-8233-3bfaceb27ec2/source.webp"
+}

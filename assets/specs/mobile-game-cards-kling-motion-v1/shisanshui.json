@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-shisanshui-kling-v1",
+  "title": "十三张 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/shisanshui.png",
+  "prompt": "Create a seamless, elegant 5-second portrait casino game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. Three small groups of traditional playing cards are dealt in sequence onto the three existing piles: cards glide in from just outside the frame, land neatly, and reveal their faces; repeat the three-pile dealing rhythm once. Keep card faces conventional and readable, with no invented characters or text. Subtle card motion only; the background and camera remain fixed. End exactly on the supplied composition so the loop is clean.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, new objects, extra piles, extra cards, deformed cards, illegible card faces, invented characters, text, logos, flicker, exposure change, blur, shaky motion, sudden movement",
+  "duration": "5",
+  "mode": "std"
+}

@@ -10,6 +10,7 @@
     "./game-room": "./src/game-room.ts",
     "./lobby-game-reference": "./src/lobby-game-reference.ts",
     "./game-catalog": "./src/game-catalog.ts",
+    "./game-experience": "./src/game-experience.ts",
     "./payment-channel": "./src/payment-channel.ts",
     "./social": "./src/social.ts",
     "./support": "./src/support.ts",
@@ -26,6 +27,8 @@
     "./game-math": "./src/game-math.ts",
     "./agent-game-config": "./src/agent-game-config.ts",
     "./agent-announcements": "./src/agent-announcements.ts",
+    "./agent-social": "./src/agent-social.ts",
+    "./coin-market": "./src/coin-market.ts",
     "./event-operations": "./src/event-operations.ts"
   },
   "dependencies": {

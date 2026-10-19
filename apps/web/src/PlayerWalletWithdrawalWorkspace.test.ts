@@ -25,16 +25,18 @@ describe('player wallet withdrawal workspace', () => {
     const completed = vi.fn();
     app = createApp(PlayerWalletWithdrawalWorkspace, {
       wallet: { listPayoutAccounts, createPayoutAccount, deletePayoutAccount: vi.fn(), quoteWithdrawal, listWithdrawals, createWithdrawal, cancelWithdrawal } as unknown as WalletApplication,
-      canWithdraw: true,
       turnoverRemaining: '0',
       availableCnyFen: '20000',
       onCompleted: completed,
     });
     app.mount(host);
     await waitFor(() => listPayoutAccounts.mock.calls.length > 0);
-    await setField(host.querySelector<HTMLInputElement>('.player-withdrawal-account-form input[placeholder="例如：我的支付宝"]')!, '演练账户');
-    await setField(host.querySelector<HTMLInputElement>('.player-withdrawal-account-form input[placeholder="例如 test-account-1234"]')!, 'test-account-1234');
-    host.querySelector<HTMLButtonElement>('.player-withdrawal-account-form button')!.click();
+    host.querySelector<HTMLButtonElement>('.player-app-select-trigger')!.click();
+    await nextTick();
+    document.body.querySelector<HTMLButtonElement>('.player-app-select-menu [role="option"]')!.click();
+    await setField(host.querySelector<HTMLInputElement>('.player-withdrawal-account-form input[placeholder="请输入收款人姓名"]')!, '演练账户');
+    await setField(host.querySelector<HTMLInputElement>('.player-withdrawal-account-form input[placeholder="填写任意测试值，不要填真实账号"]')!, 'test-account-1234');
+    host.querySelector<HTMLButtonElement>('.player-withdrawal-account-form button:not(.player-app-select-trigger)')!.click();
     await waitFor(() => createPayoutAccount.mock.calls.length === 1);
     await waitFor(() => host.querySelector('.player-withdrawal-accounts li') !== null);
     expect(createPayoutAccount).toHaveBeenCalledWith(expect.objectContaining({ channelType: PayoutChannelType.ALIPAY, accountReference: 'test-account-1234' }));
@@ -54,6 +56,44 @@ describe('player wallet withdrawal workspace', () => {
     await waitFor(() => completed.mock.calls.length === 2);
     expect(cancelWithdrawal).toHaveBeenCalledWith('42');
     expect(completed).toHaveBeenCalledTimes(2);
+  });
+
+  it('shows the turnover restriction only after the final withdrawal submission check', async () => {
+    host = document.createElement('div'); document.body.append(host);
+    const payout = { payoutAccountId: '51', channelType: PayoutChannelType.ALIPAY, accountLabel: '演练收款方式', maskedAccount: '•••• 5678', isDefault: true, status: 1 as const, createdAt: '2026-10-17T00:00:00.000Z' };
+    const quote = { payoutAccountId: '51', payoutAccountLabel: payout.accountLabel, maskedAccount: payout.maskedAccount, netCnyFen: '10000', feeCnyFen: '500', debitCnyFen: '10500', minimumNetCnyFen: '10000', feeRateBps: 500, payoutNotBeforeAt: '2026-10-20T00:00:00.000Z', quotedAt: '2026-10-17T00:00:00.000Z', expiresAt: '2026-10-17T00:01:00.000Z' };
+    const createWithdrawal = vi.fn(async () => { throw Object.assign(new Error('TURNOVER_INCOMPLETE'), { code: 'TURNOVER_INCOMPLETE' }); });
+    const manageAccounts = vi.fn();
+    app = createApp(PlayerWalletWithdrawalWorkspace, {
+      wallet: {
+        getSummary: vi.fn(async () => ({ turnover: { remainingCoins: '2500', canTransferOrWithdraw: false } })),
+        listPayoutAccounts: vi.fn(async () => [payout]), createPayoutAccount: vi.fn(), deletePayoutAccount: vi.fn(),
+        quoteWithdrawal: vi.fn(async () => quote), listWithdrawals: vi.fn(async () => []), createWithdrawal,
+        cancelWithdrawal: vi.fn(),
+      } as unknown as WalletApplication,
+      turnoverRemaining: '2500', availableCnyFen: '20000', view: 'withdraw', onManageAccounts: manageAccounts,
+    });
+    app.mount(host);
+    await waitFor(() => host.querySelector<HTMLInputElement>('.player-withdrawal-recipient-fields label:first-child input')?.value === '支付宝');
+    expect(host.querySelector<HTMLInputElement>('.player-withdrawal-recipient-fields label:first-child input')?.value).toBe('支付宝');
+    expect(host.querySelector<HTMLInputElement>('.player-withdrawal-recipient-fields label:last-child input')?.value).toBe('演练收款方式');
+    host.querySelector<HTMLButtonElement>('.player-withdrawal-common-picker')!.click();
+    await waitFor(() => document.body.querySelector('[role="dialog"]') !== null);
+    document.body.querySelector<HTMLButtonElement>('.player-withdrawal-manage-link')!.click();
+    expect(manageAccounts).toHaveBeenCalledTimes(1);
+    host.querySelector<HTMLButtonElement>('.player-withdrawal-common-picker')!.click();
+    await waitFor(() => document.body.querySelector('.player-withdrawal-account-option') !== null);
+    document.body.querySelector<HTMLButtonElement>('.player-withdrawal-account-option')!.click();
+    expect(host.querySelector('.player-wallet-turnover')).toBeNull();
+    expect(host.querySelector('.player-withdrawal-gate')).toBeNull();
+    expect(host.querySelector<HTMLInputElement>('.player-withdrawal-request input')?.disabled).toBe(false);
+    await setField(host.querySelector<HTMLInputElement>('.player-withdrawal-request input')!, '100');
+    host.querySelector<HTMLButtonElement>('.player-withdrawal-request button')!.click();
+    await waitFor(() => host.querySelector('.player-withdrawal-quote') !== null);
+    host.querySelector<HTMLButtonElement>('.player-withdrawal-confirm button:last-child')!.click();
+    await waitFor(() => document.body.querySelector('[role="alertdialog"]') !== null);
+    expect(createWithdrawal).toHaveBeenCalledTimes(1);
+    expect(document.body.querySelector('[role="alertdialog"]')?.textContent).toContain('还差 2,500 金币');
   });
 });
 

@@ -21,6 +21,8 @@ describe('player invitation and agent application workspace', () => {
     const application = {
       getInviteLink: vi.fn(),
       issueInviteLink: vi.fn(),
+      listInvitees: vi.fn(),
+      listRewards: vi.fn(),
       getAgentDomain: vi.fn(),
       applyAgentDomain: vi.fn(),
       withdrawAgentDomain: vi.fn(),
@@ -32,6 +34,8 @@ describe('player invitation and agent application workspace', () => {
     expect(host.textContent).toContain('登录后管理邀请与代理申请');
     expect(application.getInviteLink).not.toHaveBeenCalled();
     expect(application.getAgentDomain).not.toHaveBeenCalled();
+    expect(application.listInvitees).not.toHaveBeenCalled();
+    expect(application.listRewards).not.toHaveBeenCalled();
   });
 
   it('issues a two-year link and completes pending application, withdrawal, and resubmission', async () => {
@@ -50,6 +54,8 @@ describe('player invitation and agent application workspace', () => {
     const application: InviteAgentApplication = {
       getInviteLink: vi.fn(async () => null),
       issueInviteLink: vi.fn(async () => link),
+      listInvitees: vi.fn(async () => ({ items: [], totalCount: '0', nextCursor: null })),
+      listRewards: vi.fn(async () => ({ items: [], rewardType: 1 as const, totalRewardCnyFen: '0', frozenRewardCnyFen: '0', availableRewardCnyFen: '0', nextCursor: null })),
       getAgentDomain: vi.fn(async () => domain),
       applyAgentDomain,
       withdrawAgentDomain: vi.fn(async () => {

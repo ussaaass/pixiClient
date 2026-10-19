@@ -1,5 +1,6 @@
 import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
+import { RewardType } from './referral';
 
 const BigIdSchema = Type.String({ pattern: '^[1-9][0-9]{0,19}$' });
 const UtcTimestampSchema = Type.String({ pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$' });
@@ -28,6 +29,35 @@ export const InviteLinkDtoSchema = Type.Object({
   url: Type.String({ minLength: 1, maxLength: 2048 }),
   expiresAt: UtcTimestampSchema,
 }, { additionalProperties: false });
+const ReferralCursorSchema = Type.String({ pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$' });
+export const ReferralInviteeDtoSchema = Type.Object({
+  userLabel: Type.String({ minLength: 1, maxLength: 48 }),
+  boundAt: UtcTimestampSchema,
+  rewardCnyFen: Type.String({ pattern: '^(?:0|[1-9][0-9]*)$' }),
+}, { additionalProperties: false });
+export const ReferralInviteePageDtoSchema = Type.Object({
+  items: Type.Array(ReferralInviteeDtoSchema, { maxItems: 20 }),
+  totalCount: Type.String({ pattern: '^(?:0|[1-9][0-9]*)$' }),
+  nextCursor: Type.Union([ReferralCursorSchema, Type.Null()]),
+}, { additionalProperties: false });
+export const ReferralRewardDtoSchema = Type.Object({
+  rewardId: BigIdSchema,
+  sourceUserLabel: Type.String({ minLength: 1, maxLength: 48 }),
+  paidAt: UtcTimestampSchema,
+  paidAmountCnyFen: Type.String({ pattern: '^[1-9][0-9]*$' }),
+  rateBps: Type.Integer({ minimum: 0, maximum: 10000 }),
+  rewardCnyFen: Type.String({ pattern: '^[1-9][0-9]*$' }),
+  state: Type.Union([Type.Literal('FROZEN'), Type.Literal('AVAILABLE'), Type.Literal('PAID')]),
+  releaseAt: Type.Union([UtcTimestampSchema, Type.Null()]),
+}, { additionalProperties: false });
+export const ReferralRewardPageDtoSchema = Type.Object({
+  items: Type.Array(ReferralRewardDtoSchema, { maxItems: 20 }),
+  rewardType: Type.Union([Type.Literal(RewardType.RECHARGE_REBATE), Type.Literal(RewardType.CUSTOMER_LOSS_REBATE)]),
+  totalRewardCnyFen: Type.String({ pattern: '^(?:0|[1-9][0-9]*)$' }),
+  frozenRewardCnyFen: Type.String({ pattern: '^(?:0|[1-9][0-9]*)$' }),
+  availableRewardCnyFen: Type.String({ pattern: '^(?:0|[1-9][0-9]*)$' }),
+  nextCursor: Type.Union([ReferralCursorSchema, Type.Null()]),
+}, { additionalProperties: false });
 export const AgentDomainDtoSchema = Type.Object({
   userId: BigIdSchema,
   status: Type.Union([Type.Literal(AgentDomainStatus.PENDING_REVIEW), Type.Literal(AgentDomainStatus.ACTIVE), Type.Literal(AgentDomainStatus.SUSPENDED), Type.Literal(AgentDomainStatus.REVOKED), Type.Literal(AgentDomainStatus.WITHDRAWN)]),
@@ -52,6 +82,8 @@ export const InviteAgentEndpoint = {
   captureAttribution: { method: 'POST', path: '/api/v1/public/referral-attribution/candidate', request: CaptureInviteAttributionRequestSchema, response: CaptureInviteAttributionResponseSchema, successStatus: 200 },
   inviteLink: { method: 'GET', path: '/api/v1/me/invite-link', response: Type.Union([InviteLinkDtoSchema, Type.Null()]), successStatus: 200 },
   issueInviteLink: { method: 'POST', path: '/api/v1/me/invite-link', request: Type.Object({}, { additionalProperties: false }), response: InviteLinkDtoSchema, successStatus: 201 },
+  invitees: { method: 'GET', path: '/api/v1/me/referrals/direct-invitees', response: ReferralInviteePageDtoSchema, successStatus: 200 },
+  rewards: { method: 'GET', path: '/api/v1/me/referrals/rewards', response: ReferralRewardPageDtoSchema, successStatus: 200 },
   agentDomain: { method: 'GET', path: '/api/v1/me/agent-domain', response: Type.Union([AgentDomainDtoSchema, Type.Null()]), successStatus: 200 },
   applyAgentDomain: { method: 'POST', path: '/api/v1/me/agent-domain/application', request: ApplyAgentDomainRequestSchema, response: AgentDomainDtoSchema, successStatus: 201 },
   withdrawAgentDomain: { method: 'DELETE', path: '/api/v1/me/agent-domain/application', response: Type.Object({ withdrawn: Type.Boolean() }, { additionalProperties: false }), successStatus: 200 },
@@ -62,6 +94,10 @@ export const AdminAgentDomainEndpoint = {
 } as const;
 
 export type InviteLinkDto = Static<typeof InviteLinkDtoSchema>;
+export type ReferralInviteeDto = Static<typeof ReferralInviteeDtoSchema>;
+export type ReferralInviteePageDto = Static<typeof ReferralInviteePageDtoSchema>;
+export type ReferralRewardDto = Static<typeof ReferralRewardDtoSchema>;
+export type ReferralRewardPageDto = Static<typeof ReferralRewardPageDtoSchema>;
 export type AgentDomainDto = Static<typeof AgentDomainDtoSchema>;
 export type AgentDomainAdminActionRequestDto = Static<typeof AgentDomainAdminActionRequestSchema>;
 export type AgentDomainAdminActionResponseDto = Static<typeof AgentDomainAdminActionResponseSchema>;

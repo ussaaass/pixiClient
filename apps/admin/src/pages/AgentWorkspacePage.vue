@@ -1,15 +1,20 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, nextTick, onBeforeUnmount, ref, toRaw, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { AgentAuditResultType, type AgentAuditEventDto, type AgentAuditQueryDto } from '@gameing/contracts/agent-audit';
 import { AgentDownlinePurpose, AgentDownlineStatus, type AgentDownlineDetailDto, type AgentDownlineDetailReadRequestDto, type AgentDownlineDto, type AgentDownlineQueryDto } from '@gameing/contracts/agent-downlines';
 import { type AgentGameConfigScopeDto, type AgentShisanshuiScoringDto, type AgentGameConfigSimulationResponseDto, type AgentGameConfigWorkspaceDto } from '@gameing/contracts/agent-game-config';
 import { AgentAnnouncementSource, AgentAnnouncementStatus, type AgentAnnouncementDto } from '@gameing/contracts/agent-announcements';
+import type { AgentSocialConversationDto, AgentSocialConversationReadResponseDto } from '@gameing/contracts/agent-social';
+import { SocialContentStatus, SocialModerationAction, SocialModerationCaseStatus, type SocialModerationActionCode, type SocialModerationCaseDto } from '@gameing/contracts/social';
 import { CLASSIC_V1_SCORING, SHISANSHUI_MATH_MODEL_VERSION } from '@gameing/shisanshui-rules';
 import PageHelpOverlay from '../components/PageHelpOverlay.vue';
 import { agentAuditReadApplication, agentDownlineReadApplication } from '../platform/agent-downlines/composition';
 import { agentGameConfigApplication } from '../platform/agent-game-config/composition';
 import { agentAnnouncementApplication } from '../platform/agent-announcements/composition';
+import { agentSocialApplication } from '../platform/agent-social/composition';
 import { isSafeAgentAnnouncementText } from '../platform/agent-announcements/agent-announcement-domain';
 
 const route = useRoute();
@@ -101,6 +106,23 @@ const announcementStartDelay = ref(0);
 const announcementDurationHours = ref(24);
 const announcementBusy = ref(false);
 const announcementFeedback = ref('');
+const socialConversations = ref<AgentSocialConversationDto[]>([]);
+const socialLoading = ref(false);
+const socialError = ref('');
+const socialPurposeDialogOpen = ref(false);
+const socialReadReason = ref('');
+const socialReadRequestKey = ref<string | null>(null);
+const socialReadBusy = ref(false);
+const socialReadError = ref('');
+const selectedSocialConversation = ref<AgentSocialConversationReadResponseDto | null>(null);
+const socialModerationCases = ref<SocialModerationCaseDto[]>([]);
+const socialModerationError = ref('');
+const socialModerationDialogCase = ref<SocialModerationCaseDto | null>(null);
+const socialModerationAction = ref<SocialModerationActionCode>(SocialModerationAction.HIDE);
+const socialModerationReason = ref('');
+const socialModerationRequestKey = ref<string | null>(null);
+const socialModerationBusy = ref(false);
+const socialModerationDialogError = ref('');
 const featureFields = [
   ['frontThreeOfAKind', '头墩三条奖励'], ['middleFullHouse', '中墩葫芦奖励'], ['middleFourOfAKind', '中墩铁支奖励'],
   ['middleStraightFlush', '中墩同花顺奖励'], ['backFourOfAKind', '底墩铁支奖励'], ['backStraightFlush', '底墩同花顺奖励'],
@@ -157,6 +179,7 @@ watch(() => route.path, (path) => {
   if (path === '/agent/downlines' && !downlineItems.value.length) void loadDownlines();
   if (path === '/agent/audit') void loadAuditEvents();
   if (path === '/agent/announcements') void loadAgentAnnouncements();
+  if (path === '/agent/social') void loadAgentSocial();
   if ((route.meta.agentPage === 'config' || route.meta.agentPage === 'expectation') && route.params.gameKey === 'shisanshui') void loadAgentGameConfig();
   if (path !== '/agent/downlines' && (selectedDownlineId.value || detailPurposeOpen.value)) closeDownline();
 }, { immediate: true });
@@ -180,6 +203,82 @@ async function loadAgentAnnouncements(): Promise<void> {
   if (!result.ok) announcementsError.value = '公告读取失败，请重试。';
   else announcements.value = result.value.items;
   announcementsLoading.value = false;
+}
+
+async function loadAgentSocial(): Promise<void> {
+  socialLoading.value = true;
+  socialError.value = '';
+  const [conversationResult, moderationResult] = await Promise.all([agentSocialApplication.list({}), agentSocialApplication.listModeration({})]);
+  if (!conversationResult.ok) socialError.value = conversationResult.code === 'SCOPE_UNAVAILABLE' ? '当前演练代理没有私聊读取授权。' : '域内会话读取失败，请重试。';
+  else socialConversations.value = conversationResult.value.conversations;
+  if (!moderationResult.ok) socialModerationError.value = moderationResult.code === 'SCOPE_UNAVAILABLE' ? '当前演练代理没有社区审核授权。' : '域内社区审核队列读取失败，请重试。';
+  else {
+    socialModerationError.value = '';
+    socialModerationCases.value = moderationResult.value.items;
+  }
+  socialLoading.value = false;
+}
+
+function moderationActionsForCase(item: SocialModerationCaseDto): SocialModerationActionCode[] {
+  if (item.caseStatus !== SocialModerationCaseStatus.OPEN) return [];
+  if (item.contentStatus === SocialContentStatus.PENDING_REVIEW) return [SocialModerationAction.APPROVE, SocialModerationAction.HIDE];
+  if (item.contentStatus === SocialContentStatus.HIDDEN) return [SocialModerationAction.RESTORE, SocialModerationAction.DISMISS];
+  return [SocialModerationAction.HIDE, SocialModerationAction.DISMISS];
+}
+
+function moderationActionLabel(action: SocialModerationActionCode): string {
+  return action === SocialModerationAction.APPROVE ? '通过并发布' : action === SocialModerationAction.HIDE ? '隐藏内容' : action === SocialModerationAction.RESTORE ? '恢复内容' : '驳回举报';
+}
+
+function openSocialModeration(item: SocialModerationCaseDto): void {
+  socialModerationDialogCase.value = item;
+  socialModerationAction.value = moderationActionsForCase(item)[0] ?? SocialModerationAction.HIDE;
+  socialModerationReason.value = '';
+  socialModerationRequestKey.value = null;
+  socialModerationDialogError.value = '';
+}
+
+async function submitSocialModeration(): Promise<void> {
+  const item = socialModerationDialogCase.value;
+  if (!item || socialModerationBusy.value || socialModerationReason.value.trim().length < 3) return;
+  socialModerationBusy.value = true;
+  socialModerationDialogError.value = '';
+  const requestKey = socialModerationRequestKey.value ??= crypto.randomUUID();
+  const result = await agentSocialApplication.decideModeration(item.caseId, { action: socialModerationAction.value, reason: socialModerationReason.value.trim(), requestKey });
+  if (!result.ok) socialModerationDialogError.value = result.code === 'SCOPE_UNAVAILABLE' ? '社区审核权限已变化，请刷新授权。' : result.code === 'CASE_ALREADY_CLOSED' || result.code === 'INVALID_TRANSITION' ? '案件状态已变化，请刷新队列后重试。' : result.code === 'REQUEST_KEY_REUSED' ? '该操作键已用于另一项决定，请关闭后重新打开。' : '审核未完成，请重试。';
+  else {
+    socialModerationCases.value = socialModerationCases.value.map((entry) => entry.caseId === item.caseId ? result.value.item : entry);
+    socialModerationDialogCase.value = null;
+    socialModerationRequestKey.value = null;
+  }
+  socialModerationBusy.value = false;
+}
+
+function openSocialConversationRead(conversation: AgentSocialConversationDto): void {
+  selectedSocialConversation.value = null;
+  pendingSocialConversation.value = conversation;
+  socialReadReason.value = '';
+  socialReadRequestKey.value = null;
+  socialReadError.value = '';
+  socialPurposeDialogOpen.value = true;
+}
+
+const pendingSocialConversation = ref<AgentSocialConversationDto | null>(null);
+async function submitSocialConversationRead(): Promise<void> {
+  const conversation = pendingSocialConversation.value;
+  if (!conversation || socialReadBusy.value || socialReadReason.value.trim().length < 3) return;
+  socialReadBusy.value = true;
+  socialReadError.value = '';
+  const requestKey = socialReadRequestKey.value ??= crypto.randomUUID();
+  const result = await agentSocialApplication.read(conversation.conversationId, { reason: socialReadReason.value.trim(), requestKey });
+  if (!result.ok) socialReadError.value = result.code === 'SCOPE_UNAVAILABLE' ? '私聊读取权限已变化，请刷新授权。' : result.code === 'NOT_FOUND' ? '会话不存在或不属于当前代理域。' : '读取未完成，请重试。';
+  else {
+    socialPurposeDialogOpen.value = false;
+    pendingSocialConversation.value = null;
+    socialReadRequestKey.value = null;
+    selectedSocialConversation.value = result.value;
+  }
+  socialReadBusy.value = false;
 }
 
 function openAnnouncementCreate(): void {
@@ -433,7 +532,7 @@ function auditResultText(result: AgentAuditEventDto['resultType']): string {
     <template v-if="isDownlines">
       <section class="agent-operations-panel">
         <div class="agent-operations-panel-heading"><div><h2>授权范围内的下线</h2><p>只显示获准访问的直接管理范围及允许的父域汇总。</p></div><div class="agent-operations-panel-tools"><PageHelpOverlay title="下线数据范围" trigger-label="查看下线数据范围说明" :sections="downlineHelp" /></div></div>
-        <form class="agent-downline-filters" @submit.prevent="loadDownlines()"><label>用户名 / user ID<input v-model="downlineKeyword" maxlength="64" placeholder="搜索当前管理范围"></label><label>用户状态<select v-model="downlineStatus"><option value="">全部状态</option><option :value="String(AgentDownlineStatus.ACTIVE)">正常</option><option :value="String(AgentDownlineStatus.SUSPENDED)">暂停</option><option :value="String(AgentDownlineStatus.CLOSED)">已关闭</option></select></label><div class="agent-downline-scope"><small>关系范围</small><span>仅当前授权管理范围</span></div><button type="submit" :disabled="downlineLoading">{{ downlineLoading ? '正在查询…' : '查询下线' }}</button></form>
+        <form class="agent-downline-filters" @submit.prevent="loadDownlines()"><label>用户名 / user ID<input v-model="downlineKeyword" maxlength="64" placeholder="搜索当前管理范围"></label><label>用户状态<el-select v-model="downlineStatus"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption :value="String(AgentDownlineStatus.ACTIVE)">正常</AdminSelectOption><AdminSelectOption :value="String(AgentDownlineStatus.SUSPENDED)">暂停</AdminSelectOption><AdminSelectOption :value="String(AgentDownlineStatus.CLOSED)">已关闭</AdminSelectOption></el-select></label><div class="agent-downline-scope"><small>关系范围</small><span>仅当前授权管理范围</span></div><button type="submit" :disabled="downlineLoading">{{ downlineLoading ? '正在查询…' : '查询下线' }}</button></form>
         <p class="agent-downline-demo-note">开发预览 · 使用隔离的本机演练资料，不代表真实用户或线上授权数据。</p>
         <p v-if="downlineError" class="agent-downline-error" role="alert">{{ downlineError }} <button type="button" @click="loadDownlines()">重试</button></p>
         <div v-else-if="downlineLoading && !downlineItems.length" class="agent-operations-empty" role="status">正在读取下线资料…</div>
@@ -481,7 +580,7 @@ function auditResultText(result: AgentAuditEventDto['resultType']): string {
         <p v-if="!isSupportedGame" class="agent-demo-note">此游戏尚无数学模型。请返回游戏配置列表；本页不会用其它游戏的模型代替。</p>
         <template v-else>
           <div class="agent-simulation-context"><span>代理域</span><strong>{{ configWorkspace?.scope.agentDomainId ?? '正在解析' }}</strong><span>游戏 / 难度</span><strong>十三张 / 练习厅</strong><span>候选水值</span><strong>{{ candidateConfig.payouts.frontThreeOfAKind }} · {{ candidateConfig.payouts.middleFullHouse }} · {{ candidateConfig.payouts.middleFourOfAKind }} …</strong></div>
-          <div class="agent-simulation-controls"><label>模拟局数<select v-model.number="simulationRuns"><option :value="1000">1000 局 · 快速预览</option><option :value="10000">10000 局 · 扩大样本</option></select></label><label>随机种子<input v-model="simulationSeed" maxlength="128"></label><button type="button" :disabled="simulationBusy || !configWorkspace" @click="simulateAgentConfig">{{ simulationBusy ? `模拟中 ${simulationProgress}%` : '开始模拟' }}</button></div>
+          <div class="agent-simulation-controls"><label>模拟局数<el-select v-model.number="simulationRuns"><AdminSelectOption :value="1000">1000 局 · 快速预览</AdminSelectOption><AdminSelectOption :value="10000">10000 局 · 扩大样本</AdminSelectOption></el-select></label><label>随机种子<input v-model="simulationSeed" maxlength="128"></label><button type="button" :disabled="simulationBusy || !configWorkspace" @click="simulateAgentConfig">{{ simulationBusy ? `模拟中 ${simulationProgress}%` : '开始模拟' }}</button></div>
           <progress v-if="simulationBusy" class="agent-simulation-progress" max="100" :value="simulationProgress" aria-label="模拟进度"></progress>
           <p v-if="configFeedback" class="agent-downline-demo-note" role="status">{{ configFeedback }}</p>
           <div v-if="simulation" class="agent-simulation-report"><div class="agent-simulation-report-heading"><strong>模拟结果 · {{ simulation.report.runs.toLocaleString() }} 局</strong><span>{{ simulation.report.strategyKey }} · {{ simulation.report.modelVersion }} · seed {{ simulation.report.seed }}</span></div><div class="agent-simulation-metrics"><article v-for="[label, value, note] in reportMetrics" :key="label"><small>{{ label }}</small><strong>{{ value }}</strong><p>{{ note }}</p></article></div><div class="agent-simulation-distribution"><h3>净水分布</h3><div v-for="item in simulation.report.distribution" :key="item.netScore" class="agent-distribution-row"><span>{{ item.netScore > 0 ? '+' : '' }}{{ item.netScore }} 水</span><div><i :style="{ width: `${Math.max(item.count / maxDistributionCount * 100, 1)}%` }"></i></div><b>{{ item.count }} 局 · {{ formatRate(item.share) }}</b></div></div><p v-if="simulation.report.warnings.length" class="agent-simulation-warning">{{ simulation.report.warnings.join('；') }}</p></div>
@@ -505,16 +604,26 @@ function auditResultText(result: AgentAuditEventDto['resultType']): string {
 
     <template v-else-if="isSocial">
       <section class="agent-operations-panel">
-        <div class="agent-operations-panel-heading"><div><h2>域内社区与私聊</h2><p>公开内容管理和私聊读取分别授权。</p></div><div class="agent-operations-panel-tools"><PageHelpOverlay title="换绑后的社交内容" trigger-label="查看换绑后的社交内容说明" :sections="socialHelp" /></div></div>
+        <div class="agent-operations-panel-heading"><div><h2>域内社区与私聊</h2><p>公开内容管理和私聊读取分别授权。</p></div><div class="agent-operations-panel-tools"><PageHelpOverlay title="换绑后的社交内容" trigger-label="查看换绑后的社交内容说明" :sections="socialHelp" /><button type="button" @click="loadAgentSocial" :disabled="socialLoading">{{ socialLoading ? '正在读取…' : '刷新会话' }}</button></div></div>
         <div class="agent-social-permission-grid"><article><strong>话题 / 帖子 / 回复</strong><small>AGENT_SOCIAL_MODERATE</small><p>只管理当前域公开内容，处理动作记录理由和审计。</p></article><article><strong>好友 / 私聊只读</strong><small>AGENT_SOCIAL_READ_PRIVATE_MESSAGES</small><p>必须单独获授；读取记录审计，不复制消息正文到日志。</p></article></div>
-        <div class="agent-operations-empty"><span>☏</span><strong>暂无社区或私聊记录</strong></div>
+        <section class="agent-social-moderation"><header><div><h3>社区举报与复核</h3><p>仅当前代理域公开内容；每项处理都记录操作者、决定与理由。</p></div><span>{{ socialModerationCases.length }} 条</span></header>
+          <p v-if="socialModerationError" class="agent-downline-error" role="alert">{{ socialModerationError }} <button type="button" @click="loadAgentSocial">重试</button></p>
+          <div v-else-if="socialLoading && !socialModerationCases.length" class="agent-operations-empty" role="status">正在读取社区队列…</div>
+          <div v-else-if="!socialModerationCases.length" class="agent-operations-empty"><strong>当前域没有待复核内容</strong></div>
+          <div v-else class="agent-social-moderation-list"><article v-for="item in socialModerationCases" :key="item.caseId" class="agent-social-moderation-card"><header><div><span class="agent-social-case-status" :data-open="item.caseStatus === SocialModerationCaseStatus.OPEN">{{ item.caseStatus === SocialModerationCaseStatus.OPEN ? '待复核' : item.caseStatus === SocialModerationCaseStatus.RESOLVED ? '已处理' : '已驳回' }}</span><small>{{ item.topicTitle }} · {{ item.resourceType === 'POST' ? '帖子' : '回复' }} · 举报 {{ item.reporterCount }} 次</small></div><time>{{ new Date(item.createdAt).toLocaleString('zh-CN') }}</time></header><h4>{{ item.contentTitle || '社区内容' }}</h4><p>{{ item.contentBody }}</p><blockquote>{{ item.reportSummary }}</blockquote><footer><span>{{ item.authorLabel }} · {{ item.reasonCode }}</span><button v-if="moderationActionsForCase(item).length" type="button" @click="openSocialModeration(item)">复核处理</button></footer></article></div>
+        </section>
+        <p class="agent-local-demo-note">LOCAL_DEMO · 举报队列和对话均为合成样例，不是玩家真实内容；敏感读取与处理决定会写入代理审计。此页面不显示客服 IM。</p>
+        <p v-if="socialError" class="agent-downline-error" role="alert">{{ socialError }} <button type="button" @click="loadAgentSocial">重试</button></p>
+        <div v-else-if="socialLoading && !socialConversations.length" class="agent-operations-empty" role="status">正在读取域内会话…</div>
+        <div v-else-if="!socialConversations.length" class="agent-operations-empty"><span>☏</span><strong>当前域暂无会话</strong></div>
+        <div v-else class="agent-social-conversation-list"><article v-for="conversation in socialConversations" :key="conversation.conversationId" class="agent-social-conversation-card"><div><strong>{{ conversation.participants.map((participant) => participant.displayName).join('、') }}</strong><small>域内用户 · {{ conversation.messageCount }} 条消息 · 最近 {{ new Date(conversation.lastMessageAt).toLocaleString('zh-CN') }}</small></div><button type="button" @click="openSocialConversationRead(conversation)">审核读取</button></article></div>
       </section>
     </template>
 
     <template v-else-if="isAudit">
       <section class="agent-operations-panel">
         <div class="agent-operations-panel-heading"><div><h2>本人的代理操作记录</h2><p>Admin 对代理的授权记录仍属于 Admin 审计，不混在代理自行操作记录中。</p></div><span>只读</span></div>
-        <form class="agent-audit-filters" @submit.prevent="loadAuditEvents()"><label>动作 / 资源 / 查看目的<input v-model="auditKeyword" maxlength="64" placeholder="搜索审计记录"></label><label>处理结果<select v-model="auditResultType"><option value="">全部结果</option><option :value="String(AgentAuditResultType.SUCCESS)">成功</option><option :value="String(AgentAuditResultType.DENIED)">拒绝</option><option :value="String(AgentAuditResultType.FAILED)">失败</option></select></label><div class="agent-downline-scope"><small>记录范围</small><span>当前代理本人 · 不可变记录</span></div><button type="submit" :disabled="auditLoading">{{ auditLoading ? '正在查询…' : '查询记录' }}</button></form>
+        <form class="agent-audit-filters" @submit.prevent="loadAuditEvents()"><label>动作 / 资源 / 查看目的<input v-model="auditKeyword" maxlength="64" placeholder="搜索审计记录"></label><label>处理结果<el-select v-model="auditResultType"><AdminSelectOption value="">全部结果</AdminSelectOption><AdminSelectOption :value="String(AgentAuditResultType.SUCCESS)">成功</AdminSelectOption><AdminSelectOption :value="String(AgentAuditResultType.DENIED)">拒绝</AdminSelectOption><AdminSelectOption :value="String(AgentAuditResultType.FAILED)">失败</AdminSelectOption></el-select></label><div class="agent-downline-scope"><small>记录范围</small><span>当前代理本人 · 不可变记录</span></div><button type="submit" :disabled="auditLoading">{{ auditLoading ? '正在查询…' : '查询记录' }}</button></form>
         <p v-if="auditError" class="agent-downline-error" role="alert">{{ auditError }} <button type="button" @click="loadAuditEvents()">重试</button></p>
         <div v-else-if="auditLoading && !auditItems.length" class="agent-operations-empty" role="status">正在读取代理操作记录…</div>
         <div v-else-if="!auditItems.length" class="agent-operations-empty"><span>≋</span><strong>暂无操作记录</strong><p>查看下线业务明细等敏感操作会记录目的、目标和结果，不包含认证秘密或私聊正文。</p></div>
@@ -526,7 +635,7 @@ function auditResultText(result: AgentAuditEventDto['resultType']): string {
     <form class="agent-downline-purpose-dialog" role="dialog" aria-modal="true" aria-labelledby="agent-downline-purpose-title" @submit.prevent="submitDownlineDetailRead" @keydown.tab="trapPurposeDialogTab">
       <h2 id="agent-downline-purpose-title">查看业务明细</h2>
       <p>本次读取会写入代理操作审计，请选择查看目的。</p>
-      <label>查看目的<select v-model="detailPurposeCode"><option :value="AgentDownlinePurpose.ROUTINE_OPERATIONS_REVIEW">日常业务核查</option><option :value="AgentDownlinePurpose.ASSET_EXCEPTION_FOLLOWUP">资产异常跟进</option><option :value="AgentDownlinePurpose.PAYMENT_FOLLOWUP">充值或提现跟进</option><option :value="AgentDownlinePurpose.GAME_DISPUTE_FOLLOWUP">牌局争议跟进</option><option :value="AgentDownlinePurpose.SUPPORT_CASE">客服工单处理</option></select></label>
+      <label>查看目的<el-select v-model="detailPurposeCode"><AdminSelectOption :value="AgentDownlinePurpose.ROUTINE_OPERATIONS_REVIEW">日常业务核查</AdminSelectOption><AdminSelectOption :value="AgentDownlinePurpose.ASSET_EXCEPTION_FOLLOWUP">资产异常跟进</AdminSelectOption><AdminSelectOption :value="AgentDownlinePurpose.PAYMENT_FOLLOWUP">充值或提现跟进</AdminSelectOption><AdminSelectOption :value="AgentDownlinePurpose.GAME_DISPUTE_FOLLOWUP">牌局争议跟进</AdminSelectOption><AdminSelectOption :value="AgentDownlinePurpose.SUPPORT_CASE">客服工单处理</AdminSelectOption></el-select></label>
       <label v-if="detailPurposeCode === AgentDownlinePurpose.SUPPORT_CASE">客服工单号<input v-model="detailCaseReference" maxlength="80" minlength="3" required placeholder="填写工单编号"></label>
       <p v-if="detailError" class="agent-downline-error" role="alert">{{ detailError }}</p>
       <footer><button class="agent-downline-purpose-cancel" type="button" @click="cancelDownlineRead">取消</button><button class="agent-downline-purpose-submit" type="submit" :disabled="detailPurposeCode === AgentDownlinePurpose.SUPPORT_CASE && detailCaseReference.trim().length < 3">继续查看</button></footer>
@@ -558,11 +667,38 @@ function auditResultText(result: AgentAuditEventDto['resultType']): string {
     <section class="agent-downline-purpose-dialog agent-announcement-dialog" role="dialog" aria-modal="true" aria-labelledby="agent-announcement-dialog-title">
       <h2 id="agent-announcement-dialog-title">{{ announcementDialog === 'create' ? '新建域内公告草稿' : announcementDialog === 'publish' ? '预览并发布公告' : '撤回域内公告' }}</h2>
       <template v-if="announcementDialog === 'create'"><label>标题<input v-model="announcementTitle" maxlength="60" required minlength="2" placeholder="例如：本域游戏规则提醒"></label><label>公告正文<textarea v-model="announcementBody" maxlength="240" minlength="4" required rows="4" placeholder="仅支持纯文字；不要填写概率、赔率、派奖承诺或外部链接。"></textarea></label><p v-if="announcementTitle || announcementBody" class="agent-announcement-live-preview"><strong>玩家端文字预览</strong><b>{{ announcementTitle || '公告标题' }}</b><span>{{ announcementBody || '公告正文会显示在这里。' }}</span></p></template>
-      <template v-else-if="announcementDialog === 'publish' && announcementDialogTarget"><p class="agent-announcement-live-preview"><strong>本代理域公告预览</strong><b>{{ announcementDialogTarget.title }}</b><span>{{ announcementDialogTarget.body }}</span></p><label>开始时间<select v-model.number="announcementStartDelay"><option :value="0">立即展示</option><option :value="1">1 小时后展示</option></select></label><label>有效时长<select v-model.number="announcementDurationHours"><option :value="1">1 小时</option><option :value="6">6 小时</option><option :value="24">24 小时</option><option :value="72">72 小时</option></select></label></template>
+      <template v-else-if="announcementDialog === 'publish' && announcementDialogTarget"><p class="agent-announcement-live-preview"><strong>本代理域公告预览</strong><b>{{ announcementDialogTarget.title }}</b><span>{{ announcementDialogTarget.body }}</span></p><label>开始时间<el-select v-model.number="announcementStartDelay"><AdminSelectOption :value="0">立即展示</AdminSelectOption><AdminSelectOption :value="1">1 小时后展示</AdminSelectOption></el-select></label><label>有效时长<el-select v-model.number="announcementDurationHours"><AdminSelectOption :value="1">1 小时</AdminSelectOption><AdminSelectOption :value="6">6 小时</AdminSelectOption><AdminSelectOption :value="24">24 小时</AdminSelectOption><AdminSelectOption :value="72">72 小时</AdminSelectOption></el-select></label></template>
       <template v-else><p>撤回后，本机公告状态会变为“已撤回”；此演练不会影响玩家端或服务端公告。</p><p class="agent-announcement-live-preview"><b>{{ announcementDialogTarget?.title }}</b><span>{{ announcementDialogTarget?.body }}</span></p></template>
       <label>{{ announcementDialog === 'create' ? '创建原因' : announcementDialog === 'publish' ? '发布原因' : '撤回原因' }}<textarea v-model="announcementReason" maxlength="240" minlength="3" required rows="2" placeholder="至少 3 个字符，将写入不可变代理审计"></textarea></label>
       <p v-if="announcementDialog === 'create' && !isSafeAgentAnnouncementText(announcementTitle, announcementBody) && (announcementTitle || announcementBody)" class="agent-downline-error" role="alert">公告不能包含 HTML、网址或概率/赔率/派奖承诺。</p>
       <footer><button type="button" @click="announcementDialog = null">取消</button><button class="agent-downline-purpose-submit" type="button" :disabled="announcementBusy || announcementReason.trim().length < 3 || (announcementDialog === 'create' && (!isSafeAgentAnnouncementText(announcementTitle, announcementBody) || announcementTitle.trim().length < 2 || announcementBody.trim().length < 4))" @click="submitAgentAnnouncement">{{ announcementBusy ? '正在保存…' : announcementDialog === 'create' ? '保存为草稿' : announcementDialog === 'publish' ? '确认本机演练发布' : '确认本机演练撤回' }}</button></footer>
+    </section>
+  </div>
+  <div v-if="socialPurposeDialogOpen" class="agent-downline-scrim agent-downline-purpose-scrim" @click.self="socialPurposeDialogOpen = false" @keydown.esc="socialPurposeDialogOpen = false">
+    <form class="agent-downline-purpose-dialog agent-social-purpose-dialog" role="dialog" aria-modal="true" aria-labelledby="agent-social-read-title" @submit.prevent="submitSocialConversationRead">
+      <h2 id="agent-social-read-title">读取域内私聊</h2>
+      <p>查看会话内容会写入不可变代理审计；审计只记录会话编号和查看目的，不复制消息正文。</p>
+      <label>查看目的<textarea v-model="socialReadReason" maxlength="240" minlength="3" required rows="3" placeholder="说明本次查看的业务原因"></textarea></label>
+      <p v-if="socialReadError" class="agent-downline-error" role="alert">{{ socialReadError }}</p>
+      <footer><button type="button" @click="socialPurposeDialogOpen = false">取消</button><button class="agent-downline-purpose-submit" type="submit" :disabled="socialReadBusy || socialReadReason.trim().length < 3">{{ socialReadBusy ? '正在读取…' : '确认并读取' }}</button></footer>
+    </form>
+  </div>
+  <div v-if="socialModerationDialogCase" class="agent-downline-scrim agent-downline-purpose-scrim" @click.self="socialModerationDialogCase = null" @keydown.esc="socialModerationDialogCase = null">
+    <form class="agent-downline-purpose-dialog agent-social-purpose-dialog" role="dialog" aria-modal="true" aria-labelledby="agent-social-moderation-title" @submit.prevent="submitSocialModeration">
+      <h2 id="agent-social-moderation-title">处理社区举报</h2>
+      <p>{{ socialModerationDialogCase.contentTitle }} · {{ socialModerationDialogCase.authorLabel }}</p>
+      <blockquote class="agent-social-moderation-quote">{{ socialModerationDialogCase.contentBody }}</blockquote>
+      <label>处理决定<el-select v-model="socialModerationAction" @change="socialModerationRequestKey = null"><AdminSelectOption v-for="action in moderationActionsForCase(socialModerationDialogCase)" :key="action" :value="action">{{ moderationActionLabel(action) }}</AdminSelectOption></el-select></label>
+      <label>处理理由<textarea v-model="socialModerationReason" @input="socialModerationRequestKey = null" maxlength="500" minlength="3" required rows="3" placeholder="说明判断依据"></textarea></label>
+      <p v-if="socialModerationDialogError" class="agent-downline-error" role="alert">{{ socialModerationDialogError }}</p>
+      <footer><button type="button" @click="socialModerationDialogCase = null">取消</button><button class="agent-downline-purpose-submit" type="submit" :disabled="socialModerationBusy || socialModerationReason.trim().length < 3">{{ socialModerationBusy ? '正在保存…' : '确认处理' }}</button></footer>
+    </form>
+  </div>
+  <div v-if="selectedSocialConversation" class="agent-downline-scrim" @click.self="selectedSocialConversation = null" @keydown.esc="selectedSocialConversation = null">
+    <section class="agent-social-conversation-drawer" role="dialog" aria-modal="true" aria-label="域内私聊记录">
+      <header><div><p class="eyebrow">PRIVATE CONVERSATION · LOCAL_DEMO</p><h2>{{ selectedSocialConversation.conversation.participants.map((participant) => participant.displayName).join('、') }}</h2><small>只读演练 · {{ selectedSocialConversation.messages.length }} 条消息</small></div><button type="button" aria-label="关闭私聊记录" @click="selectedSocialConversation = null">×</button></header>
+      <ol class="agent-social-message-list"><li v-for="message in selectedSocialConversation.messages" :key="message.messageId"><strong>{{ selectedSocialConversation.conversation.participants.find((participant) => participant.userId === message.senderUserId)?.displayName ?? '域内用户' }}</strong><time>{{ new Date(message.createdAt).toLocaleString('zh-CN') }}</time><p>{{ message.body }}</p></li></ol>
+      <footer><span>消息正文没有写入审计副本。</span><button type="button" @click="selectedSocialConversation = null">关闭</button></footer>
     </section>
   </div>
 </template>

@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-openai-v6",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 四肢完整可见的金龙构图候选",
+  "intendedUse": "手机大厅麻将胡了 2 卡片背景；四只脚均需完整可见，供后续动效制作",
+  "prompt": "Create a premium portrait 9:16 mobile game-card illustration in the established polished dimensional casual-game style. Scene: a luminous golden Chinese dragon arcs through a moonlit palace garden with jade rooftops and deep cobalt sky. Anatomy is the priority: the dragon has exactly four legs total, attached naturally to its continuous torso: two forelegs near the neck/shoulders and two hind legs farther down the body. All four legs and all four paws must be visible at the same time, fully inside the frame, with clear gaps between each limb and the torso, tail, and nearby mahjong tiles. Pose the two forelegs reaching outward in different directions and the two hind legs reaching outward/downward, so a viewer can immediately count four separate legs. Do not hide a leg behind the body, another leg, a tile, clouds, or the tail. Each leg ends in a clearly visible dragon paw; toe count does not matter. Use a graceful upright S-curve body, readable dragon head, separate flowing tail, and streaming mane/whiskers. Place only four large traditional mahjong tiles around the outer edges, face-up with crisp bamboo pips, circle pips, and red 中 symbols; keep them away from all four legs. Deep cobalt moonlight, refined gold and jade, friendly premium dimensional game illustration. Keep the complete dragon and tiles within the upper 78 percent and the lower 22 percent dark and quiet for H5 text. Fixed camera, clean silhouette, no motion blur.",
+  "negativePrompt": "three visible legs, fewer than four legs, hidden leg, limb occluded by body or tile, legs merged together, extra fifth leg, detached leg, leg cropped by frame, paw cropped, limbs confused with whiskers, limbs confused with tail, twisted torso, tangled body, body crossing itself, corkscrew, duplicate head, blank mahjong tiles, tile backs, unreadable symbols, title text, logos, watermark, UI, people, currency, photorealism, excessive bloom, clutter, motion blur",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule-2.png", "purpose": "Match the approved moonlit palace, golden dragon identity, jade and gold materials, lighting, and dimensional art style." },
+    { "path": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v5/ad4bb614-7d7a-48be-8ef3-b6f964ccfb12/source.png", "purpose": "Use its overall palette and clear mahjong tiles only; correct the dragon anatomy so all four legs are unmistakably visible. Paw toe count is irrelevant." }
+  ],
+  "tags": ["mobile", "portrait", "mahjong-hule-2", "four-visible-legs", "anatomy-correction", "correction-v6"]
+}

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, onMounted, ref } from 'vue';
 import {
   GameCatalogStatus,
@@ -181,7 +183,7 @@ onMounted(() => { void refresh(); });
       <div class="agent-domain-section-heading"><div><h2 id="game-catalog-title">大厅游戏</h2><p>按显示名称、稳定 game code、目录状态查询；排序值越小越靠前。</p></div><span class="record-count">{{ visibleRecords.length }} 项</span></div>
       <form class="game-catalog-filters" @submit.prevent="refresh">
         <label><span>游戏名称 / Code</span><input v-model="keyword" type="search" placeholder="输入名称或 code" /></label>
-        <label><span>展示状态</span><select v-model="statusFilter"><option value="">全部状态</option><option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</option></select></label>
+        <label><span>展示状态</span><el-select v-model="statusFilter"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</AdminSelectOption></el-select></label>
         <button type="submit" :disabled="loading">{{ loading ? '查询中…' : '查询' }}</button>
         <button class="catalog-create-button" type="button" @click="openCreate">＋ 新增外接 Stub</button>
       </form>
@@ -227,10 +229,10 @@ onMounted(() => { void refresh(); });
           <div class="catalog-edit-grid">
             <label>显示名称<input v-model="editForm.name" maxlength="64" minlength="2" /></label>
             <label>分类<input v-model="editForm.category" maxlength="48" /></label>
-            <label>展示状态<select v-model.number="editForm.status"><option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</option></select></label>
+            <label>展示状态<el-select v-model.number="editForm.status"><AdminSelectOption v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</AdminSelectOption></el-select></label>
             <label>排序值<input v-model.number="editForm.sortOrder" type="number" min="0" max="1000000" step="1" /></label>
             <label class="catalog-description-field">大厅说明<textarea v-model="editForm.description" maxlength="240" rows="3"></textarea></label>
-            <label class="catalog-asset-field">大厅封面 Asset<select v-model="editForm.coverAssetId"><option v-for="asset in covers" :key="asset.assetId" :value="asset.assetId">{{ asset.name }} · {{ asset.assetId }}</option></select></label>
+            <label class="catalog-asset-field">大厅封面 Asset<el-select v-model="editForm.coverAssetId"><AdminSelectOption v-for="asset in covers" :key="asset.assetId" :value="asset.assetId">{{ asset.name }} · {{ asset.assetId }}</AdminSelectOption></el-select></label>
             <figure v-if="selectedCover" class="catalog-cover-preview"><img :src="selectedCover.previewUrl" :alt="selectedCover.name" /><figcaption>{{ selectedCover.name }}<small>asset_id {{ selectedCover.assetId }} · WebP</small></figcaption></figure>
             <label class="catalog-reason-field">变更原因<textarea v-model="editForm.reason" maxlength="500" minlength="3" rows="2" placeholder="填写至少 3 个字符的原因"></textarea></label>
           </div>
@@ -247,7 +249,7 @@ onMounted(() => { void refresh(); });
             <label>分类<input v-model="createForm.category" maxlength="48" /></label>
             <label>排序值<input v-model.number="createForm.sortOrder" type="number" min="0" max="1000000" step="1" /></label>
             <label class="catalog-description-field">大厅说明<textarea v-model="createForm.description" maxlength="240" rows="3"></textarea></label>
-            <label class="catalog-asset-field">大厅封面 Asset<select v-model="createForm.coverAssetId"><option v-for="asset in covers" :key="asset.assetId" :value="asset.assetId">{{ asset.name }} · {{ asset.assetId }}</option></select></label>
+            <label class="catalog-asset-field">大厅封面 Asset<el-select v-model="createForm.coverAssetId"><AdminSelectOption v-for="asset in covers" :key="asset.assetId" :value="asset.assetId">{{ asset.name }} · {{ asset.assetId }}</AdminSelectOption></el-select></label>
             <figure v-if="createCover" class="catalog-cover-preview"><img :src="createCover.previewUrl" :alt="createCover.name" /><figcaption>{{ createCover.name }}<small>asset_id {{ createCover.assetId }} · WebP</small></figcaption></figure>
             <label class="catalog-reason-field">新增原因<textarea v-model="createForm.reason" maxlength="500" minlength="3" rows="2" placeholder="填写至少 3 个字符的原因"></textarea></label>
           </div>

@@ -3,7 +3,7 @@ import { onMounted, ref } from 'vue';
 import { FundingOrderStatus, type FundingChannelDto, type FundingOrderDto } from '@gameing/contracts/wallet-funding';
 import type { WalletFundingApplication } from '../wallet-funding/wallet-funding-application';
 
-const props = defineProps<{ application: WalletFundingApplication }>();
+const props = defineProps<{ application: WalletFundingApplication; view?: 'all' | 'purchase' | 'orders' }>();
 const emit = defineEmits<{ completed: []; contactSupport: [] }>();
 const channels = ref<FundingChannelDto[]>([]);
 const orders = ref<FundingOrderDto[]>([]);
@@ -110,13 +110,13 @@ onMounted(() => void reload());
     <p v-if="notice" class="player-wallet-flow-notice" role="status">{{ notice }}</p>
     <p v-if="loading" class="player-wallet-flow-empty" aria-busy="true">正在读取支付方式和订单…</p>
     <template v-else>
-      <form class="player-wallet-funding-form" @submit.prevent="createOrder">
-        <label><span>支付方式</span><select v-model="channelId" :disabled="workingOrderId !== ''"><option v-for="channel in channels" :key="channel.channelId" :value="channel.channelId">{{ channel.displayName }}</option></select></label>
+      <form v-if="(props.view ?? 'all') !== 'orders'" class="player-wallet-funding-form" @submit.prevent="createOrder">
+        <fieldset class="player-wallet-channel-picker"><legend>选择充值方式</legend><label v-for="channel in channels" :key="channel.channelId" :class="{ selected: channelId === channel.channelId }"><input v-model="channelId" type="radio" name="funding-channel" :value="channel.channelId" :disabled="workingOrderId !== ''" /><span><strong>{{ channel.displayName.replace(/ · .*/, '') }}</strong><small>{{ channel.displayName.includes('本机') || channel.displayName.includes('演练') ? '本机演练' : '官方渠道' }}</small></span></label></fieldset>
         <label><span>支付金额（元）</span><input v-model="amountYuan" inputmode="decimal" autocomplete="off" maxlength="12" placeholder="例如 10 或 10.50" :disabled="workingOrderId !== ''" /></label>
         <button class="panel-primary" type="submit" :disabled="workingOrderId !== '' || !channels.length">{{ workingOrderId === 'creating' ? '正在创建…' : '创建充值订单' }}</button>
       </form>
-      <p v-if="!channels.length" class="player-wallet-flow-empty">当前没有启用的支付方式。</p>
-      <section class="player-wallet-funding-orders" aria-label="最近充值订单">
+      <p v-if="!channels.length && (props.view ?? 'all') !== 'orders'" class="player-wallet-flow-empty">当前没有启用的支付方式。请刷新重试，若仍为空表示 API 尚未提供可用渠道。</p>
+      <section v-if="(props.view ?? 'all') !== 'purchase'" class="player-wallet-funding-orders" aria-label="最近充值订单">
         <h4>最近订单</h4>
         <p v-if="!orders.length" class="player-wallet-flow-empty">还没有充值订单。创建订单后，可在本机完成一次明确标注的模拟支付。</p>
         <ol v-else>
@@ -128,6 +128,6 @@ onMounted(() => void reload());
         </ol>
       </section>
     </template>
-    <small class="player-wallet-local-note">本机模拟不会请求代理支付渠道或 TRON 网络。USDT 订单使用配置汇率快照，并在有效窗口内分配递增的 0.001 尾数；页面显示的演练标识不是可收款地址。只有生产收款服务创建的真实地址才可转账。</small>
+    <small v-if="(props.view ?? 'all') !== 'orders'" class="player-wallet-local-note">本机模拟不会请求代理支付渠道或 TRON 网络。USDT 订单使用配置汇率快照，并在有效窗口内分配递增的 0.001 尾数；页面显示的演练标识不是可收款地址。只有生产收款服务创建的真实地址才可转账。</small>
   </section>
 </template>

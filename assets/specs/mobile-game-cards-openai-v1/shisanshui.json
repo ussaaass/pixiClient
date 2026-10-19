@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-shisanshui-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "十三张 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅十三张游戏卡片的静态竖版背景；由 H5 叠加标题、规则和难度入口",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 十三张 PC portrait art. Preserve its emerald felt, classic card-room identity, warm gold lighting and conventional printed poker design, but recompose into a tight phone-friendly scene. Clearly show exactly three orderly hand groups representing head, middle and bottom piles, with a small stack at one side suggesting the source deck. Cards are the clear focal subject in the upper-middle; use recognizable standard red/black suits and traditional J/Q/K print illustrations, never invented cartoon characters. Keep the bottom 20 percent low-detail for UI text. Match the PC art's polished dimensional casual-game illustration, clean silhouettes, rich but controlled highlights and clear readable shapes. No lettering, captions, logos, watermark, card-game UI, extra hands, duplicated cards, malformed suit marks, people, money or casino photography.",
+  "negativePrompt": "wide landscape crop, photorealism, invented cartoon face cards, illegible card ranks, duplicated or fused cards, more or fewer than three hand groups, text, letters, logo, watermark, UI, clutter, harsh bloom, dark unreadable composition",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/shisanshui.png", "purpose": "Use as the exact PC art identity, emerald felt, lighting, and conventional poker visual reference. Recompose vertically for a mobile card; do not copy the PC crop." }],
+  "tags": ["mobile", "portrait", "shisanshui", "openai-api-comparison", "static"]
+}

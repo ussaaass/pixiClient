@@ -1,0 +1,71 @@
+{
+  "jobId": "b58cc3e0-61a2-427e-9107-29d01d5c5097",
+  "assetKey": "treasure-hero-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "夺宝奇侠专属游戏厅背景",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-15T16:05:32.216Z",
+  "updatedAt": "2026-10-15T16:15:51.040Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/games/treasure-hero/subhall-background.json",
+  "specSha256": "0ea4f5ce189698c0301006dbc85da06250573c50bdad9a3e27d643f33eeb2a4d",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "promptSeed": "Asset: 夺宝奇侠专属游戏厅背景\nIntended use: 夺宝奇侠游戏专属子厅背景；网页绘制标题、玩法、难度档位和按钮。\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nVisual reference images: assets/aigen/icon-game-shisanshui.webp (Shared rendering quality and materials only; do not copy composition or card motifs.). Treat them as style references only; create the subject and composition described below.\nArt direction: Create a wide 3:2 premium casual 3D treasure-adventure game room environment for Treasure Hero. A mysterious opened treasure chest glows with turquoise and warm-gold light inside an ancient but welcoming expedition chamber; a rolled blank map, a few softly glowing gemstones and carved stone arches frame the sides. Keep all objects generic and original, no hero character. Put the chest in the upper-middle background, with the lower middle 45 percent calm and uncluttered for HTML difficulty cards. Match the shared Gameing Hall art direction: polished rounded 3D forms, deep teal/blue-green dominant palette, ivory surfaces and restrained gold trim, soft broad upper-left lighting, clear silhouettes, friendly premium casual game mood.\nMust avoid: photorealism, realistic ruin, human character, copyrighted character, pirate skull, readable map, text, letters, numbers, logos, watermark, buttons, interface panels, slot reels, poker cards, cash, clutter in lower center, harsh bloom, flat vector\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create a 1536×1024, wide 3:2 opaque background for the Treasure Hero game subhall. Depict an ancient yet welcoming expedition chamber in polished, stylized 3D casual-game art. Place a mysterious open treasure chest in the upper-middle background, emitting a soft turquoise and warm-gold glow. Carved stone arches, a rolled completely blank map, and a few softly glowing gemstones frame the sides. Keep the lower middle 45% calm, spacious, and uncluttered so HTML difficulty cards and buttons remain readable over it; leave room for other webpage text overlays. No hero character.\n\nMatch the shared Gameing Hall visual direction: deep teal and blue-green dominant palette, warm ivory surfaces, restrained gold trim, rounded softly beveled forms, smooth enamel/resin-like materials, controlled glossy highlights, clear silhouettes, and low-noise detail. Use shallow, readable room perspective, a soft broad upper-left key light, gentle fill and contact shadows, and a friendly premium casual-mobile-game mood. Use the supplied reference only for rendering quality, materials, and palette—not its composition or card motifs.\n\nNo photorealism, realistic ruins, human or copyrighted characters, pirate skulls, map markings, text, letters, numbers, logos, watermarks, UI controls or panels, slot reels, poker cards, cash, lower-center clutter, harsh bloom, dramatic contrast, flat vector art, watercolor, or rough grain.",
+  "promptResponseId": "resp_09bd0a10a41ae87c016ad0f9cd08c487d0a0ab76ba5048ad1d",
+  "usage": {
+    "input_tokens": 1371,
+    "input_tokens_details": {
+      "cache_write_tokens": 1368,
+      "cached_tokens": 0
+    },
+    "output_tokens": 366,
+    "output_tokens_details": {
+      "reasoning_tokens": 69
+    },
+    "total_tokens": 1737,
+    "image": {
+      "input_tokens": 4078,
+      "input_tokens_details": {
+        "cache_write_tokens": 1737,
+        "cached_tokens": 0
+      },
+      "output_tokens": 359,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 4437
+    }
+  },
+  "imageRequestId": "req_ce5ea74135a9425bba6a38e5485d3df3",
+  "outputSha256": "594e9242ffe10fe985d4962b601d6f44a8a982877cfc7bb85c6c077fc4689ddc",
+  "outputBytes": 1394152,
+  "outputMime": "image/webp",
+  "outputWidth": 1536,
+  "outputHeight": 1024,
+  "generatedAt": "2026-10-15T16:07:08.667Z",
+  "candidatePath": "assets/candidates/treasure-hero-subhall-background/b58cc3e0-61a2-427e-9107-29d01d5c5097/source.webp",
+  "sourcePath": "assets/source/treasure-hero-subhall-background/b58cc3e0-61a2-427e-9107-29d01d5c5097/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-15T16:15:50.848Z"
+  },
+  "releasePath": "assets/releases/treasure-hero-subhall-background/b58cc3e0-61a2-427e-9107-29d01d5c5097/source.webp"
+}

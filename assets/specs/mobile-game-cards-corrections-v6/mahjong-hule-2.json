@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-openai-v7",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 盘龙与动牌构图候选",
+  "intendedUse": "手机大厅麻将胡了 2 卡片背景；中间由程序叠加清晰红色胡了字样，供后续图生视频",
+  "prompt": "Create a premium portrait 9:16 mobile game-card illustration in the established polished dimensional casual-game style. The central composition is a graceful golden Chinese dragon coiled in a clear circular ring around an open center, like a living halo. Show its full body making one continuous loop around the center, with its head and tail separated and readable; the dragon itself should feel as if it is circling around the central opening. Arrange several large traditional ivory mahjong tiles with clear red 中, bamboo pips, and circle pips orbiting along the outer curve in different positions and slight angles, as if they are in motion around the dragon. Keep every tile separate from the dragon silhouette and leave the exact central 28 percent of the image clean and uncluttered so a crisp red Chinese title can be overlaid there later. The dragon has four legs/paws; all four may be visible but are secondary to the circular coiling pose, and toe count does not matter. Use a moonlit jade palace garden, deep cobalt night sky, elegant gold and jade materials, bright readable subject, premium dimensional casual mobile-game illustration. Keep the coiled dragon and orbiting tiles concentrated in the upper 78 percent; lower 22 percent dark and quiet for H5 copy. Fixed camera, clean silhouette, crisp details, no text of any kind, no blur.",
+  "negativePrompt": "text, Chinese characters, letters, logos, watermark, UI, empty blank mahjong tiles, tile backs, unreadable tile faces, tiles fused together, tiles hiding dragon limbs, dragon stretched vertically in an S shape, dragon not coiled, body not making a circular loop, body crossing or tangling itself, corkscrew anatomy, duplicate head, extra or missing limbs, clutter in the center, bright objects in the central title-safe area, photorealism, excessive bloom, motion blur",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule-2.png", "purpose": "Match the established moonlit palace, golden dragon identity, jade and gold palette, and polished dimensional illustration style. Use as style and character reference only; change the composition to a circular coil around a clean center." },
+    { "path": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v6/3a5ddac8-031e-4cb2-b86a-26525f9fb67c/source.png", "purpose": "Keep the recognizable dragon and clear traditional tile treatment, but replace the upright S-curve composition with a circular coiled dragon and orbiting mahjong tiles." }
+  ],
+  "tags": ["mobile", "portrait", "mahjong-hule-2", "coiled-dragon", "orbiting-mahjong", "center-title-overlay", "correction-v7"]
+}

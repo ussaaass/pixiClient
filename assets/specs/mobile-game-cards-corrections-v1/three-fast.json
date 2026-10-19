@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-three-fast-openai-v2",
+  "kind": "BACKGROUND",
+  "title": "3快 Mobile 游戏卡片背景纠错候选",
+  "intendedUse": "手机大厅 3快游戏卡片背景；开奖数字和期次由 H5 单独绘制",
+  "prompt": "Create a polished portrait 9:16 mobile background for a Mark Six-style lottery draw game. Show a premium deep-indigo and gold transparent lottery drum with glossy numbered lottery balls visibly colliding and bouncing inside the machine. The balls must have clear, high-contrast, correctly printed two-digit Arabic numerals on their front surfaces, one number per ball, such as 03, 11, 18, 27, 36, and 44. Keep the numerals crisp, centered, and legible, with no extra marks or words; do not leave the balls blank. Make the numbered balls large enough to recognize as lottery balls, with natural reflections and varied colors. Keep the machine in the upper 78 percent, leaving the lower 22 percent dark and quiet for app text. Strong sense of impact and movement in a single still composition, premium dimensional casual-game illustration, refined gold metal and clear glass. No title, other text, logos, watermark, UI, people, currency, or copied screenshots.",
+  "negativePrompt": "blank balls, unmarked balls, gumballs, billiard balls, roulette wheel, dice, unreadable numbers, malformed digits, repeated numbers on one ball, letters, extra text, logos, watermark, UI, people, banknotes, photorealism, opaque chamber, clutter, excessive bloom",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/three-fast.png", "purpose": "Use only for the dark indigo stage, gold machine, glass chamber, and established game-card illustration style; add numbered lottery balls." },
+    { "path": "assets/candidates/mobile-game-cards-openai-v1/three-fast.png", "purpose": "Use only for the OpenAI mobile candidate set's glass-and-gold finish; do not preserve blank balls." }
+  ],
+  "tags": ["mobile", "portrait", "three-fast", "lottery-balls", "correction", "static-candidate"]
+}

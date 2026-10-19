@@ -8,7 +8,7 @@ import {
   type PlayerPasswordLoginRequestDto,
   type PlayerRecoveryRequestDto,
 } from '@gameing/contracts/player-entry';
-import type { ChangePasswordRequestDto, ConfirmContactChallengeRequestDto, ContactChallengeResponseDto, CreateContactChallengeRequestDto, IdentitySettingsResponseDto, RecoveryCredentialIssueResponseDto, SetUsernameRequestDto, TotpConfirmRequestDto, TotpDisableRequestDto, TotpDisabledResponseDto, TotpEnabledResponseDto, TotpSetupRequestDto, TotpSetupResponseDto, TotpRecoveryCodesRotateRequestDto } from '@gameing/contracts/identity';
+import { SetEmailContactRequestSchema, SetPhoneContactRequestSchema, type ChangePasswordRequestDto, type ConfirmContactChallengeRequestDto, type ContactChallengeResponseDto, type CreateContactChallengeRequestDto, type IdentitySettingsResponseDto, type RecoveryCredentialIssueResponseDto, type SetEmailContactRequestDto, type SetPhoneContactRequestDto, type SetUsernameRequestDto, type TotpConfirmRequestDto, type TotpDisableRequestDto, type TotpDisabledResponseDto, type TotpEnabledResponseDto, type TotpSetupRequestDto, type TotpSetupResponseDto, type TotpRecoveryCodesRotateRequestDto } from '@gameing/contracts/identity';
 
 export type PrepareRecoveryCredentialRequest = { password: string; qrPassword: string; totp?: string };
 export type PreparedRecoveryCredential = RecoveryCredentialIssueResponseDto & { qrPayload: string };
@@ -23,6 +23,8 @@ export type PlayerEntryFailureCode =
   | 'RECOVERY_QR_INVALID'
   | 'IDENTITY_SERVICE_ERROR'
   | 'IDENTIFIER_ALREADY_USED'
+  | 'CURRENT_PHONE_MISMATCH'
+  | 'CURRENT_EMAIL_MISMATCH'
   | 'REAUTHENTICATION_FAILED'
   | 'USERNAME_INVALID'
   | 'PASSWORD_REUSE'
@@ -41,6 +43,8 @@ export interface PlayerIdentityPort {
   setUsername(request: SetUsernameRequestDto): Promise<IdentitySettingsResponseDto>;
   changePassword(request: ChangePasswordRequestDto): Promise<{ changed: boolean }>;
   createContactChallenge(request: CreateContactChallengeRequestDto): Promise<ContactChallengeResponseDto>;
+  setPhoneContact(request: SetPhoneContactRequestDto): Promise<IdentitySettingsResponseDto>;
+  setEmailContact(request: SetEmailContactRequestDto): Promise<IdentitySettingsResponseDto>;
   confirmContactChallenge(challengeId: string, request: ConfirmContactChallengeRequestDto): Promise<IdentitySettingsResponseDto>;
   startTotpSetup(request: TotpSetupRequestDto): Promise<TotpSetupResponseDto>;
   confirmTotpSetup(request: TotpConfirmRequestDto): Promise<TotpEnabledResponseDto>;
@@ -59,6 +63,8 @@ export interface PlayerEntryApplication {
   setUsername(request: SetUsernameRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
   changePassword(request: ChangePasswordRequestDto): Promise<PlayerEntryResult<{ changed: boolean }>>;
   createContactChallenge(request: CreateContactChallengeRequestDto): Promise<PlayerEntryResult<ContactChallengeResponseDto>>;
+  setPhoneContact(request: SetPhoneContactRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
+  setEmailContact(request: SetEmailContactRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
   confirmContactChallenge(challengeId: string, request: ConfirmContactChallengeRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
   startTotpSetup(request: TotpSetupRequestDto): Promise<PlayerEntryResult<TotpSetupResponseDto>>;
   confirmTotpSetup(request: TotpConfirmRequestDto): Promise<PlayerEntryResult<TotpEnabledResponseDto>>;
@@ -73,7 +79,7 @@ const failure = <T>(code: PlayerEntryFailureCode): PlayerEntryResult<T> => ({ ok
 function identityFailureCode(error: unknown): PlayerEntryFailureCode {
   if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
     const code = error.code as PlayerEntryFailureCode;
-    if (['IDENTIFIER_ALREADY_USED', 'REAUTHENTICATION_FAILED', 'USERNAME_INVALID', 'PASSWORD_REUSE', 'TOTP_REQUIRED', 'SESSION_REVOKED', 'TOTP_VERIFICATION_NOT_IMPLEMENTED', 'TOTP_INVALID', 'TOTP_ALREADY_ENABLED', 'TOTP_NOT_ENABLED', 'SETUP_NOT_FOUND', 'SETUP_EXPIRED', 'RECOVERY_CREDENTIAL_NOT_FOUND', 'RECOVERY_CREDENTIAL_PENDING_EXPIRED', 'VALIDATION_FAILED', 'VERIFICATION_CODE_INVALID', 'CHALLENGE_NOT_FOUND', 'CHALLENGE_EXPIRED', 'AUTH_RATE_LIMITED'].includes(code)) return code;
+    if (['IDENTIFIER_ALREADY_USED', 'CURRENT_PHONE_MISMATCH', 'REAUTHENTICATION_FAILED', 'USERNAME_INVALID', 'PASSWORD_REUSE', 'TOTP_REQUIRED', 'SESSION_REVOKED', 'TOTP_VERIFICATION_NOT_IMPLEMENTED', 'TOTP_INVALID', 'TOTP_ALREADY_ENABLED', 'TOTP_NOT_ENABLED', 'SETUP_NOT_FOUND', 'SETUP_EXPIRED', 'RECOVERY_CREDENTIAL_NOT_FOUND', 'RECOVERY_CREDENTIAL_PENDING_EXPIRED', 'VALIDATION_FAILED', 'VERIFICATION_CODE_INVALID', 'CHALLENGE_NOT_FOUND', 'CHALLENGE_EXPIRED', 'AUTH_RATE_LIMITED'].includes(code)) return code;
   }
   return 'IDENTITY_SERVICE_ERROR';
 }
@@ -131,6 +137,18 @@ export function createPlayerEntryApplication(identity: PlayerIdentityPort): Play
 
     async createContactChallenge(request) {
       try { return { ok: true, value: await identity.createContactChallenge(request) }; }
+      catch (error) { return failure(identityFailureCode(error)); }
+    },
+
+    async setPhoneContact(request) {
+      if (!Value.Check(SetPhoneContactRequestSchema, request)) return failure('INVALID_REQUEST');
+      try { return { ok: true, value: await identity.setPhoneContact(request) }; }
+      catch (error) { return failure(identityFailureCode(error)); }
+    },
+
+    async setEmailContact(request) {
+      if (!Value.Check(SetEmailContactRequestSchema, request)) return failure('INVALID_REQUEST');
+      try { return { ok: true, value: await identity.setEmailContact(request) }; }
       catch (error) { return failure(identityFailureCode(error)); }
     },
 

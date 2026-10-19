@@ -1,0 +1,61 @@
+{
+  "jobId": "171f9657-960d-4104-b53b-9f06f76a72d7",
+  "assetKey": "lobby-mobile-casino-background-motion-v2",
+  "kind": "BACKGROUND",
+  "title": "手机游戏首页老虎机与金币无缝循环动态 v2 AVIF 清晰版",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-18T09:37:18.060Z",
+  "updatedAt": "2026-10-18T09:42:33.089Z",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "specPath": "assets/specs/player-pages/lobby-mobile-casino-background-motion-v2.json",
+  "specSha256": "d0bae01e80ad9b05e1700f269c6843116f0ff9530af8c77d42777e8e2018efb4",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/lobby.webp",
+      "sha256": "102597a22402750c8ca6733e7653f90b29b839f37a81e85c7ff22a4ed8a0ba4c"
+    }
+  ],
+  "promptSeed": "Animate this exact bright portrait casino arcade illustration as a seamless infinite mobile game-index background. Lock the camera and preserve the symmetrical emerald-and-ivory arches and all machine identities. Spin the slot reels visibly in short cycles, return every reel to its exact original symbols by the final frame, and chase the cabinet bulbs from one machine to the next in warm gold. Let a few existing coins rise a short distance from the lower tray, turn once, and settle back into their exact starting positions. Add broad visible light movement across cabinet faces without moving the machines. Keep the scene bright and welcoming, with stable exposure and no darkening. The central overlay-safe band remains relatively calm while glowing reels stay visible above and along both sides. Keep the outer 8 percent at every edge still. First and last frames match exactly in reel symbols, coin positions and light intensity. No camera movement, zoom or pan.\nDerived from review candidate aafdc357-ef44-47eb-9153-34f5c42642dd; converted to a 540x960, 8 fps infinite-loop AVIF with mild sharpening.",
+  "promptVersion": "kling-mp4-to-avif-v4",
+  "candidatePath": "assets/candidates/lobby-mobile-casino-background-motion-v2/171f9657-960d-4104-b53b-9f06f76a72d7/source.avif",
+  "outputSha256": "52c7ead0ee856679f5b19c9c49bad63842886035dc5fc4495ba5225ba3fe0e51",
+  "outputBytes": 237557,
+  "outputMime": "image/avif",
+  "outputWidth": 540,
+  "outputHeight": 960,
+  "generatedAt": "2026-10-18T09:37:18.062Z",
+  "cost": {
+    "status": "ACTUAL",
+    "amount": 0,
+    "currency": "USD",
+    "basis": "local transcode; no generation API call"
+  },
+  "derivedFrom": {
+    "jobId": "aafdc357-ef44-47eb-9153-34f5c42642dd",
+    "sourceSha256": "825a368505a99c71dfef6206aeaba23ea790c28212f6398e711841ac60206cd8",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 720,
+      "height": 1280
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 40,
+    "columns": 40,
+    "rows": 1,
+    "frameWidth": 540,
+    "frameHeight": 960,
+    "framesPerSecond": 8,
+    "repeatCount": 0
+  },
+  "sourcePath": "assets/source/lobby-mobile-casino-background-motion-v2/171f9657-960d-4104-b53b-9f06f76a72d7/source.avif",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-18T09:42:32.882Z"
+  },
+  "releasePath": "assets/releases/lobby-mobile-casino-background-motion-v2/171f9657-960d-4104-b53b-9f06f76a72d7/source.avif"
+}

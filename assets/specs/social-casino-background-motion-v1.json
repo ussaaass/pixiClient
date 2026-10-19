@@ -1,0 +1,9 @@
+{
+  "assetKey": "social-casino-background-motion-v1",
+  "title": "桌面社区页赌场横版背景动态 v1",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/review-v2/social.webp",
+  "prompt": "Animate this exact wide casino social-table illustration as a premium desktop community-page background. Keep the camera fixed and preserve the table layout, chips, cards, mahjong tiles, lighting and material appearance. Make several chips slide and spin in a short graceful arc across the felt, let gold coins roll briefly and catch moving light, and make two mahjong tiles wobble and settle. Use broad but controlled motion across the tabletop while keeping the darker upper area quiet for UI. Return all moved objects to their exact starting position and pose by the final frame for a clean infinite loop. Do not zoom or pan and do not add or remove objects.",
+  "negativePrompt": "portrait framing, camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated tiles, warped cards, melting table, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

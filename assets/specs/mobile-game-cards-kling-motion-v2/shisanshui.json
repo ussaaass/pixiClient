@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-shisanshui-kling-v2",
+  "title": "十三张 Mobile 游戏卡片动效复核版（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/shisanshui.png",
+  "prompt": "Make a clean, elegant 5-second portrait loop from this exact three-pile traditional poker composition. Keep the camera and table locked. Preserve every existing card's exact rank, suit, face artwork, count, and position; never redraw, duplicate, bend, blur, or morph any card. Show a restrained dealing rhythm using only flat, short slides of the already visible cards from the deck area toward the three existing rows, one small motion at a time, then settle precisely back into the original layout. Cards must stay parallel to the table, faces remain sharp and readable throughout, and no card may pass in front of another card face. Keep all 13 cards visible. End on the supplied composition.",
+  "negativePrompt": "new cards, duplicate cards, missing cards, changed ranks, changed suits, invented card faces, unreadable indices, blurry cards, motion blur, cards flying toward camera, cards covering other faces, bent cards, camera movement, zoom, scene cut, table movement, text, logos, flicker, sudden motion",
+  "duration": "5",
+  "mode": "std"
+}

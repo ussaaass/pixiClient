@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const principles = [
   { title: '追加式账务', body: 'asset_operation 表示一次业务操作；asset_entry 按账户与资产记录借贷变化，不改写历史余额事实。', icon: '＋' },
   { title: '冻结是占用/hold 状态', body: '冻结记录占用可用余额；释放只解除占用，不再次入账。COIN 与 CNY 分账核对。', icon: '▣' },
@@ -14,8 +16,8 @@ const principles = [
       <div class="user-filter-heading"><div><h2>查询资产操作</h2><p>按用户、operation、资产类型和时间范围检索；金额以十进制字符串传输。</p></div></div>
       <div class="asset-filter-grid">
         <label>用户 ID<input disabled placeholder="十进制字符串"></label>
-        <label>操作类型<select disabled><option>全部操作</option></select></label>
-        <label>资产类型<select disabled><option>全部资产</option></select></label>
+        <label>操作类型<el-select disabled><AdminSelectOption value="">全部操作</AdminSelectOption></el-select></label>
+        <label>资产类型<el-select disabled><AdminSelectOption value="">全部资产</AdminSelectOption></el-select></label>
         <label>关联来源<input disabled placeholder="订单 / 局 / 请求 ID"></label>
         <label>时间范围<input disabled placeholder="开始时间 — 结束时间"></label>
         <button type="button" disabled>查询账本</button>

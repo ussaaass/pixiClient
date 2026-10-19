@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, reactive, ref, toRaw } from 'vue';
 import { Value } from '@sinclair/typebox/value';
 import { useRoute } from 'vue-router';
@@ -137,7 +139,7 @@ async function simulate(): Promise<void> {
       <section class="game-simulation-controls">
         <div class="game-config-panel-heading"><div><h2>十三张 · 固定策略桌级模拟</h2><p>完整发牌给四个相同的 rank_sorted_partition_v1 策略玩家，并调用正式纯规则 settleRound。</p></div><span>{{ SHISANSHUI_MATH_MODEL_VERSION }}</span></div>
         <div class="simulation-control-grid">
-          <label>模拟轮数<select v-model.number="runCount"><option :value="1000">1000 局 · 快速预览</option><option :value="10000">10000 局 · 扩大样本</option></select></label>
+          <label>模拟轮数<el-select v-model.number="runCount"><AdminSelectOption :value="1000">1000 局 · 快速预览</AdminSelectOption><AdminSelectOption :value="10000">10000 局 · 扩大样本</AdminSelectOption></el-select></label>
           <label>随机种子<input v-model="seed" maxlength="128"></label>
           <label>配置版本<input value="LOCAL_CANDIDATE" readonly></label>
           <button type="button" :disabled="busy" @click="simulate">{{ busy ? `模拟中 ${progress}%` : '开始模拟' }}</button>

@@ -1,0 +1,9 @@
+{
+  "assetKey": "social-casino-background-motion-v1",
+  "title": "社区页赌场背景动态 v1",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/review-v2/social.webp",
+  "prompt": "Animate this exact oval poker-table illustration as a lively premium card-game background. Keep a completely locked camera and preserve the original composition, table shape, materials, colors, seats, and object identities. Create broad readable object motion: several stacks of chips rotate and glide in small arcs around the table, traditional cards fan outward and neatly return, gold coins roll in short circles, and ivory mahjong tiles cascade from the top, bounce once near the far side, and settle back into their original arrangement. Distant slot-machine lights shimmer in distinct waves. Keep all motion on the table and in the background props; no camera zoom or pan. Return every moved object to its original pose and position by the final frame so it can transition cleanly back to the supplied starting image. Do not add or remove objects.",
+  "negativePrompt": "camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated cards, warped table, melting chips, changed card faces, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

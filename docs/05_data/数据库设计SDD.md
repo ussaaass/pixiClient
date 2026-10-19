@@ -1,8 +1,8 @@
 # 数据库设计 SDD（审核稿）
 
-**状态：待业务与技术审核，不是可直接执行的迁移脚本。版本：0.10（社交、平台事件及通知持久化边界补充稿，2026-10-10）。**
+**状态：待业务与技术审核，不是可直接执行的迁移脚本。版本：0.13（金币集市裁决/延期/复核权限补充稿，2026-10-16）。**
 
-本轮校准统一了各文档的物理模型：`user` 是全平台唯一身份表；转账由单个 `asset_operation` 和多条 `asset_entry` 表达；代理链固定为直属至第四级祖先列；奖励冻结复用 `asset_hold`；配置表保存当前字符串值并由审计记录变更；用户资金退回申请复用 `withdrawal/payout_attempt`。设备当前凭证并入 `device`；恢复二维码凭证保留历史、同一账号仅一份有效且在替换前可重复使用；启用 TOTP 时二维码恢复仍需 TOTP，遗失 TOTP 转客服人工处理且二维码不能重置 TOTP；玩家 COIN/CNY 余额允许因已审计追回/冲正而变负；Admin 和普通用户的 TOTP 均为自愿启用。客服 IM 以 MySQL 保存会话/消息，Socket.IO 负责实时通信，Redis 只存在线临时状态。不再规划独立 `admin_user`、转账参与方表、代理闭包/成员表、配置版本表、牌局比较明细表或 `device_credential` 表。全库定义 60 张表，每张均有完整公共字段及表/字段注释。跨文档功能映射与实体责任同步见各领域说明。本版进一步明确支付商户选择、USDT 每日汇率刷新及逐订单地址、提现费额外扣除和 72 小时出款等待、费用向上取整，以及赠币默认 5 倍流水。
+本轮校准统一了各文档的物理模型：`user` 是全平台唯一身份表；转账由单个 `asset_operation` 和多条 `asset_entry` 表达；代理链固定为直属至第四级祖先列；奖励冻结复用 `asset_hold`；配置表保存当前字符串值并由审计记录变更；用户资金退回申请复用 `withdrawal/payout_attempt`。设备当前凭证并入 `device`；恢复二维码凭证保留历史、同一账号仅一份有效且在替换前可重复使用；启用 TOTP 时二维码恢复仍需 TOTP，遗失 TOTP 转客服人工处理且二维码不能重置 TOTP；玩家 COIN/CNY 余额允许因已审计追回/冲正而变负；Admin 和普通用户的 TOTP 均为自愿启用。客服 IM 以 MySQL 保存会话/消息，Socket.IO 负责实时通信，Redis 只存在线临时状态。不再规划独立 `admin_user`、转账参与方表、代理闭包/成员表、配置版本表、牌局比较明细表或 `device_credential` 表。全库定义 62 张表，每张均有完整公共字段及表/字段注释。金币集市仅新增 `coin_market_listing` 与 `coin_market_trade` 两个不同生命周期实体，挂牌库存复用一笔 `asset_hold`，部分成交数量由挂牌原子计数；不增加 escrow、participant 或证据表。跨文档功能映射与实体责任同步见各领域说明。本版进一步明确支付商户选择、USDT 每日汇率刷新及逐订单地址、提现费额外扣除和 72 小时出款等待、费用向上取整，以及赠币默认 5 倍流水。
 
 本稿展开本项目 MySQL 物理 schema，覆盖大厅/十三张、账号会话、金币和人民币余额、支付提现、邀请返佣、Admin、牌局恢复及 AI 素材台账。遵循 [数据库设计规范与 Sequelize 方案](./数据库设计规范与Sequelize方案.md)。所有平台账号（玩家、代理、系统账号和管理员）统一保存在 `user`；通过常量化 `role_type` 区分身份能力，不另建 `admin_user`。设计重点是领域实体和清楚的所有权：每个业务事实由其领域实体维护，用显式引用和领域用例连接，避免全能流水表或全塞入 JSON。
 
@@ -56,6 +56,7 @@
 | --- | --- | --- |
 | identity | user/device/recovery_credential；Redis sessions | `user` 是玩家、代理、系统和 Admin 唯一身份表；设备行合并当前设备凭证；身份用例不直接写资产或邀请关系 |
 | customer_support | support_conversation/support_message | Admin 作为客服人员；支持会话分派、消息历史及人工安全处置关联 |
+| coin_market | coin_market_listing/coin_market_trade | 挂牌并发库存、部分成交、付款/争议生命周期；只调用 wallet 命令，不直接写余额或冻结额 |
 | catalog/config | game/game_tier/current config values | 不修改进行中 round 的规则快照 |
 | wallet | asset_account/operation/entry/hold | 不调用渠道或自己发起 Socket 副作用 |
 | payments | provider/channel/product/order/payment_event/external settlement/withdrawal | 不绕过 wallet 直接改余额 |
@@ -135,7 +136,7 @@ Redis 键 TTL 不超过 session expires_at；access JWT 带 `sid`，验签后检
 
 `RoundingMode` 是计算策略常量而非状态字段：涉及手续费或用户需支付的金币等值时使用 `CEIL_CHARGE=1`，兑换人民币余额不足一分时使用 `FLOOR_CREDIT=2`；先用整数/精确十进制计算，再按规则取目标最小单位。金币转账费率默认 500 bps，手续费 `ceil(转账金币×500/10000)`；例如转 101 枚，手续费为 6 枚。提现金额按用户期望实际到账的净额填写，提现手续费按当时配置的 bps 计算并向上取整到人民币分；总冻结额为净额+手续费。默认 1:10 下，净到账 100 元、假设手续费率 10%，需冻结 110 元人民币余额，对应 1100 枚金币等值；最低提现门槛/整数倍只检验净到账额对应的金币数。示例 10% 不是默认提现费率。USDT 基础报价先按已确认规则截断到 0.1 USDT，再叠加订单识别尾数；该规则独立于手续费向上取整。
 
-`AssetOperationType` 是账务操作领域常量而非状态字段：`TRANSFER=1/COIN_EXCHANGE=2/GIFT_GRANT=3/GAME_SETTLEMENT=4/ORDER_FULFILLMENT=5/WITHDRAWAL_HOLD=6/WITHDRAWAL_SETTLEMENT=7/WITHDRAWAL_RELEASE=8/ADMIN_ADJUSTMENT=9/COMPENSATION=10/REFERRAL_REWARD=11`。新增类型必须通过代码常量和迁移评审，不能在运行期任意写入数值。
+`AssetOperationType` 是账务操作领域常量而非状态字段：`TRANSFER=1/COIN_EXCHANGE=2/GIFT_GRANT=3/GAME_SETTLEMENT=4/ORDER_FULFILLMENT=5/WITHDRAWAL_HOLD=6/WITHDRAWAL_SETTLEMENT=7/WITHDRAWAL_RELEASE=8/ADMIN_ADJUSTMENT=9/COMPENSATION=10/REFERRAL_REWARD=11/COIN_MARKET_HOLD=12/COIN_MARKET_TRADE=13/COIN_MARKET_RELEASE=14`。新增类型必须通过代码常量和迁移评审，不能在运行期任意写入数值。
 
 `ExternalFlowType` 是外部资金记录类型常量而非状态字段：`IN=1/OUT=2/FEE_ADJUSTMENT=3/FUNDING=4`。用户申请提现或资金退回都进入 `withdrawal → payout_attempt` 出款流程，实际外部流出统一记为 OUT，不单设 REFUND 类型。已确认的渠道拒付按封禁账号和人工处置，不自动冲减用户账本，也不新增拒付 flow type。必须由按 flow type 注册的 `ExternalSettlementFlowHandler` 校验；未注册类型、关联对象不符、方向/金额不合法或原交易不可调整时拒绝写入，不允许通用默认 handler 放行。
 
@@ -207,15 +208,15 @@ erDiagram
 | system_marker | TINYINT UNSIGNED GENERATED | 是 | 表达式 | 有效系统角色生成为 1，用唯一索引限制唯一系统用户 |
 
 **索引/约束：** U(public_code)；U(username)；U(email)；U(phone)；U(invite_code)；U(system_marker)；I(status,created_at,id)；CHECK(role_type IN (1,3,4,8))
-**实体规则：** 用户名、邮箱小写规范化后唯一，phone 使用 E.164 唯一索引；MySQL UNIQUE 允许多个 NULL 表示未绑定。email/phone 可空，email_verified_at/phone_verified_at 只由成功的服务端验证码流程设置。普通用户 `password_hash` 可空，未设置时 `password_set_at` 为空。TOTP 对所有 user 均为自愿启用，Admin 与普通用户没有强制策略；未启用时 secret 与启用时间均为空，启用后两者必须同时非空，`totp_last_accepted_counter` 只单调递增。`role_type` 按位标记：普通玩家为 PLAYER，可同时带 AGENT；所有普通用户均可使用邀请能力，不另设 INVITER 位。ADMIN 与 SYSTEM 是排他的专用身份位，不与 PLAYER/AGENT 组合；管理员凭证和 permissions 存在同一 user 行，权限仅对 ADMIN 身份生效；非 Admin 的 permissions 必须为空数组。SYSTEM 行不得有登录邮箱、电话、用户名、密码、TOTP 或 invite_code；ADMIN 不创建游戏资产账户。唯一身份/登录资料和安全版本放一个 user aggregate；不单独建 admin_user/user_contact/password_credential。system_marker 仅有效 SYSTEM 身份生成为1。
+**实体规则：** 用户名、邮箱小写规范化后唯一，phone 使用 E.164 唯一索引；MySQL UNIQUE 允许多个 NULL 表示未绑定。email/phone 可空；邮箱和手机号绑定/换绑均不进行验证码验证，因此 `email_verified_at`/`phone_verified_at` 不因绑定写入。普通用户 `password_hash` 可空，未设置时 `password_set_at` 为空。TOTP 对所有 user 均为自愿启用，Admin 与普通用户没有强制策略；未启用时 secret 与启用时间均为空，启用后两者必须同时非空，`totp_last_accepted_counter` 只单调递增。`role_type` 按位标记：普通玩家为 PLAYER，可同时带 AGENT；所有普通用户均可使用邀请能力，不另设 INVITER 位。ADMIN 与 SYSTEM 是排他的专用身份位，不与 PLAYER/AGENT 组合；管理员凭证和 permissions 存在同一 user 行，权限仅对 ADMIN 身份生效；非 Admin 的 permissions 必须为空数组。SYSTEM 行不得有登录邮箱、电话、用户名、密码、TOTP 或 invite_code；ADMIN 不创建游戏资产账户。唯一身份/登录资料和安全版本放一个 user aggregate；不单独建 admin_user/user_contact/password_credential。system_marker 仅有效 SYSTEM 身份生成为1。
 
 **generated 列表达式：** `system_marker = CASE WHEN (role_type & 8)=8 AND status=ACTIVE AND deleted_at IS NULL THEN 1 ELSE NULL END`。
 
-Email/phone 的唯一索引保证一个规范化联系方式不会同时绑定多个账号。换绑必须提交并成功验证一个新的邮箱或手机；验证完成后，在单个事务中将新联系方式写入 user 并清除旧联系方式及其 verified_at，旧值立即可由其他账号重新绑定。不能仅凭新持有者取得旧手机号/邮箱就转移原账号或资产；换绑本身须通过当前会话重新认证（若已启用 TOTP 则同时验证 TOTP），并写入安全事件。安全事件只存脱敏值或不可逆摘要，不长期保留明文旧联系方式。
+Email/phone 的唯一索引保证一个规范化联系方式不会同时绑定多个账号。邮箱和手机号均不发送验证码；换绑分别要求输入当前完整邮箱/手机号（手机页面提示末三位），服务端规范化后与现值精确比较。匹配后在单个事务中替换 user 字段并清空对应的 `verified_at`，旧值立即可由其他账号重新绑定；email/phone 的绑定状态只表示账号记录了该联系方式，不代表已验证收件能力。不能仅凭新持有者取得旧手机号/邮箱就转移原账号或资产。若账号已设置密码，联系方式操作须在当前会话重新验证密码；若尚未设置密码，则依赖已认证的当前 JWT 会话，并在启用 TOTP 时额外验证 TOTP。无密码状态不要求用户先绕行到密码设置页才能打开联系方式表单。操作结果仍写安全事件，安全事件只存脱敏值或不可逆摘要，不长期保留明文旧联系方式。
 
 TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时，后端在 Redis 保存有短 TTL 的待绑定 secret；用户扫描只展示一次的 otpauth 二维码并提交当前验证码，验证成功后将密钥认证加密后写入 user，再清除 Redis 待绑定值。登录及敏感账号变更时按账号启用状态要求验证码；校验需限速、采用窄时钟漂移窗口，并以原子比较更新 `totp_last_accepted_counter` 防止同一时间步重放。关闭 TOTP 需要密码/当前认证器二次验证。二维码恢复只恢复账号/设备访问，不重置或关闭 TOTP；已启用 TOTP 的账号必须提交当前验证码。无法提供验证码或提出异议时转客服 IM，由具备专门权限的 Admin 完成人工身份核验后执行恢复，并关联客服会话写入账号安全事件和 Admin 审计；该人工路径的核验步骤由客服运营方案定义。密钥加密密钥由部署密钥管理设施持有，密文封装可带算法/密钥标识，不增加数据库 key_version 字段。RFC 6238 定义时间因子 TOTP，并给出默认 30 秒步长。[RFC 6238](https://www.rfc-editor.org/rfc/rfc6238)
 
-联系方式换绑的字段操作补充：同类换绑（邮箱换邮箱、手机换手机）只替换对应字段并保留另一种联系方式；跨类型替换（邮箱改手机或手机改邮箱）先成功验证新值，再在同一事务写入新字段、清空旧字段及其 `verified_at`。验证失败、新值已被其他账号占用或事务失败时，原绑定保持不变。提交成功后旧值立即释放并可被其他账号重新绑定。安全事件记录脱敏的新旧值，不保存明文旧值。该操作需当前会话重新认证，已启用 TOTP 时还须通过当前 TOTP 验证。
+联系方式换绑的字段操作补充：同类换绑（邮箱换邮箱、手机换手机）只替换对应字段并保留另一种联系方式；跨类型替换（邮箱改手机或手机改邮箱）只更新目标字段并清空原字段及其 `verified_at`，不发送验证码。新值已被其他账号占用或事务失败时，原绑定保持不变。提交成功后旧值立即释放并可被其他账号重新绑定。安全事件记录脱敏的新旧值，不保存明文旧值。已设置密码时需当前密码；未设置密码时当前有效登录会话作为授权基础；已启用 TOTP 时两种情况都须通过当前 TOTP 验证。
 
 #### device
 
@@ -252,7 +253,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | revoked_at | DATETIME(3) | 是 | NULL | 被新二维码替换或由用户/管理员撤销的时间 |
 
 **索引/约束：** U(credential_key)；U(user_id,active_marker)；I(user_id,status,id)；I(expires_at,id)
-**实体规则：** 本表只保存 QR 恢复凭证；邮箱/手机验证码挑战与频率计数放 Redis。二维码含密码加密的高熵恢复秘密，不含明文账户密码；服务端不保存二维码解密密码。每个 user 可保留多条历史记录，但最多一条 status=ISSUED 的有效凭证。成功使用只更新 `last_used_at` 并写入安全事件，不消费或撤销凭证；该二维码在被新二维码替换、主动撤销或过期之前可重复使用。账号已启用 TOTP 时，二维码恢复仍必须输入当前 TOTP；二维码流程不得关闭或重置 TOTP。用户无法提供 TOTP 时转人工客服处理，客服处置须经 Admin 授权并留下审计。生成新二维码时，在一个数据库事务中将原有效行更新为 REVOKED、填入 revoked_at，再插入新 ISSUED 行；唯一索引保证不会同时出现两条有效凭证。过期凭证需先更新为 EXPIRED 再签发新的有效记录。生成或替换失败时事务回滚，原有效二维码仍有效。生成操作使用幂等键，避免弱网重试误生成多张二维码。
+**实体规则：** 本表只保存 QR 恢复凭证；登录/TOTP challenge 与频率计数放 Redis，联系方式绑定不使用验证码 challenge。二维码含密码加密的高熵恢复秘密，不含明文账户密码；服务端不保存二维码解密密码。每个 user 可保留多条历史记录，但最多一条 status=ISSUED 的有效凭证。成功使用只更新 `last_used_at` 并写入安全事件，不消费或撤销凭证；该二维码在被新二维码替换、主动撤销或过期之前可重复使用。账号已启用 TOTP 时，二维码恢复仍必须输入当前 TOTP；二维码流程不得关闭或重置 TOTP。用户无法提供 TOTP 时转人工客服处理，客服处置须经 Admin 授权并留下审计。生成新二维码时，在一个数据库事务中将原有效行更新为 REVOKED、填入 revoked_at，再插入新 ISSUED 行；唯一索引保证不会同时出现两条有效凭证。过期凭证需先更新为 EXPIRED 再签发新的有效记录。生成或替换失败时事务回滚，原有效二维码仍有效。生成操作使用幂等键，避免弱网重试误生成多张二维码。
 
 **generated 列表达式：** `active_marker = CASE WHEN status=ISSUED AND deleted_at IS NULL THEN 1 ELSE NULL END`。
 
@@ -304,6 +305,8 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 
 **索引/约束：** U(config_key)；I(status,config_type)
 **实体规则：** 一项配置一条当前记录，更新原值；不设 config version/effective version。值变更由同事务 admin_audit_event 保存变更前后字符串、config_type、管理员和原因。无需单独的 config_actor：配置修改人始终是 Admin，admin_audit_event.admin_user_id 已表达行为人并保留审计上下文；另建关系表会重复表达一次操作且不适合保存修改前后值。服务端按注册 parser allowlist 转换，再按 config_key 校验范围/单位；解析失败拒绝更新，不动态执行代码。JSON 是可选 config_type，只有确实需要集合值的配置使用，列本身仍是字符串。
+
+集市相关 system_config 键由 `coin_market` 模块注册 parser：`platform_fee_rate_bps` 默认 2000；`minimum_listing_coins` 默认 1000；`minimum_trade_coins` 默认 1000。最低挂牌量只在新建挂牌时校验，最小成交量在每笔部分成交时校验；二者均为下限，不要求成交数量按 1000 的整数倍。更新配置不回改已创建挂牌或成交。
 
 #### game_config
 
@@ -432,7 +435,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | asset_account_id | BIGINT UNSIGNED | 否 | 无 | 被占用账户 |
 | asset_operation_id | BIGINT UNSIGNED | 否 | 无 | 创建占款的操作 |
 | hold_key | VARCHAR(160) | 否 | 无 | 业务语义唯一占款键 |
-| hold_type | SMALLINT UNSIGNED | 否 | 无 | GAME=1/WITHDRAWAL=2/REWARD=3/CHANNEL_UNSETTLED=4 |
+| hold_type | SMALLINT UNSIGNED | 否 | 无 | GAME=1/WITHDRAWAL=2/REWARD=3/CHANNEL_UNSETTLED=4/COIN_MARKET_LISTING=5 |
 | amount | BIGINT | 否 | 无 | 创建占款金额 |
 | remaining_amount | BIGINT | 否 | 无 | 尚未释放或消耗金额 |
 | expires_at | DATETIME(3) | 是 | NULL | 奖励可释放时刻或业务期限 |
@@ -440,6 +443,8 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 
 **索引/约束：** U(hold_key)；I(asset_account_id,status,id)；I(hold_type,status,expires_at,id)
 **实体规则：** CHECK 0<=remaining_amount<=amount AND amount>0；有效占款之和等于账户 frozen_amount。提现未知结果不因时间到了自动释放。
+
+金币集市用 `hold_type=COIN_MARKET_LISTING=5`。每个挂牌恰有一笔挂牌 hold，由 `COIN_MARKET_HOLD` 操作创建；创建时冻结挂牌总量。部分成交只在挂牌库存中预占数量，不建立多个 wallet hold；成交成功由 `COIN_MARKET_TRADE` 消耗对应 hold 子额并转移金币，取消/裁决返还或挂牌撤销由 `COIN_MARKET_RELEASE` 释放相应子额或恢复为挂牌可售量。挂牌取消释放尚未预占数量，已存在 trade 仍按自身状态继续处理。
 
 #### coin_exchange
 
@@ -566,6 +571,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | payment_provider_id | BIGINT UNSIGNED | 否 | 无 | 消息提供商 |
 | order_id | BIGINT UNSIGNED | 是 | NULL | 可定位的商城订单 |
 | payout_attempt_id | BIGINT UNSIGNED | 是 | NULL | 可定位的出款尝试 |
+| coin_market_trade_id | BIGINT UNSIGNED | 是 | NULL | 可定位的平台通道集市成交 |
 | event_key | VARCHAR(160) | 否 | 无 | 提供商事件号或规范化语义去重键 |
 | event_type | SMALLINT UNSIGNED | 否 | 无 | CALLBACK=1/QUERY=2/RECONCILIATION=3 |
 | verification_result | SMALLINT UNSIGNED | 否 | 无 | VERIFIED=1/REJECTED=2 |
@@ -574,8 +580,8 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | occurred_at | DATETIME(3) | 否 | 无 | 渠道事件时间 |
 | received_at | DATETIME(3) | 否 | 无 | 服务端接收时间 |
 
-**索引/约束：** U(payment_provider_id,event_key)；I(order_id,id)；I(payout_attempt_id,id)
-**实体规则：** 未验证事件不能驱动资产；不能仅依赖回调到达顺序，终态成功不被旧失败覆盖。确认属于渠道拒付/争议的消息时，将对应 `user.status` 设为 DISABLED、写入 `user_security_event` 并触发人工处置；首版不自动冲减已发资产，尚未出款的提现保持占款并暂停，不得自动付款或释放，等待 Admin 处理。消息不储存密钥或完整授权头。
+**索引/约束：** U(payment_provider_id,event_key)；I(order_id,id)；I(payout_attempt_id,id)；I(coin_market_trade_id,id)；CHECK 三个目标引用恰有一个非 NULL
+**实体规则：** 一条支付事件只关联一种业务目标：商城订单、出款尝试或平台通道集市成交，handler 必须检查相应目标与 provider/channel 的归属匹配。未验证事件不能驱动资产；不能仅依赖回调到达顺序，终态成功不被旧失败覆盖。确认属于渠道拒付/争议的消息时，将对应 `user.status` 设为 DISABLED、写入 `user_security_event` 并触发人工处置；首版不自动冲减已发资产，尚未出款的提现保持占款并暂停，不得自动付款或释放，等待 Admin 处理。消息不储存密钥或完整授权头。
 
 #### external_settlement
 
@@ -586,6 +592,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | payment_provider_id | BIGINT UNSIGNED | 是 | NULL | 渠道提供商，自有资金注入可为空 |
 | order_id | BIGINT UNSIGNED | 是 | NULL | 入款订单 |
 | payout_attempt_id | BIGINT UNSIGNED | 是 | NULL | 出款尝试 |
+| coin_market_trade_id | BIGINT UNSIGNED | 是 | NULL | 平台通道集市成交 |
 | related_external_settlement_id | BIGINT UNSIGNED | 是 | NULL | 手续费调整所对应的原外部资金记录 |
 | asset_operation_id | BIGINT UNSIGNED | 是 | NULL | 内部收支记账操作 |
 | settlement_key | VARCHAR(160) | 否 | 无 | 外部收支语义键 |
@@ -599,8 +606,8 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | valuation_snapshot | JSON | 否 | 无 | 计价、是否实换汇和费用证据 |
 | settled_at | DATETIME(3) | 是 | NULL | 渠道实际结算完成时刻 |
 
-**索引/约束：** U(settlement_key)；I(payment_provider_id,status,settled_at,id)；I(order_id)；I(payout_attempt_id)；I(related_external_settlement_id)；I(asset_operation_id)；CHECK(net_cny_cents=gross_cny_cents-fee_cny_cents)；CHECK(flow_type 与业务关联列组合相符)
-**实体规则：** 每行表示一条外部资金会计事实，不表示渠道批次；实际渠道批次若包含多笔交易，按其明细逐笔写入。关联列 CHECK 为：IN 必须有 order_id，不能有 payout_attempt_id/related_external_settlement_id；OUT 必须有 payout_attempt_id，不能有 order_id/related_external_settlement_id；FUNDING 不关联订单、出款尝试或原结算；FEE_ADJUSTMENT 必须有 related_external_settlement_id，可带其原 order_id。CHECK 只管本行字段组合，关联目标类型/状态由 handler 校验。`flow_type` 必须由对应 `ExternalSettlementFlowHandler` 完成类型化校验：IN 校验有效入款订单/支付证据；OUT 校验有效出款尝试；FUNDING 校验系统资金注入凭证；FEE_ADJUSTMENT 必须指向可调整的原 IN 记录，且若填写 order_id 必须与原记录一致。手续费调整不改写原入账，而追加一笔 `gross_cny_cents=0` 的调整记录，费用增加时 `fee_cny_cents>0`、净变动为负，退回手续费时费用为负、净变动为正。用户申请提现或资金退回统一走 withdrawal/payout_attempt；外部出款记为 OUT。渠道争议/拒付属于支付事件及渠道异常处理，不视为用户提现或独立 REFUND flow type。渠道未结算净额创建系统 CNY hold。USDT 持仓与 CNY 标价不混同；原币独立核对。
+**索引/约束：** U(settlement_key)；I(payment_provider_id,status,settled_at,id)；I(order_id)；I(payout_attempt_id)；I(coin_market_trade_id)；I(related_external_settlement_id)；I(asset_operation_id)；CHECK(net_cny_cents=gross_cny_cents-fee_cny_cents)；CHECK(flow_type 与业务关联列组合相符)
+**实体规则：** 每行表示一条外部资金会计事实，不表示渠道批次；实际渠道批次若包含多笔交易，按其明细逐笔写入。关联列 CHECK 为：IN 必须且只能有关联 `order_id` 或 `coin_market_trade_id` 之一，不能有 payout_attempt_id/related_external_settlement_id；OUT 必须有 payout_attempt_id，不能有关联订单/集市成交或 related_external_settlement_id；FUNDING 不关联订单、出款尝试、集市成交或原结算；FEE_ADJUSTMENT 必须有 related_external_settlement_id，可带其原 order_id 或 coin_market_trade_id。CHECK 只管本行字段组合，关联目标类型/状态由 handler 校验。`flow_type` 必须由对应 `ExternalSettlementFlowHandler` 完成类型化校验：IN 校验有效商城订单或平台通道集市成交及其支付证据；OUT 校验有效出款尝试；FUNDING 校验系统资金注入凭证；FEE_ADJUSTMENT 必须指向可调整的原 IN 记录，且若填写业务关联 ID 必须与原记录一致。手续费调整不改写原入账，而追加一笔 `gross_cny_cents=0` 的调整记录，费用增加时 `fee_cny_cents>0`、净变动为负，退回手续费时费用为负、净变动为正。用户申请提现或资金退回统一走 withdrawal/payout_attempt；外部出款记为 OUT。渠道争议/拒付属于支付事件及渠道异常处理，不视为用户提现或独立 REFUND flow type。渠道未结算净额创建系统 CNY hold。USDT 持仓与 CNY 标价不混同；原币独立核对。
 
 #### payout_account
 
@@ -984,6 +991,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | agent_domain_id | BIGINT UNSIGNED | 是 | NULL | 涉及的代理域；代理域授权、广播或域配置操作使用 |
 | referral_binding_event_id | BIGINT UNSIGNED | 是 | NULL | 管理换绑事件 |
 | support_conversation_id | BIGINT UNSIGNED | 是 | NULL | 客服分派、消息管理或人工账号恢复对应的客服会话 |
+| coin_market_trade_id | BIGINT UNSIGNED | 是 | NULL | 集市争议裁决、延期或复核对应的成交 |
 | request_key | VARCHAR(160) | 否 | 无 | 请求与操作关联值 |
 | action_code | VARCHAR(128) | 否 | 无 | 权限对应动作码 |
 | result_type | SMALLINT UNSIGNED | 否 | 无 | SUCCESS=1/DENIED=2/FAILED=3 |
@@ -991,8 +999,8 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | snapshot | JSON | 否 | 无 | 脱敏前后数据与关联对象 |
 | ip_hash | BINARY(32) | 否 | 无 | 访问 IP 带密钥摘要 |
 
-**索引/约束：** I(admin_user_id,created_at,id)；I(admin_session_key)；I(user_id,created_at,id)；I(target_admin_user_id,created_at,id)；I(request_key)；I(asset_operation_id)；I(withdrawal_id)；I(system_config_id)；I(game_config_id)；I(agent_domain_id,created_at,id)；I(referral_binding_event_id)；I(support_conversation_id)；CHECK(system_config_id IS NULL OR game_config_id IS NULL)
-**实体规则：** 配置变更必须且只能关联 system_config_id 或 game_config_id 之一，并与前后值审计同事务；普通审计事件两者均为空。CHECK 防止同时关联两种配置，配置动作必须有一个关联由应用用例校验。一次批量配置修改逐键写多条审计，共用 request_key。Admin 权限授予/撤销同时记录操作者 admin_user_id 与 target_admin_user_id、前后 permission code 快照，并递增目标账号 auth_version。拒绝/失败在业务事务回滚后单独记审计。
+**索引/约束：** I(admin_user_id,created_at,id)；I(admin_session_key)；I(user_id,created_at,id)；I(target_admin_user_id,created_at,id)；I(request_key)；I(asset_operation_id)；I(withdrawal_id)；I(system_config_id)；I(game_config_id)；I(agent_domain_id,created_at,id)；I(referral_binding_event_id)；I(support_conversation_id)；I(coin_market_trade_id,created_at,id)；CHECK(system_config_id IS NULL OR game_config_id IS NULL)
+**实体规则：** 配置变更必须且只能关联 system_config_id 或 game_config_id 之一，并与前后值审计同事务；普通审计事件两者均为空。CHECK 防止同时关联两种配置，配置动作必须有一个关联由应用用例校验。一次批量配置修改逐键写多条审计，共用 request_key。Admin 权限授予/撤销同时记录操作者 admin_user_id 与 target_admin_user_id、前后 permission code 快照，并递增目标账号 auth_version。集市争议的工作人员裁决、Admin 延期和复核分别写独立审计，包含 trade ID、操作前后状态/截止时间、理由及关联 asset_operation；不以 `user.permissions` 代替操作审计。拒绝/失败在业务事务回滚后单独记审计。
 
 #### user_security_event
 
@@ -1286,15 +1294,15 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 | post_key | VARCHAR(160) | 否 | 无 | 创建/重试幂等键 |
 | title | VARCHAR(160) | 是 | NULL | 可选标题 |
 | body_text | MEDIUMTEXT | 是 | NULL | 正文；脱敏/删除时清空 |
-| asset_id | BIGINT UNSIGNED | 是 | NULL | 首版最多一张图片；多图暂不扩展映射表 |
+| asset_ids | JSON | 否 | 空数组 | 帖子图片对应的 asset.id 数组；不存文件 URL 或密钥 |
 | pinned_until | DATETIME(3) | 是 | NULL | 运营置顶失效时间 |
 | pinned_by_user_id | BIGINT UNSIGNED | 是 | NULL | 执行置顶的 Admin/代理 user |
 | moderated_by_user_id | BIGINT UNSIGNED | 是 | NULL | 最近处理内容的 Admin/代理 user |
 | moderated_at | DATETIME(3) | 是 | NULL | 最近审核时间 |
 | moderation_note | VARCHAR(500) | 是 | NULL | 脱敏审核理由，不记录私密凭证 |
 
-**索引/约束：** U(post_key)；I(agent_domain_id,status,created_at,id)；I(social_topic_id,status,created_at,id)；I(user_id,created_at,id)；I(pinned_until,status,id)；I(asset_id)；I(pinned_by_user_id)；I(moderated_by_user_id)
-**实体规则：** `SocialPostStatus` 为 PENDING_REVIEW=1/PUBLISHED=2/HIDDEN=3/REDACTED=4。公开 feed 只返回 PUBLISHED 且 scope 匹配的帖子；状态 4 时清除正文与 asset 引用但保留审计事实。首版一帖一个主话题、一张可选图片，不建多话题或多附件关系表。
+**索引/约束：** U(post_key)；I(agent_domain_id,status,created_at,id)；I(social_topic_id,status,created_at,id)；I(user_id,created_at,id)；I(pinned_until,status,id)；I(pinned_by_user_id)；I(moderated_by_user_id)
+**实体规则：** `SocialPostStatus` 为 PENDING_REVIEW=1/PUBLISHED=2/HIDDEN=3/REDACTED=4。公开 feed 只返回 PUBLISHED 且 scope 匹配的帖子；状态 4 时清除正文与 asset_ids，但保留审计事实。`asset_ids` 必须是无重复的正整数 ID 数组；数组长度由 `system_config.social.post_image_limit` 限制。写入时逐个校验 asset 归属作者、READY 状态、图片 MIME 与加密策略；读取时只为已授权用户解析资产。多附件直接存 JSON，不增加映射表；JSON 内 ID 不建立数据库外键，须由 Social application 在写入时校验。
 
 #### social_post_reply
 
@@ -1343,9 +1351,11 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 | user_low_read_through_no | BIGINT UNSIGNED | 否 | 0 | low 用户已读消息序号 |
 | user_high_read_through_no | BIGINT UNSIGNED | 否 | 0 | high 用户已读消息序号 |
 | last_message_at | DATETIME(3) | 是 | NULL | 最近消息时间 |
+| pending_first_message_user_id | BIGINT UNSIGNED | 是 | NULL | 陌生人首句发送方；等待另一方回复时记录，好友关系建立后忽略 |
+| open_messaging_day | DATE | 是 | NULL | 收到首句回复后允许陌生人双方继续发送的上海自然日 |
 
 **索引/约束：** U(low_user_id,high_user_id)；I(agent_domain_id,status,updated_at,id)
-**实体规则：** `SocialConversationStatus` 为 ACTIVE=1/READ_ONLY=2/CLOSED=3。首版仅一对一，不建 participant 表；pair ID 规范化且禁止 self-chat。发送消息时锁定会话行并递增 `last_message_no`，已读游标只能单调递增且不得超过高水位。会话与参与者不同域时禁止双方访问；换绑时整段会话迁到被换绑用户的新域，原域另一方失去读取/发送权，直到双方有效域再次一致才恢复互动。
+**实体规则：** `SocialConversationStatus` 为 ACTIVE=1/READ_ONLY=2/CLOSED=3。首版仅一对一，不建 participant 表；pair ID 规范化且禁止 self-chat。陌生人每日首句状态在该行表达：`pending_first_message_user_id` 非空时只允许另一方回复；回复成功同事务清除此字段并设置当前 `open_messaging_day`；上海日期变化后，一方可以重新发送当天第一句。有效好友不受该限制，已移除关系禁止向原会话继续发送。发送消息时锁定会话行并递增 `last_message_no`，已读游标只能单调递增且不得超过高水位。会话与参与者不同域时禁止双方访问；换绑时整段会话迁到被换绑用户的新域，原域另一方失去读取/发送权，直到双方有效域再次一致才恢复互动。
 
 #### social_message
 
@@ -1365,6 +1375,23 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 
 **索引/约束：** U(social_conversation_id,message_no)；U(sender_user_id,client_message_id)；I(social_conversation_id,id)；I(sender_user_id,created_at,id)；I(asset_id)；I(redacted_by_user_id)
 **实体规则：** `SocialMessageStatus` 为 SENT=1/REDACTED=2。文本消息必须有 body_text 且无 asset_id；图片消息必须引用发送者有权使用的 READY 私有 asset。消息 scope 通过会话继承，历史按 id 游标分页，Socket 断线后从 MySQL 补拉。状态 2 清空正文/asset 引用但留不可变消息位置与审计，不硬删除。消息留存期限尚未决定，在政策通过前不得自动清理。
+
+#### social_content_interaction
+
+**表注释：** 用户对帖子或回复的轻量互动状态。 **状态 enum：** SocialContentInteractionStatus。
+
+| 字段 | MySQL 类型 | 可空 | 默认值/取值 | 用途与约束 |
+| --- | --- | --- | --- | --- |
+| interaction_key | VARCHAR(160) | 否 | 无 | 服务端生成的 actor/target/action 稳定组合键，保证同一互动只有一条当前状态 |
+| actor_user_id | BIGINT UNSIGNED | 否 | 无 | 执行互动的 user |
+| target_type | SMALLINT UNSIGNED | 否 | POST=1/POST_REPLY=2/USER=3 | 帖子 dislike、回复 dislike 或作者关注 |
+| social_post_id | BIGINT UNSIGNED | 是 | NULL | target_type=POST 时填写 |
+| social_post_reply_id | BIGINT UNSIGNED | 是 | NULL | target_type=POST_REPLY 时填写 |
+| target_user_id | BIGINT UNSIGNED | 是 | NULL | target_type=USER 时填写；FOLLOW_AUTHOR 的目标作者 |
+| action_type | SMALLINT UNSIGNED | 否 | DISLIKE=1/FOLLOW_AUTHOR=2 | 互动类型；举报独立记录在 social_report |
+| ended_at | DATETIME(3) | 是 | NULL | 取消 dislike/关注时记录结束时间 |
+
+**索引/约束：** U(interaction_key)；I(actor_user_id,status,updated_at,id)；I(target_type,social_post_id,status,id)；I(target_type,social_post_reply_id,status,id)；I(target_user_id,status,id)；CHECK 仅一个目标列非空且与 target_type 一致；CHECK 用户不能关注自己。**实体规则：** `SocialContentInteractionStatus` 为 ACTIVE=1/REMOVED=2。dislike 和关注作者均可撤销，更新 status/ended_at，不物理删除；关注以 `target_user_id` 为目标，因此从同一作者的不同帖子进入菜单会显示同一关注状态。该表只支撑帖子/回复“更多”菜单的“不喜欢”和“关注作者”；举报仍走 `social_report`，不把举报案生命周期混入偏好状态表。
 
 #### social_block
 
@@ -1404,6 +1431,76 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 **索引/约束：** U(report_key)；I(agent_domain_id,status,created_at,id)；I(reporter_user_id,created_at,id)；I(social_post_id)；I(social_post_reply_id)；I(social_message_id)；I(reported_user_id)；I(handled_by_user_id)；CHECK(target_type 与四个目标引用中恰有一个匹配)
 **实体规则：** `SocialReportStatus` 为 OPEN=1/RESOLVED=2/DISMISSED=3。每条举报只引用一个目标，target_type 与非空目标 FK 必须严格匹配；私聊举报正文仍从受限 social_message 读取，不复制进举报快照。普通社区审核员不能因此获得私聊读取能力。目标迁域时举报 scope 随目标同步；审核处置按 Admin/Agent 审计分别留痕。
 
+### 5.13 金币集市
+
+金币集市仅增加挂牌和成交两个实体：挂牌维护卖方可售库存及其生命周期；每个部分成交单独保存买方、付款/申诉/裁定状态。该拆分支撑同一挂牌多买家并发成交，避免一个交易状态覆盖另一交易。挂牌金币由 `asset_hold` 一次冻结，钱包账本仍是余额权威；没有独立 escrow、participant、evidence 或状态历史表。图片凭证复用 `asset`，业务状态变化通过 `outbox` 通知，账务事实使用 `asset_operation/asset_entry`。
+
+挂牌库存恒等式：`listed_coins = available_coins + reserved_coins + filled_coins + cancelled_coins`。挂单事务锁定 listing 行并原子更新库存；已接单交易不因挂牌暂停或取消而被取消。已取消挂牌仍有待处理 trade 时保留其 hold 中相应子额，直到成交或裁决终结。超时/裁定退回后，若挂牌仍 ACTIVE 则恢复可售量，否则计入 cancelled 并释放钱包占款。放币成功时 `filled_coins` 增加、hold 子额消耗，并将 COIN 从卖家资产转至买家；任何失败均整笔回滚或使用幂等补偿操作恢复。
+
+#### coin_market_listing
+
+**表注释：** 卖家发布的一张金币挂牌及可被多个买家部分成交的库存状态。 **状态 enum：** CoinMarketListingStatus。
+
+| 字段 | MySQL 类型 | 可空 | 默认值/取值 | 用途与约束 |
+| --- | --- | --- | --- | --- |
+| seller_user_id | BIGINT UNSIGNED | 否 | 无 | 挂牌卖家 |
+| listing_key | VARCHAR(160) | 否 | 无 | 创建/重试幂等键 |
+| asset_hold_id | BIGINT UNSIGNED | 否 | 无 | 本挂牌唯一金币占款 |
+| listed_coins | BIGINT | 否 | 无 | 挂牌总量，必须大于 0 |
+| available_coins | BIGINT | 否 | 无 | 当前可成交量 |
+| reserved_coins | BIGINT | 否 | 0 | 尚未完成的交易预占量 |
+| filled_coins | BIGINT | 否 | 0 | 已完成成交量 |
+| cancelled_coins | BIGINT | 否 | 0 | 挂牌关闭后释放的剩余量 |
+| price_cents_per_1000_coins | BIGINT UNSIGNED | 否 | 无 | 每 1000 金币的挂牌价，单位为人民币分；正整数 |
+| receive_method | SMALLINT UNSIGNED | 否 | 无 | 已登记收款方式常量；首版支持方式沿用支付渠道/USDT 目录 |
+| receive_snapshot | JSON | 是 | NULL | 加密或脱敏的卖家收款方式快照；仅交易参与方按权限读取 |
+| platform_payment_opt_in | TINYINT UNSIGNED | 否 | 0 | 0/1 仅为普通布尔值，不是状态或枚举；默认不允许平台通道，卖家是否主动开放该挂牌的平台支付路径 |
+| cancelled_at | DATETIME(3) | 是 | NULL | 撤销时间 |
+| suspended_by_user_id | BIGINT UNSIGNED | 是 | NULL | 暂停/冻结挂牌的 Admin 或有权运营者 |
+
+**索引/约束：** U(listing_key)；U(asset_hold_id)；I(status,created_at,id)；I(seller_user_id,status,created_at,id)；I(receive_method,status,created_at,id)；I(suspended_by_user_id)；CHECK `listed_coins=available_coins+reserved_coins+filled_coins+cancelled_coins`；CHECK 各数量非负且 `listed_coins>0`。
+**实体规则：** `CoinMarketListingStatus` 为 ACTIVE=1/PAUSED=2/COMPLETED=3/CANCELLED=4/SUSPENDED=5。所有数量变动必须在 listing 行锁事务内执行；`listed_coins` 不得低于创建时生效的 `minimum_listing_coins` 配置；`COMPLETED` 要求 available/reserved 均为0且 filled=listed；主动取消先把 available 转 cancelled 并释放相应 hold，reserved 保留给现有成交。管理员冻结同样不取消已存在成交。`price_cents_per_1000_coins` 是每 1000 金币的挂牌价，币种 RMB/CNY，单位为分；它是卖家设定的市场价。页面另按当前金币兑余额配置计算每 1000 金币的参考价，该参考值为动态展示数据，不写入挂牌行。部分成交 `gross_cents=ceil(price_cents_per_1000_coins × coins ÷ 1000)`，按成交创建时的挂牌报价计算并固化在 trade；整数计算必须避免溢出，不能使用浮点。
+
+#### coin_market_trade
+
+**表注释：** 买家对一张金币挂牌的一笔独立部分成交及其付款、争议和结算过程。 **状态 enum：** CoinMarketTradeStatus。
+
+| 字段 | MySQL 类型 | 可空 | 默认值/取值 | 用途与约束 |
+| --- | --- | --- | --- | --- |
+| coin_market_listing_id | BIGINT UNSIGNED | 否 | 无 | 来源挂牌 |
+| buyer_user_id | BIGINT UNSIGNED | 否 | 无 | 本笔买家 |
+| trade_key | VARCHAR(160) | 否 | 无 | 接受挂牌幂等键 |
+| coins | BIGINT | 否 | 无 | 本笔预占金币数量，必须大于 0 |
+| gross_cents | BIGINT | 否 | 无 | 本笔买家应付人民币分 |
+| payment_mode | SMALLINT UNSIGNED | 否 | 无 | DIRECT=1/PLATFORM_CHANNEL=2/USDT=3 |
+| payment_channel_id | BIGINT UNSIGNED | 是 | NULL | 平台通道成交所选支付方式 |
+| fee_rate_bps | INT UNSIGNED | 否 | 0 | 本笔平台通道费率快照；默认配置 2000 bps，非平台通道为0 |
+| fee_cents | BIGINT | 否 | 0 | 从卖家应收中扣除的费用，按统一货币舍入规则 |
+| seller_net_cents | BIGINT | 否 | 0 | 平台通道成交卖家净收金额；直接场外付款为0（不经平台钱包） |
+| payment_proof_asset_id | BIGINT UNSIGNED | 是 | NULL | 买家付款凭证；私有加密 asset |
+| chain_tx_id | VARCHAR(160) | 是 | NULL | USDT 链上交易标识，唯一性由 TRON payment handler 校验 |
+| usdt_rate_snapshot | DECIMAL(20,8) | 是 | NULL | 该笔交易锁定的每日 CNY/USDT 汇率 |
+| payment_deadline_at | DATETIME(3) | 否 | 无 | 接受挂牌后 48h 截止 |
+| seller_response_deadline_at | DATETIME(3) | 是 | NULL | 凭证提交后 48h 截止；USDT 核验路径可空 |
+| buyer_evidence_deadline_at | DATETIME(3) | 是 | NULL | 卖家申诉后买家补证截止（48h） |
+| buyer_evidence_asset_id | BIGINT UNSIGNED | 是 | NULL | 买家针对申诉提交的补充银行付款凭证 |
+| buyer_evidence_submitted_at | DATETIME(3) | 是 | NULL | 买家补充证据提交时间；开始卖家回应举证窗口 |
+| seller_evidence_deadline_at | DATETIME(3) | 是 | NULL | 买家补证后卖家回应证据截止（48h） |
+| seller_evidence_asset_id | BIGINT UNSIGNED | 是 | NULL | 卖家针对买家补证提交的回应凭证 |
+| seller_evidence_submitted_at | DATETIME(3) | 是 | NULL | 卖家回应证据提交时间 |
+| platform_decision_deadline_at | DATETIME(3) | 是 | NULL | 卖家提交回应或回应期届满后，平台默认 48h 裁定截止；手动延期时更新并审计 |
+| seller_dispute_note | VARCHAR(1000) | 是 | NULL | 卖家申诉说明；不得填写完整支付账号或敏感凭证 |
+| paid_at | DATETIME(3) | 是 | NULL | 买家付款凭证/链上交易提交时间 |
+| support_conversation_id | BIGINT UNSIGNED | 是 | NULL | 关联本笔争议客服会话；会话内容仍由客服领域管理 |
+| adjudicated_by_user_id | BIGINT UNSIGNED | 是 | NULL | 普通工作人员裁决人员 |
+| resolution_code | SMALLINT UNSIGNED | 是 | NULL | RELEASE_TO_BUYER=1/RETURN_TO_SELLER=2；未裁决为空 |
+| resolution_note | VARCHAR(1000) | 是 | NULL | 裁决理由，禁止写入支付凭证明文 |
+| adjudicated_at | DATETIME(3) | 是 | NULL | 普通工作人员作出裁定的时间 |
+| asset_operation_id | BIGINT UNSIGNED | 是 | NULL | 成交放币/返还对应的钱包操作 |
+
+**索引/约束：** U(trade_key)；U(chain_tx_id)（允许多个 NULL）；U(asset_operation_id)（允许多个 NULL）；I(coin_market_listing_id,status,created_at,id)；I(buyer_user_id,status,created_at,id)；I(status,payment_deadline_at,id)；I(status,seller_response_deadline_at,id)；I(status,buyer_evidence_deadline_at,id)；I(status,seller_evidence_deadline_at,id)；I(status,platform_decision_deadline_at,id)；I(payment_channel_id)；I(payment_proof_asset_id)；I(buyer_evidence_asset_id)；I(seller_evidence_asset_id)；I(support_conversation_id)；I(adjudicated_by_user_id)。
+**实体规则：** `CoinMarketTradeStatus` 为 PAYMENT_PENDING=1/SELLER_CONFIRMATION_PENDING=2/DISPUTED=3/BUYER_EVIDENCE_PENDING=4/SELLER_EVIDENCE_PENDING=5/PLATFORM_REVIEW=6/RELEASED=7/AUTO_RELEASED=8/PAYMENT_EXPIRED=9/RESOLVED_RETURN=10/CANCELLED=11。创建 trade 与 listing 库存预占同事务；本笔 `coins` 不得低于创建时生效的 `minimum_trade_coins` 配置。`gross_cents` 按挂牌快照的 `price_cents_per_1000_coins × coins ÷ 1000` 向上取整到分。成交时快照平台通道费率（`coin_market.platform_fee_rate_bps`，默认 2000）及所有金额。手续费只从卖家应收扣除，买家付款仍为 gross。用户主动选择平台通道时 `seller_net_cents=gross_cents-fee_cents`，实际支付成功后由 payment handler 与 wallet 同步结算；seller_net 记入卖家 CNY 可用余额，之后通过现有 withdrawal 审核/出款流程申请提现。直接场外路径不伪造人民币到账分录，仅在确认收款后转移 COIN。卖家提出未收到款的申诉后暂停自动放币，买家在 `buyer_evidence_deadline_at` 前补交；买家提交后启动 48h `seller_evidence_deadline_at`，卖家提交 `seller_evidence_asset_id` 或该期限届满后进入人工裁定，并设置默认 48h 的 `platform_decision_deadline_at`。买家补证超时则同样进入平台裁定。普通工作人员通过 `coin_market.dispute.adjudicate` 权限负责最终裁定并写 `adjudicated_by_user_id/adjudicated_at`；管理员另持 `coin_market.dispute.extend_deadline` 与 `coin_market.dispute.review`，可手动延长截止时间及复核裁定。所有延期和复核通过带 `coin_market_trade_id` 的 `admin_audit_event` 记录操作前后快照与理由；争议期间卖家沉默不能自动放币。普通无争议路径下，卖家在 48h 内未确认仍按既有规则自动放币。客服关联复用 `support_conversation`，不为市场纠纷新建客服表。裁定及放币命令按当前状态和幂等键校验；`asset_operation_id` 唯一且仅由 wallet 用例写入。金额、费率以整数/精确 DECIMAL 计算，不使用浮点。拒绝前端提交状态码。
+
 ## 6. 领域事务及记账不变量
 
 ### 6.1 功能到表职责映射
@@ -1417,8 +1514,11 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 | 登录与身份 | `recovery_credential` | 保存密码保护二维码凭证的历史；每个账号最多一条有效，重新生成会使旧凭证失效；TOTP 开启时恢复仍须输入 TOTP，不可借二维码重置。 |
 | 客服 IM | `support_conversation` | 用户咨询、问题分类、客服分派、关联订单/提现及双方未读计数。 |
 | 客服 IM | `support_message` | 持久化消息、发送幂等、历史分页、附件引用和脱敏撤回。 |
+| 金币集市挂牌 | `coin_market_listing` | 一张卖家挂牌、收款展示快照和可售/预占/成交/取消库存；唯一 `asset_hold` 冻结整张挂牌金币。 |
+| 金币集市成交 | `coin_market_trade` | 每位买家一笔部分成交，保存应付/费用快照、付款凭证、48 小时时限、争议证据及最终钱包操作；多笔 trade 共享挂牌库存，但各自隔离交易状态。 |
+| 金币集市支付 | `payment_event` / `external_settlement` | 仅用户主动选择平台支付通道时关联 `coin_market_trade_id`；ExternalSettlement handler 按 IN 类型校验成交和支付证据。场外直付不伪造平台人民币入账。 |
 | 社交话题 | `social_topic` | 维护平台公共或代理域专属话题目录；迁域按 topic_key 复用目标域话题。 |
-| 社交社区 | `social_post` | 保存帖子正文、单主话题、单图资产引用、可见域和审核/置顶状态。 |
+| 社交社区 | `social_post` | 保存帖子正文、单主话题、多图 asset ID JSON、可见域和审核/置顶状态。 |
 | 社交社区 | `social_post_reply` | 保存帖子一级回复；scope 从所属帖子继承，不重复存域 ID。 |
 | 社交关系 | `social_friendship` | 规范化双用户 pair，管理申请/接受/拒绝/删除状态。 |
 | 社交私信 | `social_conversation` | 一对一会话、scope 和双方已读序号，不建会话成员表。 |
@@ -1428,6 +1528,7 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 | 大厅 | `game` | 定义大厅游戏入口、封面资产、排序和内部/外部 Stub 类型。 |
 | 大厅 | `game_tier` | 定义子厅难度、金币准入上下限和展示顺序。 |
 | 规则配置 | `system_config` | 提供全局开关、比例、奖励和流水参数的当前值。 |
+| 集市运营配置 | `system_config` | 提供平台支付通道费率（默认 20%）、最低挂牌量和最小单笔成交量（默认各 1000 金币）；市场用例在创建/接单时读取并校验。 |
 | 规则配置 | `game_config` | 覆盖全局规则或特定游戏/难度厅参数。 |
 | 代理域 | `agent_domain` | 记录普通 user 获批后的域状态和 capability codes；不建立独立 agent 身份。 |
 | 代理域配置 | `game_config.agent_domain_id` | 保存受平台硬边界约束的域级游戏/难度 override。 |
@@ -1436,6 +1537,7 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 | 钱包 | `asset_operation` | 一次资产用例的幂等根、操作类型、操作者和冲正来源。 |
 | 钱包 | `asset_entry` | 不可变复式分录，是余额变化、冻结变化及对账重放的账本事实。 |
 | 钱包 | `asset_hold` | 为牌局、提现、奖励解冻或渠道未结算资金保留可用额。 |
+| 金币集市占款 | `asset_hold` | 一张卖家挂牌冻结一次总金币量；部分成交与撤单按挂牌库存分配消耗/释放，不另建 escrow 账户或 hold 明细表。 |
 | 兑换 | `coin_exchange` | 保存一次金币兑人民币余额的数量、比例、舍入结果及对应资产操作。 |
 | 赠币 | `gift_grant` | 记录新手/活动/商品赠币数量及对应流水倍数；金币来源不做分类追踪。 |
 | 支付接入 | `payment_provider` | 配置聚合支付或自建 TRON 适配器的服务器端能力和密钥引用。 |
@@ -1465,6 +1567,7 @@ PixiJS 8 通过 `Assets` 自定义 parser/resolver 接入该 API：加密资源�
 | Admin | `user` 的 Admin 身份字段 | 以 `role_type` 的 ADMIN 位区分；登录凭证、可选 TOTP 配置及权限码 JSON 均在统一账号行。 |
 | Admin | `admin_permission` | 后台操作权限码、HTTP 方法和路由模板目录。 |
 | Admin 审计 | `admin_audit_event` | 记录 Admin 调账、配置修改、提现审核及代理换绑的操作者和结果。 |
+| 集市争议审计 | `admin_audit_event` | 通过可空 `coin_market_trade_id` 关联案件；工作人员裁决、Admin 延期/复核均保存操作者、理由和前后状态/期限快照，不增加市场审计表。 |
 | 安全审计 | `user_security_event` | 记录玩家密码、设备、邮箱、手机和会话安全事件。 |
 | 可靠通知 | `outbox` | 与业务事务同提交，供 Worker 重试发送 Socket 通知、回调或异步任务；不代表客户端已读。 |
 | 平台事件与广播 | `game_event_instance` | 跨牌局保存活动生命周期、配置/效果/公告快照与状态版本；一个实例服务多目标，不另建公告或收件人表。 |
@@ -1552,11 +1655,12 @@ Redis 租约负责短期房间进程所有权；每次接管先递增 `room.fenc
 | Admin/代理域权限、安全事件和基础任务 | 7 | agent_domain, admin_permission, agent_audit_event, admin_audit_event, user_security_event, outbox, migration_history；身份在 user，域能力在 agent_domain，会话在 Redis |
 | 客服 IM | 2 | support_conversation, support_message；会话与消息持久化在 MySQL，在线状态放 Redis |
 | 平台事件与广播 | 1 | game_event_instance；活动状态、配置效果/公告快照及版本，不建独立公告收件人表 |
-| 社交 | 8 | social_topic, social_post, social_post_reply, social_friendship, social_conversation, social_message, social_block, social_report；附件复用 asset，投递复用 outbox |
+| 社交 | 9 | social_topic, social_post, social_post_reply, social_friendship, social_conversation, social_message, social_content_interaction, social_block, social_report；附件复用 asset，投递复用 outbox |
+| 金币集市 | 2 | coin_market_listing 管理卖家挂牌与部分成交库存；coin_market_trade 管理每一笔买方成交、付款、申诉和裁定；金币占款复用 asset_hold |
 | AI 素材生产台账与发布 | 5 | ai_asset_job, ai_asset_artifact, ai_asset_reference, asset_release, asset_release_item |
 | 文件资产 | 1 | asset |
 
-本稿包含 60 张表。所有身份统一保存在 `user`；Admin 使用 `role_type` 专用位及 `permissions` JSON，代理也是普通 user，通过 `role_type` 的 AGENT 位及唯一 `agent_domain` 表达获批权限与数据范围，不设 `agent` 或 `agent_user` 身份表。`admin_permission` 保存 Admin 路由目录，不设 `admin_user`、Role 或角色关联表。`agent_audit_event` 记录代理查看下线明细、私聊及运营操作，不复用 Admin 操作审计。每台设备的当前认证凭证并入 `device`；`recovery_credential` 保留二维码凭证历史并以唯一约束保证每个账号至多一个有效凭证。会话及刷新令牌由 Redis 管理；客服会话和消息持久化在 MySQL，在线状态放 Redis；客损统计与返点由代理线下处理，不纳入平台 schema。牌局结果不建游戏专属比较表，由 handler 管理版本化 JSON。该数量是领域设计覆盖面结果，不是 Microservice 数量或必须一次性上线数量。
+本稿包含 63 张表。所有身份统一保存在 `user`；Admin 使用 `role_type` 专用位及 `permissions` JSON，代理也是普通 user，通过 `role_type` 的 AGENT 位及唯一 `agent_domain` 表达获批权限与数据范围，不设 `agent` 或 `agent_user` 身份表。`admin_permission` 保存 Admin 路由目录，不设 `admin_user`、Role 或角色关联表。`agent_audit_event` 记录代理查看下线明细、私聊及运营操作，不复用 Admin 操作审计。每台设备的当前认证凭证并入 `device`；`recovery_credential` 保留二维码凭证历史并以唯一约束保证每个账号至多一个有效凭证。会话及刷新令牌由 Redis 管理；客服会话和消息持久化在 MySQL，在线状态放 Redis；客损统计与返点由代理线下处理，不纳入平台 schema。牌局结果不建游戏专属比较表，由 handler 管理版本化 JSON。集市仅新增挂牌/成交两个必要实体，托管余额、图片凭证、审计和通知复用既有账本、Asset、Admin 审计及 outbox。社交内容偏好仅新增一张通用互动表，避免为 dislike/follow 分别建表。该数量是领域设计覆盖面结果，不是 Microservice 数量或必须一次性上线数量。
 
 ## 8. 查询路径和容量
 
@@ -1582,7 +1686,7 @@ Redis 租约负责短期房间进程所有权；每次接管先递增 `room.fenc
 | USDT入账 | 每单随机分配独立 TRON 地址；每日汇率写订单 extra；尾数识别订单；异常转客服 | 链上确认数、每日采样具体时刻/时区及汇率 provider 在接入真实链路前确定 |
 | 渠道拒付 | 识别拒付后封禁账号并人工处置；不自动冲减用户账本、不新建 REFUND flow | 首版无待决的拒付账务规则 |
 | 金额舍入 | 5% 转账费向上取整；提现费向上取整到分；兑换兑入余额向下取整到分；需扣金币等值向上取整；提款门槛检验净到账额 | 已定：比例造成不足 1 分的余额向下取整 |
-| 唯一联系信息 | email/phone 在 user 表规范化且唯一；换绑必须验证新联系方式，成功提交后立即释放旧值供他人复用 | 已定；不可凭新持有人对旧值的控制接管原账号，换绑写安全事件 |
+| 唯一联系信息 | email/phone 在 user 表规范化且唯一；换绑核验完整旧值后原子替换，成功提交后立即释放旧值供他人复用 | 已定；不发验证码、不表示收件能力已验证；不可凭新持有人对旧值的控制接管原账号，换绑写安全事件 |
 | 可选双因素认证 | TOTP 密文和启用/重放字段放 user；待绑定 secret 放 Redis；安全操作记 user_security_event | 已定：Admin 与普通用户均可自行启用或关闭，不存在强制策略。 |
 | 代理换绑影响面 | 固定四级祖先列；Admin 换绑重算受影响下级，保存前后快照和收益投影 | 已定：预计下级少，单事务完成；监测生产耗时，当前不引入批处理或额外表 |
 | 收款与凭证加密 | 敏感值使用 AEAD 密文，凭证只存单向摘要；密钥标识封装在密文元数据中，不新增独立 key_version 列 | 密钥托管、恢复二维码格式及客服人工恢复的授权/核验流程在安全与客服实现方案中锁定 |
@@ -1637,3 +1741,12 @@ Redis 租约负责短期房间进程所有权；每次接管先递增 `room.fenc
 | 2026-10-15 | 将 `user.public_code` 明确为随机不透明好友码并设唯一索引，二维码仅编码该公开好友码，不新增好友码表或字段。 |
 | 2026-10-15 | 将 agent_domain 的用户撤回状态常量化为 WITHDRAWN=5，沿用既有代理实体，不增加申请表。 |
 | 2026-10-15 | 锁定金币兑换人民币余额不足一分时向下取整；说明 production coin_exchange 与现有 asset_operation/asset_entry 的关系及 IndexedDB 不扩表原则。 |
+| 2026-10-16 | 按已确认的集市部分成交、48 小时补证和可配置 20% 平台费率增加挂牌/成交两实体；挂牌复用单笔 asset_hold，支付事件/外部结算通过 flow handler 强校验 trade 关联，总表数校准为 62。 |
+| 2026-10-16 | 确认集市最低挂牌量和最小单笔成交量可配置、默认均为 1000 金币；平台支付净款记入卖家 CNY 可用余额并沿用提现流程。 |
+| 2026-10-16 | 明确争议证据时序及裁定期限字段：买家补证后卖家回应 48h，回应提交或超时后平台默认 48h 裁定；人工延期更新截止并审计，争议期间不自动放币。 |
+| 2026-10-16 | 明确后台争议权限：普通工作人员裁决，管理员延期和复核；以 user permission codes 区分能力，并用 admin_audit_event.coin_market_trade_id 关联审计，不增角色或审计表。 |
+| 2026-10-16 | 社区帖子改用 `asset_ids` JSON 保存多张图片的 Asset ID，不新增附件表；集市按每 1000 金币的人民币分报价，部分成交按比例向上取整到分。 |
+| 2026-10-16 | 增加 `social_content_interaction` 一张表承载帖子/回复 dislike 与关注作者的可撤销状态；社交实体数和总表数由 8/62 校准为 9/63，举报仍使用 `social_report`。 |
+| 2026-10-16 | 在既有 `social_conversation` 增加陌生人首句等待回复及当日开放状态字段；以会话行锁保证首句/回复限制并发一致，不新增表。 |
+| 2026-10-18 | 明确未设置密码账号可通过已认证会话直接打开并绑定联系方式；有密码时仍验证密码，TOTP 启用时始终验证 TOTP，匹配前台编辑入口和身份 API DTO。 |
+| 2026-10-18 | 邮箱/手机绑定统一免验证码；换绑输入完整旧值，成功后清除 verified_at 并立即释放旧值。 |

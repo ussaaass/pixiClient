@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "lobby-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机游戏大厅明亮老虎机与金币无缝循环动态 v2 AVIF 清晰版",
+  "jobId": "83781c96-0fec-4f9d-adcf-9d38b4fa843b",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "promptVersion": "kling-mp4-to-avif-v4",
+  "sourceSha256": "52244084e0537793dbef0d1d5def42fb1b74451bec5ea24f5a140fd268072b4b",
+  "mime": "image/avif",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/lobby.webp",
+      "sha256": "61e7b1016d09b11fe13cf07cbd2ab52fc762f6c0efb00b8d8ebbc7b8d69a47a0"
+    }
+  ],
+  "derivedFrom": {
+    "jobId": "0f013768-e6d9-4e7b-bd99-457251e21dd7",
+    "sourceSha256": "5387b8991248ec09b3b25c3cd98b39c287c447b7c402b1f8b7b9eb23edc8e6fc",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 720,
+      "height": 1280
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 40,
+    "columns": 40,
+    "rows": 1,
+    "frameWidth": 540,
+    "frameHeight": 960,
+    "framesPerSecond": 8,
+    "repeatCount": 0
+  },
+  "width": 540,
+  "height": 960,
+  "bytes": 221758,
+  "releasePath": "assets/releases/lobby-mobile-casino-background-motion-v1/83781c96-0fec-4f9d-adcf-9d38b4fa843b/source.avif",
+  "publishedAt": "2026-10-18T09:27:23.817Z",
+  "reviewer": "Codex visual review"
+}

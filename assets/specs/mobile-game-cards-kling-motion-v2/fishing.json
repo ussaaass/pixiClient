@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-fishing-kling-v2",
+  "title": "捕鱼 Mobile 游戏卡片海鱼动效纠错版（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-fishing-openai-v2/7d1443da-86c1-4199-9676-026f117c5fcf/source.png",
+  "prompt": "Create a visibly animated, seamless 5-second portrait loop from this tropical saltwater coral-reef scene. Keep the camera and reef fixed. The existing clownfish, blue tangs, butterflyfish, angelfish, and distant reef shark swim clearly through the water in different directions; the large angelfish crosses a noticeable part of the scene, small fish weave between coral, and fins and tails move naturally. All animals remain unmistakable marine fish with realistic fish silhouettes; preserve their colors and do not introduce freshwater fish. Add a few small rising bubbles. Keep all fish inside the frame and return to the original composition at the end.",
+  "negativePrompt": "koi, carp, goldfish, freshwater fish, pond, lily pads, new species, fish leaving frame, malformed fins, fish changing species, camera movement, zoom, scene cut, layout change, text, logos, blur, flicker, frantic motion, sudden movement",
+  "duration": "5",
+  "mode": "std"
+}

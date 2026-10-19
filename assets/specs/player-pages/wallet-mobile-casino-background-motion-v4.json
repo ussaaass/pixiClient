@@ -1,0 +1,10 @@
+{
+  "assetKey": "wallet-mobile-casino-background-motion-v4",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页平行推筹码与美元无缝循环动态 v4",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+  "prompt": "Make a subtle, physically coherent 5-second seamless loop from this exact image. Treat every hand, chip stack, banknote, roulette part, table edge and background detail as a rigid, locked object; preserve its exact shape and material. The customer's hand and its chip stack on the LEFT stay entirely in the left half of the image (x below 45%); the casino staff hand and its US dollar bills on the RIGHT stay entirely in the right half (x above 55%). Animate two independent parallel gestures toward the viewer: the left hand nudges its chip stack down the felt by only 3 percent of frame height, while the right hand nudges its banknotes down the felt by only 3 percent of frame height. Pause briefly, then return both hand-object groups along the same paths to the exact starting position. Maintain at least 10 percent of the frame width as clear green felt between the chip stack and banknotes at all times; the objects must never approach, touch, overlap, cross, merge, or change identity. Do not move or deform the felt, sleeves, fingers, chips, bills, faces or roulette wheel. Animate only the two tiny rigid translations plus a gentle moving highlight on the felt and metal. Keep the camera locked; no zoom, pan, tilt, scene change, exposure change or vignette. First and last frames match exactly.",
+  "negativePrompt": "green felt stretching, green ribbon, morphing, liquid motion, bending hands, extra fingers, hand deformation, chip deformation, banknote deformation, chip crossing centerline, banknote crossing centerline, chip touching banknotes, overlapping objects, merged objects, new objects, removed objects, face, head, body, camera movement, zoom, pan, tilt, darkening, flicker, strobing, scene cut, text, logo, watermark, UI",
+  "duration": "5",
+  "mode": "std"
+}

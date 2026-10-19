@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-fishing-kling-v1",
+  "title": "捕鱼 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/fishing.png",
+  "prompt": "Create a seamless, atmospheric 5-second portrait fish-game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. The fish already in the scene swim naturally in gentle looping paths, with subtle fin and tail movement and soft bubbles drifting upward. Keep every fish within the image boundaries, maintain clear silhouettes, and leave the camera and background fixed. End on the supplied composition for a clean loop.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, new fish, fish leaving frame, distorted anatomy, text, logos, flicker, blur, shaky motion, sudden movement, fast chaotic swimming, changing colors",
+  "duration": "5",
+  "mode": "std"
+}

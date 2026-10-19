@@ -24,7 +24,10 @@ describe('notification summary application', () => {
       NotificationSource.ANNOUNCEMENT,
     ]);
     expect(result.items[1]).toMatchObject({ title: '金币资产变动', action: NotificationAction.OPEN_WALLET });
-    expect(result.items[2]).toMatchObject({ title: '新的好友申请', action: NotificationAction.OPEN_FRIENDS });
+    expect(result.items[0]).toMatchObject({ title: '客服会话更新', requiresAction: true });
+    expect(result.items[2]).toMatchObject({ title: '新的好友申请', action: NotificationAction.OPEN_FRIENDS, requiresAction: true });
+    expect(result.items[1]?.requiresAction).toBe(false);
+    expect(result.items[3]?.requiresAction).toBe(false);
   });
 
   it('does not request private sources for guests and reports source failures for retry', async () => {

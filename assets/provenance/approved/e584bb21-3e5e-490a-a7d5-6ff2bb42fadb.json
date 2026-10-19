@@ -1,0 +1,66 @@
+{
+  "jobId": "e584bb21-3e5e-490a-a7d5-6ff2bb42fadb",
+  "assetKey": "lobby-mobile-casino-background-v3",
+  "kind": "BACKGROUND",
+  "title": "手机游戏大厅明亮老虎机长廊背景 v3",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-18T09:23:17.617Z",
+  "updatedAt": "2026-10-18T09:24:13.766Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/player-pages/lobby-mobile-casino-background-v3.json",
+  "specSha256": "82c9ba860f578fb9651849f330f6a5ef763c923cf688a88df13674935e6230d9",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [],
+  "promptSeed": "Asset: 手机游戏大厅明亮老虎机长廊背景 v3\nIntended use: H5 手机游戏大厅竖屏背景；游戏卡片覆盖屏幕中段时，老虎机与暖金灯光仍从卡片上方及两侧清晰露出\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nArt direction: Create a bright, polished portrait 9:16 mobile casino arcade background for a premium casual game app. Composition is designed for a phone screen with interface cards covering the middle 35–70% of the image: place the main ornate emerald-and-gold slot machine high in the frame, with its crown, marquee and upper reel area fully visible in the top 15–40%; place two smaller colorful slot machines along the left and right sides, so their glowing reels and cabinet edges remain visible beside the central interface card; put a sparkling spill of gold coins and warm reflections near the lower 72–84%, above a quiet dark footer safe zone. Show a welcoming row of active slot machines, clear spinning reels with classic cherries, bells, lucky sevens and clovers, bright jewel-like cabinet lights, a few airborne coins, rich emerald, ruby, sapphire and vivid warm gold. Make the central machines and symbols crisp, bright and luminous, with balanced midtones and visible detail; avoid a dark vignette and avoid a shadow overlay. The casino machines should feel lively and inviting, not ominous. Keep the top 8% and bottom 10% low-detail for controls. High-quality stylized 3D game illustration, clean readable silhouettes, cinematic warm lighting, saturated but tasteful color. The screen-facing machines fill the upper and side regions; do not place the only important subject behind the central card-safe band. No text, letters, numbers except simple slot symbols, logos, UI, buttons, people or watermark. Opaque image.\nMust avoid: dark exposure, black shadows over main machines, heavy vignette, underexposed, muddy colors, dull gold, main slot reels only in the center 40–70% hidden by interface, empty dark upper half, empty dark lower half except footer, machine cut off at frame edge, cropped reels, text, readable words, brand logos, interface, buttons, people, watermark, photorealism, blurry symbols, clutter, flat vector art\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create an opaque 944×1680 portrait background for an H5 mobile game lobby: a bright, welcoming row of active slot machines, composed so interface cards can cover the middle 35–70% without hiding the scene’s key details. Place the main ornate deep-emerald-and-gold machine high in the frame, with its crown, decorative marquee, and upper reels fully visible within the top 15–40%. Place two smaller machines along the left and right sides, keeping their complete glowing reels and rounded cabinet edges visible beside the card-safe center. Use clear cherries, bells, and clovers as reel symbols. Add jewel-like ruby and sapphire light accents, a few airborne coins, and a sparkling spill of gold coins with warm reflections at 72–84%, above a quiet, low-detail footer. Keep the top 8% low-detail for controls.\n\nMatch a premium casual-game stylized 3D illustration: rounded, softly beveled forms; smooth enamel/resin-like surfaces; controlled glossy highlights; crisp silhouettes and readable detail at phone size. Deep teal and blue-green dominate, warm ivory provides the main light surfaces, and warm gold remains a trim and lighting accent. Use shallow, screen-facing perspective, a soft broad upper-left key light, gentle fill and contact shadows, balanced midtones, and inviting warmth. Keep the machines luminous without harsh bloom, dramatic contrast, dark overlays, or a vignette. No text, letters, numerals, logos, UI, buttons, people, watermarks, photorealism, flat vector treatment, clutter, or cropped reels.",
+  "promptResponseId": "resp_0afb8076b884b838016ad49006054887d0b0e241a143c5d00f",
+  "usage": {
+    "input_tokens": 1747,
+    "input_tokens_details": {
+      "cache_write_tokens": 1744,
+      "cached_tokens": 0
+    },
+    "output_tokens": 471,
+    "output_tokens_details": {
+      "reasoning_tokens": 144
+    },
+    "total_tokens": 2218,
+    "image": {
+      "input_tokens": 2997,
+      "input_tokens_details": {
+        "cache_write_tokens": 0,
+        "cached_tokens": 0
+      },
+      "output_tokens": 412,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 3409
+    }
+  },
+  "imageRequestId": "req_38fbeac453f94dfab5a9508f91c373dc",
+  "outputSha256": "93777c38cb41eb62b7322d91e8955c7d8087709eccf338ab8ede99ee131491b6",
+  "outputBytes": 1633042,
+  "outputMime": "image/webp",
+  "outputWidth": 944,
+  "outputHeight": 1680,
+  "generatedAt": "2026-10-18T09:23:59.089Z",
+  "candidatePath": "assets/candidates/lobby-mobile-casino-background-v3/e584bb21-3e5e-490a-a7d5-6ff2bb42fadb/source.webp",
+  "sourcePath": "assets/source/lobby-mobile-casino-background-v3/e584bb21-3e5e-490a-a7d5-6ff2bb42fadb/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-18T09:24:09.908Z"
+  },
+  "releasePath": "assets/releases/lobby-mobile-casino-background-v3/e584bb21-3e5e-490a-a7d5-6ff2bb42fadb/source.webp"
+}

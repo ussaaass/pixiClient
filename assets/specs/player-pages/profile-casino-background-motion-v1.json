@@ -1,0 +1,9 @@
+{
+  "assetKey": "profile-casino-background-motion-v1",
+  "title": "桌面我的页赌场横版背景动态 v1",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/review-v2/profile.webp",
+  "prompt": "Animate this exact landscape casino table illustration as a premium desktop profile-page background. Lock the camera and preserve the existing wide composition, cards, roulette-table details, chips, coins and colors. Let a fan of traditional playing cards lift slightly and settle, rotate a nearby chip stack and sweep warm highlights across the gold trim and emerald felt. Distant casino lights pulse gently in layered waves. Motion should be visible yet calm behind UI, with no camera zoom or pan. Return every moved object to its exact starting pose by the final frame for a clean infinite loop. Do not add or remove objects.",
+  "negativePrompt": "portrait framing, camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated cards, malformed card suits, warped table, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

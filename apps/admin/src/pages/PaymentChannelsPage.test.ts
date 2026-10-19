@@ -6,6 +6,7 @@ import { PaymentChannelSource, PaymentChannelStatus, PaymentMethod, PaymentProvi
 import PaymentChannelsPage from './PaymentChannelsPage.vue';
 import { createPaymentChannelApplication } from '../platform/payment-channels/payment-channel-application';
 import { IndexedDbPaymentChannelAdapter } from '../platform/payment-channels/indexeddb-payment-channel-adapter';
+import { adminSelectLabel, chooseAdminOption } from '../test-utils/select-option';
 
 describe('PaymentChannelsPage', () => {
   let app: VueApp | undefined;
@@ -59,10 +60,9 @@ describe('PaymentChannelsPage', () => {
     setInput(createDialog.querySelector<HTMLInputElement>('.payment-channel-form-grid label:nth-child(2) input')!, '演练支付公司');
     setInput(createDialog.querySelector<HTMLInputElement>('.payment-channel-form-grid label:nth-child(5) input')!, '12');
     setInput(createDialog.querySelector<HTMLTextAreaElement>('.payment-channel-reason textarea')!, '本机验证渠道创建流程');
-    createDialog.querySelector<HTMLSelectElement>('.payment-channel-form-grid label:nth-child(3) select')!.value = String(PaymentMethod.WECHAT);
-    createDialog.querySelector<HTMLSelectElement>('.payment-channel-form-grid label:nth-child(3) select')!.dispatchEvent(new Event('change', { bubbles: true }));
-    createDialog.querySelector<HTMLSelectElement>('.payment-channel-form-grid label:nth-child(4) select')!.value = String(PaymentProviderType.AGGREGATOR);
-    createDialog.querySelector<HTMLSelectElement>('.payment-channel-form-grid label:nth-child(4) select')!.dispatchEvent(new Event('change', { bubbles: true }));
+    await chooseAdminOption(createDialog, '.payment-channel-form-grid label:nth-child(3) .el-select', '微信');
+    await chooseAdminOption(createDialog, '.payment-channel-form-grid label:nth-child(4) .el-select', '支付代理公司');
+    expect(adminSelectLabel(createDialog, '.payment-channel-form-grid label:nth-child(3) .el-select')).toBe('微信');
     await settle();
     createDialog.querySelector<HTMLButtonElement>('.payment-channel-primary')!.click();
     await settle();
@@ -73,8 +73,7 @@ describe('PaymentChannelsPage', () => {
     host.querySelector<HTMLButtonElement>('.payment-channel-mobile-card .catalog-row-actions button')!.click();
     await settle();
     const editDialog = document.querySelector<HTMLElement>('.payment-channel-dialog[aria-labelledby="payment-edit-title"]')!;
-    editDialog.querySelector<HTMLSelectElement>('.payment-channel-form-grid label:nth-child(3) select')!.value = String(PaymentChannelStatus.DISABLED);
-    editDialog.querySelector<HTMLSelectElement>('.payment-channel-form-grid label:nth-child(3) select')!.dispatchEvent(new Event('change', { bubbles: true }));
+    await chooseAdminOption(editDialog, '.payment-channel-form-grid label:nth-child(3) .el-select', '已停用');
     setInput(editDialog.querySelector<HTMLInputElement>('.payment-channel-form-grid label:nth-child(2) input')!, '1');
     setInput(editDialog.querySelector<HTMLTextAreaElement>('.payment-channel-reason textarea')!, '暂停渠道并调整本机排序');
     await settle();

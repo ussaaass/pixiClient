@@ -27,6 +27,7 @@ export const NotificationSummaryItemSchema = Type.Object({
   summary: Type.String({ minLength: 1, maxLength: 240 }),
   occurredAt: TimestampSchema,
   action: ActionSchema,
+  requiresAction: Type.Boolean(),
 }, { additionalProperties: false });
 
 export const NotificationSummaryResponseSchema = Type.Object({

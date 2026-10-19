@@ -9,6 +9,9 @@ export interface RuntimeConfig {
   spaceBunnyApiKey?: string;
   spaceBunnyBaseUrl: string;
   spaceBunnyModel: string;
+  klingApiKey?: string;
+  klingBaseUrl: string;
+  klingModel: string;
   socks5Proxy?: string;
   maxOutputBytes: number;
 }
@@ -47,9 +50,17 @@ export function readRuntimeConfig(): RuntimeConfig {
     spaceBunnyApiKey: process.env.SPACE_BUNNY_API_KEY,
     spaceBunnyBaseUrl: process.env.SPACE_BUNNY_BASE_URL ?? "https://spacebunny.app/api/v1",
     spaceBunnyModel: process.env.SPACE_BUNNY_MODEL ?? "stealth/space-bunny-alpha",
+    klingApiKey: process.env.KLINGAI_API_KEY,
+    klingBaseUrl: process.env.KLINGAI_BASE_URL ?? "https://api-singapore.klingai.com",
+    klingModel: process.env.KLINGAI_VIDEO_MODEL ?? "kling-v3",
     socks5Proxy: process.env.ASSET_SOCKS5_PROXY,
     maxOutputBytes,
   };
+}
+
+export function requireKlingConfig(config: RuntimeConfig): asserts config is RuntimeConfig & { klingApiKey: string; klingModel: string } {
+  if (!config.klingApiKey) throw new Error("Missing KLINGAI_API_KEY. Add it to tools/asset-generation/.env; never put it in the browser or Git.");
+  if (!config.klingModel.trim()) throw new Error("KLINGAI_VIDEO_MODEL cannot be empty.");
 }
 
 export function requireSpaceBunnyConfig(config: RuntimeConfig): asserts config is RuntimeConfig & { spaceBunnyApiKey: string; spaceBunnyModel: string } {

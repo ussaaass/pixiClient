@@ -25,6 +25,7 @@ function announcedAt(value: PlatformAnnouncement): NotificationSummaryItemDto {
     summary: value.publicActorLabel ? `${value.publicActorLabel} 的活动播报，查看范围和规则。` : '有新的大厅活动，点击查看适用范围和规则。',
     occurredAt: value.startsAt,
     action: NotificationAction.OPEN_ANNOUNCEMENT,
+    requiresAction: false,
   };
 }
 
@@ -38,6 +39,7 @@ function walletItem(value: WalletActivityItemDto): NotificationSummaryItemDto {
     summary: `${delta} ${value.currency === 'COIN' ? '金币' : '分'} · 当前余额 ${value.balanceAfter}`,
     occurredAt: value.occurredAt,
     action: NotificationAction.OPEN_WALLET,
+    requiresAction: false,
   };
 }
 
@@ -51,6 +53,7 @@ function supportItem(value: SupportConversationDto): NotificationSummaryItemDto 
     summary: `${value.subject} · ${statusCopy}`,
     occurredAt: value.updatedAt,
     action: NotificationAction.OPEN_SUPPORT,
+    requiresAction: value.status === SupportConversationStatus.WAITING_USER,
   };
 }
 
@@ -63,6 +66,7 @@ function friendRequestItem(value: SocialFriendDto): NotificationSummaryItemDto {
     summary: `${value.displayName} 想添加你为好友。`,
     occurredAt: value.updatedAt,
     action: NotificationAction.OPEN_FRIENDS,
+    requiresAction: true,
   };
 }
 

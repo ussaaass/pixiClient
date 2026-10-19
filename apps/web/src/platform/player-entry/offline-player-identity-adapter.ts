@@ -28,6 +28,10 @@ export class OfflinePlayerIdentityAdapter implements PlayerIdentityPort {
 
   async createContactChallenge(): Promise<import('@gameing/contracts/identity').ContactChallengeResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
 
+  async setPhoneContact(): Promise<IdentitySettingsResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
+
+  async setEmailContact(): Promise<IdentitySettingsResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
+
   async confirmContactChallenge(): Promise<IdentitySettingsResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
 
   async startTotpSetup(): Promise<import('@gameing/contracts/identity').TotpSetupResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }

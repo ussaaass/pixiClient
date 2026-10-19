@@ -1,5 +1,6 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import type { SocialPostDto, SocialPostReplyDto } from '@gameing/contracts/social';
+import { CoinMarketTradeStatus, type CoinMarketPaymentMethodValue } from '@gameing/contracts/coin-market';
 import type { AgentCapabilityCodeValue, ReferralBindingStatus } from '@gameing/contracts/invite-agent';
 import type { RewardTypeValue } from '@gameing/contracts/referral';
 import { FundingOrderStatus, FundingPaymentMethod, OrderType } from '@gameing/contracts/wallet-funding';
@@ -7,11 +8,14 @@ import { FundingOrderStatus, FundingPaymentMethod, OrderType } from '@gameing/co
 export type LocalUser = {
   userId: string;
   displayName: string;
+  createdAt?: string;
+  bio?: string;
   roleType: number;
   rewardType?: RewardTypeValue;
   status: 'ACTIVE' | 'LOCKED';
   authVersion: number;
   friendCode?: string;
+  isDemoFixture?: boolean;
   inviteCode?: string;
   inviteCodeExpiresAt?: string;
 };
@@ -19,8 +23,9 @@ export type LocalAgentDomain = { userId: string; status: 1 | 2 | 3 | 4 | 5; appl
 export type LocalReferralBinding = { userId: string; parent1UserId: string; parent2UserId?: string; parent3UserId?: string; parent4UserId?: string; createdAt: string; status: (typeof ReferralBindingStatus)[keyof typeof ReferralBindingStatus] };
 
 export type LocalSocialFriendship = { pairKey: string; lowUserId: string; highUserId: string; requesterUserId: string; state: 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'REMOVED'; updatedAt: string };
-export type LocalSocialConversation = { conversationId: string; pairKey: string; lowUserId: string; highUserId: string; updatedAt: string };
-export type LocalSocialMessage = { messageId: string; conversationId: string; clientMessageId: string; senderUserId: string; body: string; createdAt: string };
+export type LocalSocialConversation = { conversationId: string; pairKey: string; lowUserId: string; highUserId: string; updatedAt: string; pendingFirstMessageUserId?: string; openMessagingDay?: string };
+export type LocalSocialMessage = { messageId: string; conversationId: string; clientMessageId: string; senderUserId: string; body: string; attachments?: import('@gameing/contracts/social').SocialMessageAttachmentDto[]; createdAt: string };
+export type LocalEncryptedAsset = { assetId: string; ownerUserId: string; authorizedUserIds: string[]; kind: import('@gameing/contracts/social').SocialMessageAttachmentKindValue; mimeType: string; fileName: string; byteSize: number; ciphertext: Blob; aes128Key: Uint8Array; hmacSha256Key: Uint8Array; createdAt: string };
 export type LocalSocialContent = {
   contentId: string;
   contentType: 1 | 2;
@@ -31,12 +36,14 @@ export type LocalSocialContent = {
   post?: SocialPostDto;
   reply?: SocialPostReplyDto;
 };
+export type LocalSocialInteraction = { interactionKey: string; actorUserId: string; targetType: 'POST' | 'REPLY' | 'USER'; targetId: string; action: 'DISLIKE' | 'FOLLOW_AUTHOR' | 'REPORT' | 'REPORT_USER' | 'BLOCK_USER'; active: boolean; reasonCode?: string; details?: string; createdAt: string; updatedAt: string };
 
 export type LocalCredential = {
   credentialId: string;
   userId: string;
   kind: 'IDENTIFIER' | 'PASSWORD' | 'DEVICE' | 'RECOVERY' | 'TOTP' | 'TOTP_RECOVERY';
   identifierType?: 'USERNAME' | 'EMAIL' | 'PHONE';
+  verified?: boolean;
   displayValue?: string;
   deviceId?: string;
   lookupKey?: string;
@@ -86,8 +93,11 @@ export type LocalWelcomeGrant = {
 };
 
 export type LocalAssetAccount = { accountId: string; userId: string; assetType: 1 | 2; amount: string; frozenAmount: string; version: number; status: 1 };
-export type LocalAssetOperation = { operationId: string; idempotencyKey: string; operationType: 1 | 2 | 3 | 4; status: 1; createdAt: string; extra?: Record<string, string> };
-export type LocalAssetEntry = { entryId: string; operationId: string; accountId: string; delta: string; balanceAfter: string; createdAt: string };
+export type LocalAssetOperation = { operationId: string; idempotencyKey: string; operationType: 1 | 2 | 3 | 4 | 5 | 6 | 7; status: 1; createdAt: string; extra?: Record<string, string> };
+export type LocalAssetEntry = { entryId: string; operationId: string; accountId: string; delta: string; frozenDelta?: string; balanceAfter: string; createdAt: string };
+export type LocalAssetHold = { holdId: string; userId: string; accountId: string; businessType: 'COIN_MARKET_LISTING'; businessId: string; initialAmount: string; remainingAmount: string; consumedAmount: string; releasedAmount: string; status: 1 | 2 | 3; createdAt: string; updatedAt: string };
+export type LocalCoinMarketListing = { listingId: string; sellerUserId: string; sellerLabel?: string; idempotencyKey: string; coins: string; availableCoins: string; priceCentsPer1000Coins: string; referenceCentsPer1000Coins: string; totalCents: string; assetHoldId: string; paymentMethods: CoinMarketPaymentMethodValue[]; paymentInstructions: string; reservedCoins: string; soldCoins: string; status: 1 | 2 | 3 | 4 | 5; createdAt: string; updatedAt: string };
+export type LocalCoinMarketTrade = { tradeId: string; listingId: string; buyerUserId: string; sellerUserId: string; coins: string; grossCents: string; status: (typeof CoinMarketTradeStatus)[keyof typeof CoinMarketTradeStatus]; paymentMethod: CoinMarketPaymentMethodValue; paymentInstructions: string; paymentDeadlineAt: string; sellerDeadlineAt: string | null; buyerEvidenceDeadlineAt: string | null; sellerEvidenceDeadlineAt: string | null; platformDecisionDeadlineAt: string | null; paymentProof: string | null; appealReason: string | null; buyerEvidence: string | null; sellerEvidence: string | null; idempotencyKey: string; createdAt: string; updatedAt: string };
 export type LocalTurnoverState = { userId: string; remainingCoins: string; updatedAt: string };
 export type LocalPayoutAccount = { payoutAccountId: string; userId: string; idempotencyKey: string; requestFingerprint: string; channelType: 1 | 2 | 3 | 4 | 5; accountLabel: string; maskedAccount: string; isDefault: boolean; status: 1; createdAt: string };
 export type LocalWithdrawal = { withdrawalId: string; userId: string; payoutAccountId: string; payoutAccountLabel: string; maskedAccount: string; netCnyFen: string; feeCnyFen: string; debitCnyFen: string; status: 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9; payoutNotBeforeAt: string; createdAt: string; idempotencyKey: string };
@@ -104,14 +114,16 @@ export type LocalCookie = {
 
 export type LocalSetting = { key: string; value: unknown };
 
-interface BrowserDevelopmentSchema extends DBSchema {
+export interface BrowserDevelopmentSchema extends DBSchema {
   users: { key: string; value: LocalUser; indexes: { 'by-friend-code': string; 'by-invite-code': string } };
   agent_domains: { key: string; value: LocalAgentDomain; indexes: { 'by-status': LocalAgentDomain['status'] } };
   referral_bindings: { key: string; value: LocalReferralBinding; indexes: { 'by-parent-1': string } };
   social_friendships: { key: string; value: LocalSocialFriendship; indexes: { 'by-low': string; 'by-high': string } };
   social_conversations: { key: string; value: LocalSocialConversation; indexes: { 'by-pair': string } };
   social_messages: { key: string; value: LocalSocialMessage; indexes: { 'by-conversation': [string, string]; 'by-client-id': string } };
+  assets: { key: string; value: LocalEncryptedAsset; indexes: { 'by-owner-created': [string, string] } };
   social_content: { key: string; value: LocalSocialContent; indexes: { 'by-topic-created': [string, string]; 'by-post-created': [string, string] } };
+  social_interactions: { key: string; value: LocalSocialInteraction; indexes: { 'by-key': string; 'by-actor-target': [string, string, string] } };
   credentials: {
     key: string;
     value: LocalCredential;
@@ -123,6 +135,9 @@ interface BrowserDevelopmentSchema extends DBSchema {
   asset_accounts: { key: string; value: LocalAssetAccount; indexes: { 'by-user-asset': [string, 1 | 2] } };
   asset_operations: { key: string; value: LocalAssetOperation; indexes: { 'by-idempotency-key': string } };
   asset_entries: { key: string; value: LocalAssetEntry; indexes: { 'by-operation': string; 'by-account': string } };
+  asset_holds: { key: string; value: LocalAssetHold; indexes: { 'by-user-status': [string, LocalAssetHold['status']]; 'by-business': [LocalAssetHold['businessType'], string] } };
+  coin_market_listings: { key: string; value: LocalCoinMarketListing; indexes: { 'by-seller-created': [string, string]; 'by-seller-idempotency': [string, string] } };
+  coin_market_trades: { key: string; value: LocalCoinMarketTrade; indexes: { 'by-buyer-created': [string, string]; 'by-seller-created': [string, string]; 'by-idempotency-key': [string, string] } };
   turnover_states: { key: string; value: LocalTurnoverState };
   payout_accounts: { key: string; value: LocalPayoutAccount; indexes: { 'by-user': string; 'by-idempotency-key': string } };
   wallet_withdrawals: { key: string; value: LocalWithdrawal; indexes: { 'by-user-created': [string, string]; 'by-idempotency-key': string } };
@@ -134,7 +149,7 @@ interface BrowserDevelopmentSchema extends DBSchema {
 }
 
 const DATABASE_NAME = 'gameing_hall_browser_dev';
-const DATABASE_VERSION = 11;
+const DATABASE_VERSION = 16;
 
 let opening: Promise<IDBPDatabase<BrowserDevelopmentSchema>> | undefined;
 
@@ -223,6 +238,42 @@ export function openBrowserDevelopmentDatabase(): Promise<IDBPDatabase<BrowserDe
           const orders = database.createObjectStore('orders', { keyPath: 'orderId' });
           orders.createIndex('by-user-created', ['userId', 'createdAt']);
           orders.createIndex('by-idempotency-key', 'idempotencyKey', { unique: true });
+        }
+        if (oldVersion < 12) {
+          const holds = database.createObjectStore('asset_holds', { keyPath: 'holdId' });
+          holds.createIndex('by-user-status', ['userId', 'status']);
+          holds.createIndex('by-business', ['businessType', 'businessId'], { unique: true });
+          const listings = database.createObjectStore('coin_market_listings', { keyPath: 'listingId' });
+          listings.createIndex('by-seller-created', ['sellerUserId', 'createdAt']);
+        }
+        if (oldVersion < 13) {
+          const listings = transaction.objectStore('coin_market_listings') as unknown as IDBObjectStore;
+          if (listings.indexNames.contains('by-idempotency-key')) listings.deleteIndex('by-idempotency-key');
+          listings.createIndex('by-seller-idempotency', ['sellerUserId', 'idempotencyKey'], { unique: true });
+        }
+        if (oldVersion < 14) {
+          const trades = database.createObjectStore('coin_market_trades', { keyPath: 'tradeId' });
+          trades.createIndex('by-buyer-created', ['buyerUserId', 'createdAt']);
+          trades.createIndex('by-seller-created', ['sellerUserId', 'createdAt']);
+          trades.createIndex('by-idempotency-key', ['buyerUserId', 'idempotencyKey'], { unique: true });
+          const listingStore = transaction.objectStore('coin_market_listings') as unknown as IDBObjectStore;
+          const cursorRequest = listingStore.openCursor();
+          cursorRequest.onsuccess = () => {
+            const cursor = cursorRequest.result;
+            if (!cursor) return;
+            const value = cursor.value as LocalCoinMarketListing;
+            if (!Array.isArray(value.paymentMethods)) cursor.update({ ...value, paymentMethods: [1], paymentInstructions: '', reservedCoins: '0', soldCoins: '0', status: 2 });
+            cursor.continue();
+          };
+        }
+        if (oldVersion < 15) {
+          const interactions = database.createObjectStore('social_interactions', { keyPath: 'interactionKey' });
+          interactions.createIndex('by-key', 'interactionKey', { unique: true });
+          interactions.createIndex('by-actor-target', ['actorUserId', 'targetType', 'targetId']);
+        }
+        if (oldVersion < 16) {
+          const assets = database.createObjectStore('assets', { keyPath: 'assetId' });
+          assets.createIndex('by-owner-created', ['ownerUserId', 'createdAt']);
         }
       },
       blocked() {

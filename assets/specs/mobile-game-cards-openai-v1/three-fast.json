@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-three-fast-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "3快 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅 3快游戏卡片的静态竖版背景；开奖文字和期次由 H5 绘制",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 3快 PC portrait art. Preserve its deep indigo-and-gold lottery machine, transparent spherical drum and blank colored balls, but recompose for a narrow phone card. The machine fills the upper-middle; inside its clear glass chamber, several glossy unmarked balls are frozen at the moment of colliding and bouncing against one another. Use dynamic spacing and tasteful impact glints to make the collision legible in a still frame. Every ball must remain completely blank with no digits, letters, dots, symbols or patterns. Keep the lower 20 percent dark and quiet for interface text. Match the PC source's premium dimensional casual-game illustration, polished gold metal and luminous glass. No text, numbers, logos, watermark, UI, people, currency or photorealism.",
+  "negativePrompt": "wide crop, roulette wheel, dice, numbered lottery balls, digits, letters, dots, logos, watermark, UI, people, banknotes, photorealism, opaque chamber, clutter, excessive bloom",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/three-fast.png", "purpose": "Match the PC source's dark indigo stage, gold machine, glass chamber and blank colored lottery balls while creating a fresh narrow portrait composition." }],
+  "tags": ["mobile", "portrait", "three-fast", "openai-api-comparison", "static"]
+}

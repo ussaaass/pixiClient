@@ -1,0 +1,38 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "wallet-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "钱包页赌场背景动态 v1 AVIF 清晰版",
+  "jobId": "4d4cd9f9-73b7-4238-b782-e56baa18a064",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "promptVersion": "kling-mp4-to-avif-v4",
+  "sourceSha256": "54932db30a257612de1ee4b6b924bd2bf398fc3dd11610e9988c8afe39b13f3f",
+  "mime": "image/avif",
+  "derivedFrom": {
+    "jobId": "8894dd0f-c39d-4f1d-8237-43bcddd27dac",
+    "sourceSha256": "05aa35840a2faf9429ce8ce3c88b6ad1e31602b074effadb90309a6a68daa7cd",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 1176,
+      "height": 784
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 960,
+    "frameHeight": 640,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "width": 960,
+  "height": 640,
+  "bytes": 190453,
+  "releasePath": "assets/releases/wallet-casino-background-motion-v1/4d4cd9f9-73b7-4238-b782-e56baa18a064/source.avif",
+  "publishedAt": "2026-10-17T20:19:16.385Z",
+  "reviewer": "Codex visual QA (user-directed integration)"
+}

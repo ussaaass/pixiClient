@@ -1,6 +1,7 @@
 import { createApp } from 'vue';
 import App from './App.vue';
 import './style.css';
+import { createApiClient } from './platform/http/api-client';
 
 declare global {
   interface Window {
@@ -18,22 +19,29 @@ if (import.meta.env.DEV) {
   const { createBrowserDevelopmentIdentity } = await import('./platform/browser-api/composition');
   const identity = await createBrowserDevelopmentIdentity();
   app = createApp(App, {
+    gameExperienceApi: identity.gameExperienceApi,
     playerEntryApplication: identity.application,
     walletApplication: identity.walletApplication,
     walletFundingApplication: identity.walletFundingApplication,
     supportApplication: identity.supportApplication,
     socialApplication: identity.socialApplication,
+    coinMarketApplication: identity.coinMarketApplication,
     socialFriendsApplication: identity.socialFriendsApplication,
     checkSocialAccess: identity.checkSocialAccess,
     notificationSummaryApplication: identity.notificationSummaryApplication,
     inviteAgentApplication: identity.inviteAgentApplication,
     devFixture: identity.createTestAccount,
-    readDevelopmentContactChallengeCode: identity.readDevelopmentContactChallengeCode,
     identitySessionState: identity.sessionState,
   });
   startLocalIdentity = identity.start;
 } else {
-  app = createApp(App);
+  const api = createApiClient((input, init) => fetch(input, init));
+  app = createApp(App, { gameExperienceApi: {
+    gameCatalog: () => api.gameCatalog(),
+    gameExperiences: () => api.gameExperiences(),
+    gameExperience: (gameKey: string) => api.gameExperience(gameKey),
+    gamePreflight: (gameKey: string, difficultyKey: string) => api.gamePreflight(gameKey, difficultyKey),
+  } });
 }
 app.mount('#app');
 if (startLocalIdentity) void startLocalIdentity().catch((error: unknown) => {

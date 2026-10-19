@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "wallet-mobile-casino-background-v3",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页筹码兑换美元赌场背景 v3",
+  "jobId": "8b426d32-00ba-467a-bcc6-45c02595a5b8",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "promptVersion": "asset-prompt-v2",
+  "sourceSha256": "fd50c774cb94315c57948db668c428ac30234a438b51076e41a1c37b3d4b7124",
+  "mime": "image/webp",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+      "sha256": "4bce676d265b65bb2907892559277175166b49722ba0b417819ac673eea0f3ee"
+    }
+  ],
+  "width": 944,
+  "height": 1680,
+  "bytes": 1415070,
+  "releasePath": "assets/releases/wallet-mobile-casino-background-v3/8b426d32-00ba-467a-bcc6-45c02595a5b8/source.webp",
+  "publishedAt": "2026-10-18T09:33:20.294Z",
+  "reviewer": "Codex visual review"
+}

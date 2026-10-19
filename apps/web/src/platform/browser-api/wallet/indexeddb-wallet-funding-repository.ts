@@ -4,7 +4,7 @@ import type { BrowserDevelopmentDatabase } from '../database';
 import type { WalletFundingRepository } from '../../../wallet-funding/wallet-funding-application';
 import { LOCAL_FUNDING_CHANNELS } from './local-funding-channels';
 import { calculatePurchaseCoins, DEFAULT_EXCHANGE_RATE_CASH_FEN, DEFAULT_EXCHANGE_RATE_COIN_UNITS } from '../../wallet/wallet-domain';
-import { LocalAssetType, LocalAssetOperationType } from './indexeddb-wallet-repository';
+import { LocalAssetType, LocalAssetOperationType } from './local-asset-constants';
 
 const SYSTEM_USER_SETTING = 'wallet:system-user-id';
 const RATE_SETTING = 'system_config:cny_to_coin_ratio';

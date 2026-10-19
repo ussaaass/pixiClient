@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, onMounted, ref } from 'vue';
 import { AgentCapabilityCode, AgentDomainAdminAction, AgentDomainStatus, type AgentCapabilityCodeValue, type AgentDomainDto } from '@gameing/contracts/invite-agent';
 import type { AgentDomainReviewAuditDto } from '@gameing/admin-contracts/agent-domain-review';
@@ -184,7 +186,7 @@ onMounted(() => { void refresh(); });
       <div class="agent-domain-section-heading"><div><h2 id="agent-domain-filter-title">申请与代理列表</h2><p>演练申请使用独立的本机演练身份，不会写入真实用户。</p></div><span class="record-count">{{ visibleRecords.length }} 条</span></div>
       <div class="agent-domain-controls">
         <label><span>本机演练 user ID</span><input v-model="filterUserId" type="search" placeholder="输入演练 user ID" /></label>
-        <label><span>域状态</span><select v-model="filterStatus"><option value="">全部状态</option><option v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</option></select></label>
+        <label><span>域状态</span><el-select v-model="filterStatus"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption v-for="item in statusOptions" :key="item.value" :value="item.value">{{ item.label }}</AdminSelectOption></el-select></label>
         <button type="button" @click="filterUserId = ''; filterStatus = ''">清除筛选</button>
       </div>
       <div v-if="loading" class="agent-domain-empty" role="status">正在读取本机演练记录…</div>

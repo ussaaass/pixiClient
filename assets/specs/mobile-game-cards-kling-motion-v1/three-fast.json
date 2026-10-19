@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-three-fast-kling-v1",
+  "title": "3快 Mobile 游戏卡片动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-cards-openai-v1/three-fast.png",
+  "prompt": "Create a seamless, suspenseful 5-second portrait lottery-game-card animation from the supplied image. Preserve the exact composition, framing, palette, objects, and illustrated style. The existing numbered lottery balls collide and bounce naturally inside the original transparent lottery machine, rolling against the glass and one another before settling back into their original arrangement. Keep all numbers and balls inside the machine and legible. The camera remains fixed and the ending returns to the supplied composition for a clean loop.",
+  "negativePrompt": "camera movement, zoom, scene cut, layout change, extra balls, missing balls, illegible or changing numbers, balls leaving machine, text, logos, flicker, blur, shaky motion, sudden movement, broken glass, changing background",
+  "duration": "5",
+  "mode": "std"
+}

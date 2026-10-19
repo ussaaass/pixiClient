@@ -1,0 +1,10 @@
+{
+  "assetKey": "wallet-mobile-casino-background-motion-v2",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页筹码兑换美金无缝循环动态 v2",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+  "prompt": "Animate this exact portrait casino-table illustration as a clean infinite loop for the mobile Wallet page. Lock the camera and preserve the composition, cabinet, roulette edge, felt, colors and brightness. Animate the customer's anonymous hand pushing a small stack of chips forward across the felt; from the opposite side, the anonymous casino staff hand slides a few US dollar bills back toward the customer, clearly showing the chips-for-cash exchange. Keep both people faceless and outside the frame; animate hands and forearms only. Make the chip stack glide a short distance, settle, and return smoothly to its starting position; make the banknotes slide forward, pause, and return exactly to their original position. Add a subtle glint that travels over the chips and bills and a gentle roulette-wheel rotation in the background. Keep all movement inside the central 70 percent of the frame and leave the edges stationary. Maintain bright readable midtones and clear separation between chips and banknotes. First and last frames must match in hand pose, chip and bill positions, wheel orientation, and light level. No camera movement, zoom or pan.",
+  "negativePrompt": "faces, heads, visible bodies, new people, extra fingers, malformed hands, banknotes fused with chips, unreadable cash, money duplication, object morphing, camera movement, zoom, pan, tilt, scene cut, darkening, heavy vignette, flicker, strobing, watermark, text, logo, UI, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

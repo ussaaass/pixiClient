@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import {
@@ -292,7 +294,7 @@ watch(isAdminUsers, (active) => { if (active) void loadPermissionWorkspace(); })
     <template v-else-if="isAdminUsers">
       <section class="system-work-panel">
         <div class="system-panel-heading"><div><h2>统一 user 中的 Admin 账号</h2><p>只管理 `role_type` 含 ADMIN 的 user 权限 JSON；权限从登记目录选择，不创建独立 admin_user 或 Role。</p></div><span>本机 IndexedDB 演练</span></div>
-        <form class="system-filter-grid admin-permission-filters" @submit.prevent="loadPermissionWorkspace"><label>user ID / 用户名<input v-model="permissionKeyword" placeholder="搜索本机演练账号" maxlength="80"></label><label>Admin 状态<select v-model="permissionStatus"><option value="">全部状态</option><option :value="String(AdminManagedUserStatus.ACTIVE)">启用</option><option :value="String(AdminManagedUserStatus.LOCKED)">已锁定</option></select></label><label>权限码<select v-model="permissionPathFilter"><option value="">全部权限</option><option v-for="path in permissionPaths" :key="path.permissionCode" :value="path.permissionCode">{{ path.permissionCode }}</option></select></label><button type="submit" :disabled="permissionLoading">{{ permissionLoading ? '查询中…' : '查询账号' }}</button></form>
+        <form class="system-filter-grid admin-permission-filters" @submit.prevent="loadPermissionWorkspace"><label>user ID / 用户名<input v-model="permissionKeyword" placeholder="搜索本机演练账号" maxlength="80"></label><label>Admin 状态<el-select v-model="permissionStatus"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption :value="String(AdminManagedUserStatus.ACTIVE)">启用</AdminSelectOption><AdminSelectOption :value="String(AdminManagedUserStatus.LOCKED)">已锁定</AdminSelectOption></el-select></label><label>权限码<el-select v-model="permissionPathFilter"><AdminSelectOption value="">全部权限</AdminSelectOption><AdminSelectOption v-for="path in permissionPaths" :key="path.permissionCode" :value="path.permissionCode">{{ path.permissionCode }}</AdminSelectOption></el-select></label><button type="submit" :disabled="permissionLoading">{{ permissionLoading ? '查询中…' : '查询账号' }}</button></form>
         <p v-if="permissionError" class="system-inline-error" role="alert">{{ permissionError }} <button type="button" @click="loadPermissionWorkspace">重试</button></p>
         <p v-else-if="permissionFeedback" class="system-inline-success" role="status">{{ permissionFeedback }}</p>
         <div class="admin-permission-workspace">
@@ -341,8 +343,8 @@ watch(isAdminUsers, (active) => { if (active) void loadPermissionWorkspace(); })
           <label>关键字<input v-model="auditKeyword" maxlength="100" placeholder="原因、动作、资源或 request ID"></label>
           <label>操作者 user ID<input v-model="auditAdminUserId" inputmode="numeric" maxlength="20" placeholder="完整 ID"></label>
           <label>目标 user ID<input v-model="auditTargetUserId" inputmode="numeric" maxlength="20" placeholder="完整 ID"></label>
-          <label>操作类型<select v-model="auditActionCode"><option value="">全部操作</option><option v-for="(label,code) in auditActionLabels" :key="code" :value="code">{{ label }}</option></select></label>
-          <label>结果<select v-model="auditResultType"><option value="">全部结果</option><option :value="String(AdminAuditResultType.SUCCESS)">成功</option><option :value="String(AdminAuditResultType.DENIED)">拒绝</option><option :value="String(AdminAuditResultType.FAILED)">失败</option></select></label>
+          <label>操作类型<el-select v-model="auditActionCode"><AdminSelectOption value="">全部操作</AdminSelectOption><AdminSelectOption v-for="(label,code) in auditActionLabels" :key="code" :value="code">{{ label }}</AdminSelectOption></el-select></label>
+          <label>结果<el-select v-model="auditResultType"><AdminSelectOption value="">全部结果</AdminSelectOption><AdminSelectOption :value="String(AdminAuditResultType.SUCCESS)">成功</AdminSelectOption><AdminSelectOption :value="String(AdminAuditResultType.DENIED)">拒绝</AdminSelectOption><AdminSelectOption :value="String(AdminAuditResultType.FAILED)">失败</AdminSelectOption></el-select></label>
           <label>开始时间<input v-model="auditFrom" type="datetime-local"></label>
           <label>结束时间<input v-model="auditTo" type="datetime-local"></label>
           <span class="system-panel-actions"><button type="button" @click="resetAuditFilters">清空</button><button class="system-primary-action" type="submit" :disabled="auditLoading">{{ auditLoading?'查询中…':'查询审计' }}</button></span>
@@ -360,7 +362,7 @@ watch(isAdminUsers, (active) => { if (active) void loadPermissionWorkspace(); })
     <template v-else-if="isJobs">
       <section class="system-work-panel">
         <div class="system-panel-heading"><div><h2>Outbox 与后台任务</h2><p>查看积压、失败和租约；重试保持 event key 幂等，不编辑 payload 或业务事实。</p></div><button type="button" disabled>重试失败任务</button></div>
-        <div class="system-filter-grid jobs-filters"><label>topic / consumer<input disabled placeholder="按任务类型或消费者过滤"></label><label>任务状态<select disabled><option>全部状态</option></select></label><label>最早时间<input disabled placeholder="最早积压时间"></label><button type="button" disabled>查询任务</button></div>
+        <div class="system-filter-grid jobs-filters"><label>topic / consumer<input disabled placeholder="按任务类型或消费者过滤"></label><label>任务状态<el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label><label>最早时间<input disabled placeholder="最早积压时间"></label><button type="button" disabled>查询任务</button></div>
         <div class="system-empty-state"><span>↻</span><strong>暂无可读取的任务状态</strong><p>失败详情仅展示脱敏错误码与安全 payload 摘要。死信、取消和重试均需独立权限、原因和审计；不得把 Redis 临时状态当作数据库业务事实。</p></div>
         <p class="system-inline-warning">当前没有任务数据，不能推测队列正常或积压为零。</p>
       </section>

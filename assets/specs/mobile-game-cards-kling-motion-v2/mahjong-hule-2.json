@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-kling-v2",
+  "title": "麻将胡了 2 Mobile 游戏卡片动效纠错版（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v2/3b125c38-d09d-4647-8e3f-f36cae870559/source.png",
+  "prompt": "Create a seamless, premium 5-second portrait loop from this exact moonlit mahjong scene. Preserve the golden dragon's current silhouette and anatomy: one continuous body in one graceful S-curve, no corkscrew roll, no knot, no body crossing itself, no new limbs. Keep the camera fixed. Animate a clear gentle wave traveling from the dragon's head down its existing body and tail without changing the overall curve. The six existing face-up mahjong tiles make small controlled quarter-turns in place; their current bamboo, circle, and red honor markings stay crisp, face-forward, and unchanged, never becoming blank or showing tile backs. Return every element to the supplied composition at the end.",
+  "negativePrompt": "blank mahjong tiles, tile backs, changed tile symbols, unreadable markings, tangled dragon, twisted body, body crossing, corkscrew, broken anatomy, extra limbs, camera movement, zoom, scene cut, layout change, text, logos, blur, flicker, sudden motion",
+  "duration": "5",
+  "mode": "std"
+}

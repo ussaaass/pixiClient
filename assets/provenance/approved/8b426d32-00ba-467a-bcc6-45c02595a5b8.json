@@ -1,0 +1,71 @@
+{
+  "jobId": "8b426d32-00ba-467a-bcc6-45c02595a5b8",
+  "assetKey": "wallet-mobile-casino-background-v3",
+  "kind": "BACKGROUND",
+  "title": "手机钱包页筹码兑换美元赌场背景 v3",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-18T09:31:27.122Z",
+  "updatedAt": "2026-10-18T09:33:20.496Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/player-pages/wallet-mobile-casino-background-v3.json",
+  "specSha256": "e6d30fe0cd635cdecb013bde290ee881596aba20401502e38a4807f50cfef928",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+      "sha256": "4bce676d265b65bb2907892559277175166b49722ba0b417819ac673eea0f3ee"
+    }
+  ],
+  "promptSeed": "Asset: 手机钱包页筹码兑换美元赌场背景 v3\nIntended use: 钱包页竖屏背景；主题明确呈现筹码交易及美金到账，背景主体放在上半段和两侧，兼容页面控件覆盖\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nVisual reference images: apps/web/public/assets/page-backgrounds/mobile/wallet.webp (Style/material and casino-table reference only; replace its scene composition with a clear chip-for-US-dollar exchange.). Treat them as style references only; create the subject and composition described below.\nArt direction: Use case: stylized-concept. Asset type: portrait mobile casino wallet background illustration. Input image: Image 1 is a style/material reference only; keep its premium emerald felt, warm gold casino lighting, and polished game-illustration finish, but create a new composition. Scene: a close, richly detailed green casino tabletop with a gold-lit roulette wheel edge and soft slot-machine bokeh in the upper background. Primary request: clearly depict a casino-chip-to-cash exchange. In the upper-middle action area, one anonymous customer's hand slides a small neat stack of colorful casino chips forward across the felt; from the opposite side, the cuffed hand of a casino staff member slides several recognizable US dollar banknotes back toward the customer. Only hands and forearms are visible; both people remain completely outside the frame, with no faces or bodies. Keep chips and bills separated and unmistakable, in crisp focus, with visible green felt between them. Surround the transaction with a few neatly stacked red, black and emerald chips and restrained gold coins. Composition: portrait 9:16. Put the exchange action between 22% and 46% of the image height, keep both hands fully inside the central 70% safe width, and leave the bottom 15% visually quiet for mobile navigation. Keep the subject large enough to remain recognizable beneath translucent app panels. Style: premium casual 3D game illustration, rounded polished materials, emerald green and warm gold with restrained red/black chip accents, bright readable midtones, crisp silhouettes and soft casino lighting. No text or interface. Opaque background.\nMust avoid: faces, heads, visible bodies, identifiable person, extra fingers, malformed hands, floating money, banknotes fused with chips, unreadable paper clutter, gambling text, readable serial numbers, casino logo, watermark, UI, buttons, dark exposure, heavy vignette, motion blur, photorealistic photo, flat vector, empty center, hands cut off at frame edge\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create an opaque 9:16 portrait background (944×1680) for a mobile casino wallet page. Use the supplied wallet image only as a style and material reference; create a new composition. Depict a close emerald-green casino felt tabletop, with a gold-lit roulette-wheel edge and soft slot-machine bokeh in the upper background. In the upper-middle, between 22% and 46% of the image height, show a clear chip-for-cash exchange: an anonymous customer’s hand slides a small, neat stack of colorful casino chips forward, while a casino staff member’s cuffed hand slides several recognizable US-dollar banknotes back. Keep the chips and bills separate, crisp, and large enough to read beneath translucent app panels, with visible felt between them. Both hands must be anatomically correct and fully within the central 70% of the image width; show only hands and forearms, no faces or bodies. Place a few tidy red, black, and emerald chip stacks and restrained gold coins around the transaction, without crowding it.\n\nRender as a premium, friendly casual 3D game illustration: rounded, softly beveled forms, smooth polished enamel-like surfaces, crisp silhouettes, low-noise detail, and bright readable midtones. Deep teal and emerald green dominate, with warm ivory light surfaces and restrained warm-gold accents. Use a soft broad upper-left key light, gentle fill, warm highlights, and subtle contact shadows. Keep the perspective shallow and readable at phone size. Concentrate visual detail in the upper half and along the sides; leave the bottom 15% quiet for mobile navigation and preserve uncluttered space for H5 interface overlays.\n\nNo text, letters, numerals, readable banknote markings or serial numbers, logos, watermarks, UI, buttons, extra or malformed fingers, floating money, fused chips and banknotes, paper clutter, heavy vignette, dark exposure, motion blur, photorealism, or flat-vector styling.",
+  "promptResponseId": "resp_0293125dd022e4e7016ad491efd95c87d098155d6bdbde6c26",
+  "usage": {
+    "input_tokens": 1824,
+    "input_tokens_details": {
+      "cache_write_tokens": 1821,
+      "cached_tokens": 0
+    },
+    "output_tokens": 609,
+    "output_tokens_details": {
+      "reasoning_tokens": 205
+    },
+    "total_tokens": 2433,
+    "image": {
+      "input_tokens": 4959,
+      "input_tokens_details": {
+        "cache_write_tokens": 2459,
+        "cached_tokens": 0
+      },
+      "output_tokens": 453,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 5412
+    }
+  },
+  "imageRequestId": "req_923e1a79608445178a677cbc45cafeb9",
+  "outputSha256": "fd50c774cb94315c57948db668c428ac30234a438b51076e41a1c37b3d4b7124",
+  "outputBytes": 1415070,
+  "outputMime": "image/webp",
+  "outputWidth": 944,
+  "outputHeight": 1680,
+  "generatedAt": "2026-10-18T09:32:22.512Z",
+  "candidatePath": "assets/candidates/wallet-mobile-casino-background-v3/8b426d32-00ba-467a-bcc6-45c02595a5b8/source.webp",
+  "sourcePath": "assets/source/wallet-mobile-casino-background-v3/8b426d32-00ba-467a-bcc6-45c02595a5b8/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-18T09:33:20.294Z"
+  },
+  "releasePath": "assets/releases/wallet-mobile-casino-background-v3/8b426d32-00ba-467a-bcc6-45c02595a5b8/source.webp"
+}

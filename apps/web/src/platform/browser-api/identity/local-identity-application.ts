@@ -64,7 +64,7 @@ export class LocalIdentityApplication {
     }
     const userId = await this.repository.nextId();
     const deviceId = await this.repository.nextId();
-    const user: LocalUser = { userId, displayName: `游客${userId.slice(-4)}`, roleType: 1, rewardType: RewardType.RECHARGE_REBATE, status: 'ACTIVE', authVersion: 1 };
+    const user: LocalUser = { userId, displayName: `游客${userId.slice(-4)}`, createdAt: new Date().toISOString(), roleType: 1, rewardType: RewardType.RECHARGE_REBATE, status: 'ACTIVE', authVersion: 1 };
     const credential: LocalCredential = { credentialId: await this.repository.nextId(), userId, deviceId, kind: 'DEVICE', lookupKey: deviceHash, secretHash: deviceHash, state: 'ACTIVE' };
     await this.repository.createUserWithCredentials(user, [credential]);
     const issued = await issueSession(this.repository, user, deviceId);
@@ -220,8 +220,8 @@ export class LocalIdentityApplication {
       ?? passwords.find((credential) => credential.state === 'ACTIVE' && credential.lookupKey && !credential.lookupKey.includes('@') && !/^\+?[0-9]{7,15}$/.test(credential.lookupKey));
     return {
       username: usernameCredential?.displayValue ?? usernameCredential?.lookupKey ?? null,
-      email: emailCredential?.lookupKey ? { maskedValue: maskEmail(emailCredential.lookupKey), verified: true } : null,
-      phone: phoneCredential?.lookupKey ? { maskedValue: maskPhone(phoneCredential.lookupKey), verified: true } : null,
+      email: emailCredential?.lookupKey ? { maskedValue: maskEmail(emailCredential.lookupKey), verified: emailCredential.verified ?? true } : null,
+      phone: phoneCredential?.lookupKey ? { maskedValue: maskPhone(phoneCredential.lookupKey), verified: phoneCredential.verified ?? true } : null,
       passwordConfigured: passwords.some((credential) => credential.state === 'ACTIVE'),
       totpEnabled: totp.some((credential) => credential.state === 'ACTIVE'),
       recoveryCredential: { available: Boolean(activeRecovery), expiresAt: activeRecovery?.expiresAt ?? null },
@@ -340,9 +340,9 @@ export class LocalIdentityApplication {
     return { changed: true };
   }
 
-  async createContactChallenge(userId: string, input: { contactType: 'EMAIL' | 'PHONE'; contactValue: string; password: string; totp?: string }): Promise<{ challengeId: string; expiresAt: string }> {
+  async createContactChallenge(userId: string, input: { contactType: 'EMAIL' | 'PHONE'; contactValue: string; password?: string; totp?: string }): Promise<{ challengeId: string; expiresAt: string }> {
     if (!this.contactChallengeDelivery) throw new IdentityUseCaseError(503, 'IDENTITY_STORAGE_UNAVAILABLE', 'The local contact delivery adapter is unavailable.');
-    await this.requireCurrentPassword(userId, input.password);
+    await this.requirePasswordIfConfigured(userId, input.password);
     await this.requireTotpIfEnabled(userId, input.totp);
     const contactValue = input.contactType === 'EMAIL'
       ? input.contactValue.trim().normalize('NFC').toLocaleLowerCase()
@@ -377,6 +377,53 @@ export class LocalIdentityApplication {
     return { challengeId, expiresAt };
   }
 
+  async setPhoneContact(userId: string, input: { phone: string; currentPhone?: string; password?: string; totp?: string }): Promise<IdentitySettingsResponseDto> {
+    await this.requirePasswordIfConfigured(userId, input.password);
+    await this.requireTotpIfEnabled(userId, input.totp);
+    const phone = normalizePhone(input.phone);
+    if (!/^\+?[1-9][0-9]{6,14}$/.test(phone)) throw new IdentityUseCaseError(400, 'VALIDATION_FAILED', 'The phone number is invalid.');
+    const current = await this.repository.findCredentialsByUserKind(userId, 'IDENTIFIER');
+    const phoneCredential = current.find((item) => item.identifierType === 'PHONE' && item.state === 'ACTIVE');
+    if (phoneCredential) {
+      if (!input.currentPhone || normalizePhone(input.currentPhone) !== phoneCredential.lookupKey) throw new IdentityUseCaseError(409, 'CURRENT_PHONE_MISMATCH', 'The current phone number does not match.');
+    } else if (input.currentPhone) {
+      throw new IdentityUseCaseError(409, 'CURRENT_PHONE_MISMATCH', 'There is no currently bound phone number to replace.');
+    }
+    const existing = await this.repository.findCredentialByLookup(phone);
+    if (existing && (existing.userId !== userId || existing.identifierType !== 'PHONE')) throw new IdentityUseCaseError(409, 'IDENTIFIER_ALREADY_USED', 'This phone number is already in use.');
+    const credential: LocalCredential = { credentialId: await this.repository.nextId(), userId, kind: 'IDENTIFIER', identifierType: 'PHONE', lookupKey: phone, verified: false, state: 'ACTIVE' };
+    try { await this.repository.replaceContact(credential); }
+    catch (error) {
+      if (error instanceof DOMException && error.name === 'ConstraintError') throw new IdentityUseCaseError(409, 'IDENTIFIER_ALREADY_USED', 'This phone number is already in use.');
+      throw error;
+    }
+    return this.getIdentitySettings(userId);
+  }
+
+  async setEmailContact(userId: string, input: { email: string; currentEmail?: string; password?: string; totp?: string }): Promise<IdentitySettingsResponseDto> {
+    await this.requirePasswordIfConfigured(userId, input.password);
+    await this.requireTotpIfEnabled(userId, input.totp);
+    const email = input.email.trim().normalize('NFC').toLocaleLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new IdentityUseCaseError(400, 'VALIDATION_FAILED', 'The email address is invalid.');
+    const identifiers = await this.repository.findCredentialsByUserKind(userId, 'IDENTIFIER');
+    const current = identifiers.find((item) => item.identifierType === 'EMAIL' && item.state === 'ACTIVE');
+    if (current) {
+      const suppliedCurrentEmail = input.currentEmail?.trim().normalize('NFC').toLocaleLowerCase();
+      if (!suppliedCurrentEmail || suppliedCurrentEmail !== current.lookupKey) throw new IdentityUseCaseError(409, 'CURRENT_EMAIL_MISMATCH', 'The current email address does not match.');
+    } else if (input.currentEmail) {
+      throw new IdentityUseCaseError(409, 'CURRENT_EMAIL_MISMATCH', 'There is no currently bound email address to replace.');
+    }
+    const existing = await this.repository.findCredentialByLookup(email);
+    if (existing && (existing.userId !== userId || existing.identifierType !== 'EMAIL')) throw new IdentityUseCaseError(409, 'IDENTIFIER_ALREADY_USED', 'This email address is already in use.');
+    const credential: LocalCredential = { credentialId: await this.repository.nextId(), userId, kind: 'IDENTIFIER', identifierType: 'EMAIL', lookupKey: email, verified: false, state: 'ACTIVE' };
+    try { await this.repository.replaceContact(credential); }
+    catch (error) {
+      if (error instanceof DOMException && error.name === 'ConstraintError') throw new IdentityUseCaseError(409, 'IDENTIFIER_ALREADY_USED', 'This email address is already in use.');
+      throw error;
+    }
+    return this.getIdentitySettings(userId);
+  }
+
   async confirmContactChallenge(userId: string, challengeId: string, code: string): Promise<IdentitySettingsResponseDto> {
     const challenge = await this.repository.findChallenge(challengeId);
     if (!challenge || challenge.userId !== userId || !challenge.type.startsWith('CONTACT_')) throw new IdentityUseCaseError(404, 'CHALLENGE_NOT_FOUND', 'The contact verification challenge was not found.');
@@ -391,7 +438,7 @@ export class LocalIdentityApplication {
     if (existing && (existing.userId !== userId || existing.identifierType !== contactType)) throw new IdentityUseCaseError(409, 'IDENTIFIER_ALREADY_USED', 'This email address or phone number is already in use.');
     const credential: LocalCredential = {
       credentialId: await this.repository.nextId(), userId, kind: 'IDENTIFIER', identifierType: contactType,
-      lookupKey: challenge.targetValue!, state: 'ACTIVE',
+      lookupKey: challenge.targetValue!, verified: true, state: 'ACTIVE',
     };
     try {
       await this.repository.bindVerifiedContact(challenge, credential);
@@ -408,6 +455,11 @@ export class LocalIdentityApplication {
     if (!credential || credential.state !== 'ACTIVE' || !credential.salt || !credential.secretHash) throw new IdentityUseCaseError(401, 'REAUTHENTICATION_FAILED', 'A current account password is required.');
     const candidate = await derivePasswordHash(password, Uint8Array.from(atob(credential.salt), (char) => char.charCodeAt(0)));
     if (candidate !== credential.secretHash) throw new IdentityUseCaseError(401, 'REAUTHENTICATION_FAILED', 'The current password could not be verified.');
+  }
+
+  private async requirePasswordIfConfigured(userId: string, password?: string): Promise<void> {
+    const credential = await this.repository.findCredentialByUserKind(userId, 'PASSWORD');
+    if (credential?.state === 'ACTIVE') await this.requireCurrentPassword(userId, password ?? '');
   }
 
   private async requireTotpIfEnabled(userId: string, code?: string): Promise<void> {
@@ -437,5 +489,7 @@ function maskEmail(value: string): string {
 function maskPhone(value: string): string {
   return value.length < 7 ? '•••••••' : `${value.slice(0, 3)}••••${value.slice(-3)}`;
 }
+
+function normalizePhone(value: string): string { return value.trim().replace(/[\s()-]/g, ''); }
 
 export function localCookieName(key: 'device' | 'refresh'): string { return key === 'device' ? DEVICE_COOKIE : REFRESH_COOKIE; }

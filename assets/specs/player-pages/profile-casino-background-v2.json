@@ -1,0 +1,15 @@
+{
+  "assetKey": "profile-casino-background-v2",
+  "kind": "BACKGROUND",
+  "title": "我的页赌场牌桌背景 v2",
+  "intendedUse": "玩家我的/个人中心一级页面背景；头像、账号资料和安全设置由 H5 单独渲染。以玩家专属牌位和筹码表达个人身份",
+  "prompt": "Create a wide 3:2 polished stylized 3D casino-game background for the My/Profile page. Show a close, unmistakable single-player casino TABLE as the main subject, occupying about 65% of the image, viewed from a slightly elevated angle. The deep emerald felt must be enclosed by a visible padded rail. Feature one elegant player's chair and a clearly defined personal playing position with a neat stack of gold coins, casino chips, and a few traditional playing cards. Add a softly glowing slot machine behind the table and a graceful shower of ivory mahjong tiles falling from the upper edge toward the table. The image should suggest a player's own place in a premium casino, not a portrait or hotel lobby. Strong readable table silhouette and gaming props, warm gold accents over deep teal and emerald, polished casual-game 3D illustration, crisp details, not photorealistic. The table is foreground and dominant; architecture remains secondary. The green area must never resemble a floor, carpet, pool, or empty room. No person, face, text, letters, numbers, logos, UI, or watermark.",
+  "negativePrompt": "portrait, person, face, empty lounge, empty floor, carpet, pool, green void, table only in distant background, tiny chips or cards, architecture dominating, mailboxes, photorealistic casino photography, readable text, numerals, logos, watermark, UI, buttons, clutter hiding tabletop",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "tags": ["player-page", "profile", "casino", "personal-table", "background", "v2"]
+}

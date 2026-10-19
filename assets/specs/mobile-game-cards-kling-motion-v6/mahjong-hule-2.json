@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-kling-v6",
+  "title": "麻将胡了 2 盘龙转动与麻将浮动循环候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v8/55591a64-b845-454d-984b-092efdc6be5a/preview.webp",
+  "prompt": "Create a seamless 5-second portrait loop from this exact artwork. The camera stays completely fixed. The golden dragon remains coiled in a circular ring around the center and performs a clearly visible smooth clockwise circling motion around the central title, like the coiled body is gently revolving as one continuous ring; keep its head, tail, scales, and all four paws recognizable and countable throughout. The mahjong tiles around the outside also float and rotate individually along a gentle orbit, with clear tile-face patterns. Make the motion broad and obvious at mobile-card size: dragon coil rotation, visible tile rotation and orbital travel, a slight flowing mane and tail, but no zoom or camera pan. Keep the exact center title “胡了！” locked in place, sharp, bright red, and unchanged for every frame. Preserve all tile symbols and the moonlit palace scene. Return to the starting composition at the end for a smooth loop, no cuts or flicker.",
+  "negativePrompt": "static image, camera-only movement, zoom, pan, dragon uncoiling, straight dragon, body losing circular coil, body crossing itself, twisted body, limbs disappearing, fewer or more than four paws, paw count changing, tile symbols changing, text changing, misspelled or deformed Chinese title, title moving, title blur, blank tile faces, motion blur, flicker, scene cut, extra text, logos, watermark",
+  "duration": "5",
+  "mode": "std"
+}

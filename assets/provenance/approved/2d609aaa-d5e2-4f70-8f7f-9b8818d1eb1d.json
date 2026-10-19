@@ -1,0 +1,61 @@
+{
+  "jobId": "2d609aaa-d5e2-4f70-8f7f-9b8818d1eb1d",
+  "assetKey": "social-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机社区页赌场竖版背景动态 v1 AVIF 清晰版",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-17T19:48:52.490Z",
+  "updatedAt": "2026-10-17T20:19:20.251Z",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "specPath": "assets/specs/player-pages/social-mobile-casino-background-motion-v1.json",
+  "specSha256": "328782eb6e8eafe3e325cf0c814614c41f8dca24137965e82840c60ca79b84e6",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/social.webp",
+      "sha256": "ddf121a6fd33511b4fe386880d543a37d10fce94a24e30b2b013e1c2d61b12fb"
+    }
+  ],
+  "promptSeed": "Animate this exact portrait casino social-table illustration as a premium mobile community-page background. Preserve its portrait composition, exact props, colors and materials with a locked camera. Create clearly visible but calm motion: several poker chips glide in a short arc and rotate on the felt, gold coins roll briefly and catch moving light, and two ivory mahjong tiles wobble and settle. Casino lamps glow in layered waves in the distance. Keep the central upper space calm for community UI. Return every moved item to its original pose and position in the final frame for a clean infinite loop. Do not zoom or pan the camera and do not add or remove objects.\nDerived from review candidate f8e6646f-a3cf-49a7-9f2b-75a2964c0bff; converted to a 640x960, 5 fps infinite-loop AVIF with mild sharpening.",
+  "promptVersion": "kling-mp4-to-avif-v3",
+  "candidatePath": "assets/candidates/social-mobile-casino-background-motion-v1/2d609aaa-d5e2-4f70-8f7f-9b8818d1eb1d/source.avif",
+  "outputSha256": "f136e9232b0dce0a852aaf5d20c275cba646c853cac70a711826a34e6d740390",
+  "outputBytes": 115529,
+  "outputMime": "image/avif",
+  "outputWidth": 640,
+  "outputHeight": 960,
+  "generatedAt": "2026-10-17T19:48:52.502Z",
+  "cost": {
+    "status": "ACTUAL",
+    "amount": 0,
+    "currency": "USD",
+    "basis": "local transcode; no generation API call"
+  },
+  "derivedFrom": {
+    "jobId": "f8e6646f-a3cf-49a7-9f2b-75a2964c0bff",
+    "sourceSha256": "82f3e282566dcddc4a9f006c2f637cf1fef8ec5ab3bc8f577aed3c6774b5e66c",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 784,
+      "height": 1176
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 640,
+    "frameHeight": 960,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "sourcePath": "assets/source/social-mobile-casino-background-motion-v1/2d609aaa-d5e2-4f70-8f7f-9b8818d1eb1d/source.avif",
+  "review": {
+    "reviewer": "Codex visual QA (user-directed integration)",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-17T20:19:19.923Z"
+  },
+  "releasePath": "assets/releases/social-mobile-casino-background-motion-v1/2d609aaa-d5e2-4f70-8f7f-9b8818d1eb1d/source.avif"
+}

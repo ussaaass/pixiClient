@@ -1,0 +1,9 @@
+{
+  "assetKey": "wallet-mobile-casino-background-motion-v1",
+  "title": "手机钱包页赌场竖版背景动态 v1",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/wallet.webp",
+  "prompt": "Animate this exact portrait casino roulette-table illustration as a premium mobile page background. Lock the camera completely and preserve portrait framing, layout, all table and object identities, colors and materials. Make the roulette wheel spin clearly, let two or three chip stacks rotate and slide a short distance across the felt, and make gold coins roll and flash with moving highlights. A few ivory mahjong tiles descend from the upper edge, bounce once on the far side of the table, then return to their original pose. Distant slot lights pulse in layered waves. Use broad visible object motion without camera zoom, pan, tilt or scene changes. Return moved objects to their exact starting pose and position by the final frame for a clean infinite loop. Do not add or remove objects.",
+  "negativePrompt": "landscape framing, camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated chips, warped roulette wheel, melting table, changed tile design, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

@@ -1,0 +1,12 @@
+{
+  "assetKey": "mobile-game-card-fishing-openai-v1",
+  "kind": "BACKGROUND",
+  "title": "捕鱼 Mobile 游戏卡片背景 OpenAI API 对照候选",
+  "intendedUse": "手机大厅捕鱼游戏卡片的静态竖版背景；游戏名称和难度信息由 H5 绘制",
+  "prompt": "Create an original portrait 9:16 mobile game-card background based on the supplied 捕鱼 PC portrait art. Preserve its bright turquoise underwater reef and central golden koi identity, but recompose for a narrow phone card. Show one elegant golden koi swimming in a graceful S-curve through the upper-middle, with a few colorful smaller fish swimming nearby at distinct depths. The fish should be complete, clearly separated and visually lively, with flowing fins, bubbles and shafts of sun from above. Keep the lower 20 percent calmer for interface text. Match the PC source's polished dimensional casual-game illustration, clean fish silhouettes, luminous water and saturated but balanced reef colors. No fishing guns, text, numbers, logos, watermark, UI, people, money or photorealism.",
+  "negativePrompt": "wide crop, cropped fish, extra eyes or fins, fused fish, fishing guns, text, logos, watermark, UI, people, currency, photorealism, dark muddy underwater scene, excessive bubbles, clutter",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/game-cards-v3-portrait/sources/fishing.png", "purpose": "Match the PC source's golden koi, underwater brightness, reef detail and polished 3D style; compose for portrait mobile use." }],
+  "tags": ["mobile", "portrait", "fishing", "openai-api-comparison", "static"]
+}

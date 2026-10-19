@@ -67,6 +67,22 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
     await transaction.done;
   }
 
+  async replaceContact(credential: LocalCredential): Promise<void> {
+    const transaction = this.database.transaction('credentials', 'readwrite');
+    const store = transaction.store;
+    const current = await store.index('by-user-kind').getAll([credential.userId, 'IDENTIFIER']);
+    for (const item of current) {
+      if (item.state === 'ACTIVE' && item.identifierType === credential.identifierType) {
+        const replaced = { ...item, state: 'REPLACED' as const };
+        delete replaced.lookupKey;
+        delete replaced.displayValue;
+        await store.put(replaced);
+      }
+    }
+    await store.put(credential);
+    await transaction.done;
+  }
+
   async createUserWithCredentials(user: LocalUser, credentials: LocalCredential[]): Promise<void> {
     const transaction = this.database.transaction(['users', 'credentials'], 'readwrite');
     await transaction.objectStore('users').put(user);

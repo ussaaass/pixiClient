@@ -1,0 +1,12 @@
+{
+  "assetKey": "three-fast-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "3快专属游戏厅背景",
+  "intendedUse": "3分快开游戏专属子厅背景；网页覆盖投注规则、倒计时和难度档位。",
+  "prompt": "Create a wide 3:2 premium casual 3D quick-draw game room environment. Three luminous abstract draw capsules with different simple geometric patterns sweep through a circular teal light track, with elegant motion trails and a soft clock-like halo in the distant background. Do not show digits, lottery balls with numerals, or a result. Keep the lower middle 45 percent dark, calm and uncluttered for HTML rules and difficulty cards. Match the shared Gameing Hall style: rounded polished 3D objects, deep teal and blue-green, ivory highlights, restrained warm gold, soft broad upper-left lighting, friendly premium casual-game finish.",
+  "negativePrompt": "photorealism, real lottery branding, readable numbers, text, letters, logos, watermark, people, casino, betting slip, UI, buttons, cards, cash, clutter lower center, harsh bloom, flat vector",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared polished dimensional finish and soft light only; create original abstract draw imagery." }],
+  "tags": ["three-fast", "subhall", "background"]
+}

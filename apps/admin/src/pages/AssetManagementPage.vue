@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed } from 'vue';
 import { useRoute } from 'vue-router';
 
@@ -30,9 +32,9 @@ const releaseChecks = ['READY 且审核通过', '格式与资源完整性', '尺
         <div class="asset-panel-heading"><div><h2>Asset 文件目录</h2><p>查询统一文件元数据；variant/使用位置由已登记 artifact、release 与引用记录汇总。</p></div><button type="button" disabled>＋ 上传资源</button></div>
         <div class="asset-query-grid">
           <label>Asset ID<input disabled placeholder="十进制字符串"></label>
-          <label>资源类型<select disabled><option>全部类型</option></select></label>
-          <label>资源状态<select disabled><option>全部状态</option></select></label>
-          <label>使用位置<select disabled><option>全部位置</option></select></label>
+          <label>资源类型<el-select disabled><AdminSelectOption value="">全部类型</AdminSelectOption></el-select></label>
+          <label>资源状态<el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
+          <label>使用位置<el-select disabled><AdminSelectOption value="">全部位置</AdminSelectOption></el-select></label>
           <button type="button" disabled>查询资源</button>
         </div>
         <div class="asset-table-empty"><span>▧</span><strong>暂无可读取的 Asset</strong><p>目录会显示类型、状态、hash、密文字节数、尺寸/时长、客户端声明 MIME、可见范围与引用位置。对象存储路径和长期公开 URL 不在列表回显。</p></div>
@@ -48,8 +50,8 @@ const releaseChecks = ['READY 且审核通过', '格式与资源完整性', '尺
         <div class="asset-panel-heading"><div><h2>AI 生成任务台账</h2><p>主模型与图像模型分开记录，实际模型 ID 和费用依据由服务端任务回执提供。</p></div><button type="button" disabled>＋ 创建生成任务</button></div>
         <div class="asset-query-grid generation-query-grid">
           <label>素材语义键<input disabled placeholder="按 asset_key 查找"></label>
-          <label>资源类型<select disabled><option>全部类型</option></select></label>
-          <label>任务状态<select disabled><option>全部状态</option></select></label>
+          <label>资源类型<el-select disabled><AdminSelectOption value="">全部类型</AdminSelectOption></el-select></label>
+          <label>任务状态<el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
           <label>创建时间<input disabled placeholder="开始时间 — 结束时间"></label>
           <button type="button" disabled>查询任务</button>
         </div>
@@ -67,8 +69,8 @@ const releaseChecks = ['READY 且审核通过', '格式与资源完整性', '尺
       <section class="asset-query-panel">
         <div class="asset-panel-heading"><div><h2>资源发布清单</h2><p>大厅公共资源与游戏专属资源按不可变版本发布；每个 release 固定清单和文件 hash。</p></div><div class="asset-panel-actions"><button type="button" disabled>构建检查</button><button type="button" disabled>＋ 新建发布</button></div></div>
         <div class="asset-query-grid release-query-grid">
-          <label>资源范围<select disabled><option>大厅 / 指定游戏</option></select></label>
-          <label>发布状态<select disabled><option>全部状态</option></select></label>
+          <label>资源范围<el-select disabled><AdminSelectOption value="">大厅 / 指定游戏</AdminSelectOption></el-select></label>
+          <label>发布状态<el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
           <label>版本 / 清单<input disabled placeholder="release key 或 manifest hash"></label>
           <button type="button" disabled>查询发布</button>
         </div>

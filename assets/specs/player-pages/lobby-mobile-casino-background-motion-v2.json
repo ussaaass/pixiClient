@@ -1,0 +1,10 @@
+{
+  "assetKey": "lobby-mobile-casino-background-motion-v2",
+  "kind": "BACKGROUND",
+  "title": "手机游戏首页老虎机与金币无缝循环动态 v2",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/lobby.webp",
+  "prompt": "Animate this exact bright portrait casino arcade illustration as a seamless infinite mobile game-index background. Lock the camera and preserve the symmetrical emerald-and-ivory arches and all machine identities. Spin the slot reels visibly in short cycles, return every reel to its exact original symbols by the final frame, and chase the cabinet bulbs from one machine to the next in warm gold. Let a few existing coins rise a short distance from the lower tray, turn once, and settle back into their exact starting positions. Add broad visible light movement across cabinet faces without moving the machines. Keep the scene bright and welcoming, with stable exposure and no darkening. The central overlay-safe band remains relatively calm while glowing reels stay visible above and along both sides. Keep the outer 8 percent at every edge still. First and last frames match exactly in reel symbols, coin positions and light intensity. No camera movement, zoom or pan.",
+  "negativePrompt": "camera movement, zoom, pan, tilt, scene cut, dark exposure, heavy vignette, flicker, strobing, exposure flashes, motion near edges, clipped coins, new or removed machines, deformed cabinets, changing architecture, unreadable reels, text, logos, watermark, UI, people, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

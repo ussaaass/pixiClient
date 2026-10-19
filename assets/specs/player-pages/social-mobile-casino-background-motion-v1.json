@@ -1,0 +1,9 @@
+{
+  "assetKey": "social-mobile-casino-background-motion-v1",
+  "title": "手机社区页赌场竖版背景动态 v1",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/social.webp",
+  "prompt": "Animate this exact portrait casino social-table illustration as a premium mobile community-page background. Preserve its portrait composition, exact props, colors and materials with a locked camera. Create clearly visible but calm motion: several poker chips glide in a short arc and rotate on the felt, gold coins roll briefly and catch moving light, and two ivory mahjong tiles wobble and settle. Casino lamps glow in layered waves in the distance. Keep the central upper space calm for community UI. Return every moved item to its original pose and position in the final frame for a clean infinite loop. Do not zoom or pan the camera and do not add or remove objects.",
+  "negativePrompt": "landscape framing, camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated tiles, warped cards, melting table, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

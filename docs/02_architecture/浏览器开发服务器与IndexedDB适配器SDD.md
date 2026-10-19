@@ -1,6 +1,6 @@
 # 浏览器开发服务器与 IndexedDB 适配器 SDD
 
-状态：已审核，离线身份、欢迎赠币/钱包摘要/转账/金币兑换/提现申请、充值订单与 USDT/TRON 本机演练、客服文本会话、社区帖子/回复、好友与私信、通知摘要及邀请/代理申请已施工；真实链上收款、附件和真实服务仍在推进。当前已实现共享 Identity/Wallet/WalletFunding/Support/Social/Notification/InviteAgent contracts、浏览器 Request/Response dispatcher、IndexedDB v11、设备注册/登录、账号安全设置、TOTP/恢复码/二维码、access refresh、首次赠币及充值/转账/兑币复式账本、JWT 钱包摘要/明细/充值订单/转账/兑换/收款方式/提现报价和申请、客服会话创建/续写/关闭、社区帖子/回复按本地 owner 持久化、直属上级 reward_type 社交门禁与共享 access DTO、好友码/用户名查找、好友申请与一对一文字私信、两年邀请链接本地签发、按 system_config TTL 暂存邀请码并在首次设备注册时绑定四级本地祖先链及 agent_domain 申请/撤回；通知 application 从现有业务来源实时聚合，不创建通知表或本地通知副本。提现 Browser API 仅冻结余额、查看待审状态或取消申请，绝不模拟审核通过或实际出款；充值仅能由显式开发模拟 endpoint 演练，不等同真实渠道支付。演练收款资料只存名称和末四位；USDT 订单仅返回明确标记的不可转账演练标识，不生成 TRON 地址。本文不把浏览器数据库定义为产品后端，也不把本地身份、账本、社交会话或读模型当成线上事实。
+状态：已审核，离线身份、欢迎赠币/钱包摘要/转账/金币兑换/提现申请、充值订单与 USDT/TRON 本机演练、客服文本会话、社区帖子/回复、好友与私信、通知摘要及邀请/代理申请已施工；真实链上收款、附件和真实服务仍在推进。当前已实现共享 Identity/Wallet/WalletFunding/Support/Social/Notification/InviteAgent contracts、浏览器 Request/Response dispatcher、IndexedDB v11、设备注册/登录、账号安全设置、TOTP/恢复码/二维码、access refresh、首次赠币及充值/转账/兑币复式账本、JWT 钱包摘要/明细/充值订单/转账/兑换/收款方式/提现报价和申请、客服会话创建/续写/关闭、社区帖子/回复按本地 owner 持久化、直属上级 reward_type 社交门禁与共享 access DTO、好友码/用户名查找、好友申请与一对一文字私信、两年邀请链接本地签发、按 system_config TTL 暂存邀请码并在首次设备注册时绑定四级本地祖先链及 agent_domain 申请/撤回；通知 application 从现有业务来源实时聚合，不创建通知表或本地通知副本。消息导航徽标只计需要用户处理的待办：待本人回复的客服会话和入站好友申请；历史公告与资产流水不算未读。社区导航另显示已发布新帖数，按当前浏览器为每个用户保存的已读游标计算，首次使用展示最近 24 小时的帖子，进入社区后推进游标；生产跨设备同步仍需服务端读状态接口。提现报价只计算金额和手续费；有效流水在最终创建提现申请的事务中校验，失败不占款，由前端在确认提交后显示弹窗。提现 Browser API 仅冻结余额、查看待审状态或取消申请，绝不模拟审核通过或实际出款；充值仅能由显式开发模拟 endpoint 演练，不等同真实渠道支付。演练收款资料只存名称和末四位；USDT 订单仅返回明确标记的不可转账演练标识，不生成 TRON 地址。本文不把浏览器数据库定义为产品后端，也不把本地身份、账本、社交会话或读模型当成线上事实。
 
 ## 1. 目标与边界
 
@@ -54,7 +54,7 @@ Composition Root 只接受构建环境注入的 `LOCAL_BROWSER_SERVER` 或 `REMO
 | --- | --- | --- | --- |
 | `POST /api/v1/auth/device-register` | 首次访问无设备凭证时自动创建 user/device/session，并触发一次性新用户赠币 workflow | 无；`Idempotency-Key` | 共享设备摘要 request 与 `SessionResponse` |
 | `POST /api/v1/auth/device-login` | 读取/验证本机已绑定设备凭证；未绑定返回稳定业务错误 | 无 | 共享 `DeviceLoginRequest/SessionResponse` |
-| `POST /api/v1/auth/password-login` | 用用户名/已验证邮箱/手机号与密码登录；启用 TOTP 时进入同一登录 challenge 协议 | 无 | 共享 `PasswordLoginRequest/SessionResponse` 或 challenge DTO |
+| `POST /api/v1/auth/password-login` | 用用户名/邮箱/手机号与密码登录；启用 TOTP 时进入同一登录 challenge 协议 | 无 | 共享 `PasswordLoginRequest/SessionResponse` 或 challenge DTO |
 | `POST /api/v1/auth/recovery` | H5 本地解密二维码后，以凭证 ID/secret 与（若启用）当前 TOTP 恢复账号并创建会话 | 无 | 共享 `AccountRecoveryRequest/SessionResponse` |
 | `POST /api/v1/auth/refresh` | 轮换刷新凭证并签发新 access token | refresh cookie/本地 refresh jar | 共享 `SessionResponse`；响应 envelope 相同 |
 | `POST /api/v1/auth/logout` | 撤销当前会话 | 玩家 access token | 共享 logout response；正式接口不使用 204 |
@@ -82,8 +82,8 @@ Browser API Server 必须与后端使用相同 JSON 序列化边界：HTTP 2xx/�
 | `GET /api/v1/me/wallet/activity` | Bearer access token；可选 query `cursor=ISO_UTC~entryId` | `200 WalletActivityResponseDto = { items: WalletActivityItemDto[], nextCursor: string|null }`，每页至多 50 条当前用户资产账户分录，按时间倒序；游标用 occurredAt+entryId 稳定翻页。分录含 entry/operation ID、常量化 activityType、assetType、币种、delta、balanceAfter 和 ISO UTC occurredAt | `400 VALIDATION_FAILED`、`401 ACCESS_TOKEN_INVALID`、`503 WALLET_STORAGE_UNAVAILABLE` |
 | `GET/POST /api/v1/me/wallet/payout-accounts` | 登录会话；创建请求含收款方式、名称、演练标识和幂等键 | 读取/创建当前 user 的收款方式；响应只含脱敏账号，不回显原标识 | `PayoutAccountDto[]` / `PayoutAccountDto`；本机模拟仅接受虚构标识，线上必须使用受控加密存储 |
 | `DELETE /api/v1/me/wallet/payout-accounts/:payoutAccountId` | Bearer access token | 无未终态提现引用时删除本机演练方式；默认项在事务内切换 | `{ deleted: boolean }`；被未终态申请引用时返回冲突 |
-| `POST /api/v1/me/wallet/withdrawals/quote` | `{ payoutAccountId, netCnyFen }`；需邮箱/手机验证或用户名+密码 | 读取配置、检查有效流水/可用余额/最低金额整数倍；手续费向上取整到人民币分，返回 72 小时后可出款时刻和短时报价 | `WithdrawalQuoteDto`；比例 `cny_to_coin_ratio`、`minimum_withdrawal_coins`、`withdrawal_fee_rate_percent` |
-| `GET/POST /api/v1/me/wallet/withdrawals` | Bearer access token；创建提交 `{ quote, idempotencyKey }`，同样执行身份门槛 | 读取最近申请；提交在单个 IndexedDB 事务内重新校验快照并增加 CNY `frozenAmount`，初态 `REQUESTED` | `WithdrawalDto[]` / `WithdrawalDto`；不在此端点调用商户或完成结算 |
+| `POST /api/v1/me/wallet/withdrawals/quote` | `{ payoutAccountId, netCnyFen }`；需邮箱/手机验证或用户名+密码 | 读取配置、校验收款方式/可用余额/最低金额整数倍并计算费用；不检查有效流水，返回 72 小时后可出款时刻和短时报价 | `WithdrawalQuoteDto`；比例 `cny_to_coin_ratio`、`minimum_withdrawal_coins`、`withdrawal_fee_rate_percent` |
+| `GET/POST /api/v1/me/wallet/withdrawals` | Bearer access token；创建提交 `{ quote, idempotencyKey }`，同样执行身份门槛 | 读取最近申请；提交在单个 IndexedDB 事务内重新校验报价、身份、有效流水和余额，并增加 CNY `frozenAmount`，初态 `REQUESTED`；流水不足时以 `TURNOVER_INCOMPLETE` 拒绝且不占款 | `WithdrawalDto[]` / `WithdrawalDto`；不在此端点调用商户或完成结算 |
 | `POST /api/v1/me/wallet/withdrawals/:withdrawalId/cancel` | Bearer access token | 只允许 `REQUESTED` 撤销；原子标为 `CANCELLED` 并释放冻结金额，重复撤销返回原状态 | `WithdrawalDto`；其他状态不允许客户端取消 |
 | `POST /api/v1/me/identity/username` | `{ username: string(3..32), password: string(1..256), totp?: 6 位 TOTP 或 16 位十六进制备用码 }` | `200 IdentitySettingsResponse`；创建或替换唯一用户名，必须用当前密码重新认证 | `400 VALIDATION_FAILED`、`401 REAUTHENTICATION_FAILED`、`409 IDENTIFIER_ALREADY_USED`、`422 USERNAME_INVALID` |
 | `POST /api/v1/me/identity/password` | `{ currentPassword?: string, newPassword: string(8..256), totp?: 6 位 TOTP 或 16 位十六进制备用码 }`；已有密码时 currentPassword 必填；首次设置依赖已授权当前 session | `200 { changed: true }`；密码摘要保存后撤销其他 sessions，当前 session 保持有效 | `400 VALIDATION_FAILED`、`401 REAUTHENTICATION_FAILED`、`409 PASSWORD_REUSE` |
@@ -137,7 +137,7 @@ type RecoveryCredentialIssueResponse = { credentialId: BigIntIdString; expiresAt
 
 账号锁定、attempt 计数及 challenge TTL 是客户端流程模拟参数，不复制生产风控结论。首版本地 challenge TTL 5 分钟、失败连续 5 次后锁定 15 分钟；二者仅为可配置开发 fixture，明确不作为生产参数。锁定统一用 HTTP `403 ACCOUNT_LOCKED`，遵守 HTTP SDD 的 status 列表。
 
-账号资料绑定完整流程包括：设置/更改用户名与密码；邮箱/手机分别重新验证当前密码后发送验证 challenge，确认 challenge 后绑定；可选启用 TOTP 并展示一次性备用恢复码；可选签发/替换密码保护的恢复二维码。每个敏感变更均要求当前密码，若 TOTP 已启用再要求 TOTP 或尚未使用的备用码；TOTP 遗失且没有可用备用码时不提供自助重置，走客服人工流程。邮箱/手机在新值验证成功后才替换旧值，替换与 challenge 消费在同一事务完成，旧值立即释放。LOCAL 验证码由开发态内存 inbox 保存且只通过 dev-only inspector 读取；验证码不进入公开 DTO、IndexedDB、日志或 URL。TOTP seed 通过 otpauth URI 一次性返回页面，以手动录入方式添加验证器；IndexedDB 只存 AES-GCM 加密后的 seed。启用 TOTP 前必须确认有效 6 位码；登录先签发 5 分钟单次 challenge，成功消费后建立会话。启用后返回 10 个一次性备用码，数据库仅保存每个码的 SHA-256 摘要；登录 challenge 可消费单个备用码，不能重复使用。二维码默认有效 2 年，在替换前可重复使用，旧版本保留为 REPLACED 历史，账号最多一份有效凭证。账号恢复二维码流程要求当前 TOTP，不接受备用码替代。
+账号资料绑定完整流程包括：设置/更改用户名与密码；邮箱/手机免验证码绑定，换绑时输入完整旧联系方式；若已设置密码需重新输入当前密码，若启用 TOTP 需当前 TOTP。联系方式与安全事件在同一个 IndexedDB 事务提交，成功后旧值立即释放；绑定状态不代表邮箱或手机可达性已验证。可选启用 TOTP 并展示一次性备用恢复码；可选签发/替换密码保护的恢复二维码。TOTP 遗失且没有可用备用码时不提供自助重置，走客服人工流程。遗留的 challenge DTO/路由仅为兼容已有开发数据，不再被联系方式表单调用。TOTP seed 通过 otpauth URI 一次性返回页面，以手动录入方式添加验证器；IndexedDB 只存 AES-GCM 加密后的 seed。启用 TOTP 前必须确认有效 6 位码；登录先签发 5 分钟单次 challenge，成功消费后建立会话。启用后返回 10 个一次性备用码，数据库仅保存每个码的 SHA-256 摘要；登录 challenge 可消费单个备用码，不能重复使用。二维码默认有效 2 年，在替换前可重复使用，旧版本保留为 REPLACED 历史，账号最多一份有效凭证。账号恢复二维码流程要求当前 TOTP，不接受备用码替代。
 
 恢复二维码采用本机加密边界：二维码明文载荷包含 `formatVersion=1`、`credentialId`、256-bit 随机 `recoverySecret` 与 `expiresAt`；H5 使用 Web Crypto 的 PBKDF2-HMAC-SHA-256（600,000 iterations、16-byte random salt）派生 AES-256-GCM 密钥，12-byte random nonce、128-bit authentication tag，AAD 固定为 UTF-8 `LOTTERY-GAME-RECOVERY-V1`。QR 字符串使用 `LGRC1.<base64url(salt)>.<base64url(nonce)>.<base64url(ciphertext+tag)>`；解密后必须校验 payload version 和各字段格式。用户设置的二维码密码只在浏览器内经 KDF 派生加密密钥，不发送、不记录、不保存。[OWASP 密码存储建议](https://cheatsheetseries.owasp.org/cheatsheets/Password_Storage_Cheat_Sheet.html)给出的 PBKDF2-HMAC-SHA-256 基准是 600,000 次；登录恢复前端需测低端手机耗时，并在 UI 显示可感知的处理中状态，不得静默降低 KDF 成本。恢复时先扫描/读取 QR 并在浏览器本机解密，再将 `credentialId`、`recoverySecret` 和（仅 TOTP 已启用时必需的）当前 TOTP 通过 HTTPS 提交；服务端只存 `recoverySecret` 的单向验证摘要。覆盖错误密码、篡改 ciphertext、过期凭证和跨账号凭证测试；不得让 API handler 接收二维码密码或整张 QR 原文。
 
@@ -248,6 +248,8 @@ Identity application 通过 identity 域私有 `LocalIdentityRepository` port �
 
 运行 mode 由 Vite `import.meta.env.MODE` / 明确 build-time define 决定；开发默认 `LOCAL_BROWSER_SERVER`，显式 `REMOTE` 用于服务端联调，production define 固定为 `REMOTE`。禁止使用运行时 `window.location`、query、localStorage 或服务端响应选择本地模拟。构建配置在 production 下不导入 browser-api composition root；只在 dev composition 动态装配会导致 tree-shaking 不稳定，因此生产 entry 的静态 import 图本身不得触达 browser-api 目录。
 
+Vite 开发服务器仅在 `serve` 模式安装响应压缩 middleware，响应体达到 1 KiB 才压缩，级别为 6；按客户端 `Accept-Encoding` 协商 Brotli/gzip，production build 不受此开发插件影响。浏览器开发工具的 `Size` 可能显示解压后的资源大小，应同时检查 `Transferred` 或 Resource Timing 的 `encodedBodySize` 才能确认网络传输收益。生产 Brotli/gzip 由部署边缘层或正式静态资源服务器负责，不在 Vite 开发服务器上重复配置。
+
 施工验收必须包含：
 
 - contracts tests 对每个 endpoint 的 method/path、request schema、success DTO、status/error registry 和 OpenAPI operation 作快照/结构断言。
@@ -268,7 +270,7 @@ Identity application 通过 identity 域私有 `LocalIdentityRepository` port �
 - ✅ 完成设备凭证与恢复 QR 本地纵向闭环：支持本机解密、共享 recovery DTO、session 签发、旧 session 撤销、凭证重复使用及替换语义；个人资料可 prepare→加密 PNG 下载→显式 activate，旧 QR 在新 QR 激活前有效。错误码由共享 endpoint envelope 返回。
 - ✅ 个人资料安全概览通过 Bearer JWT 读取共享 `IdentitySettingsResponseDto`，Browser API 校验签名、session 状态及 authVersion；未登录或已撤销 session 返回共享错误 envelope。
 - ✅ 从个人资料完成首次密码设置、重新认证修改密码、设置/修改用户名，并通过共享 DTO 与本地 Browser API 登录验证；更改密码在一个 IDB 事务中撤销其他会话，当前会话保持有效。
-- ✅ 邮箱/手机绑定与更换使用共享 challenge DTO、Bearer session、当前密码重新认证、本地 dev inbox 和原子绑定；覆盖错误码、错误验证码、越权 challenge、重复联系方式、替换释放和 UI 回显。
+- ✅ 邮箱/手机绑定与更换使用共享联系方式 DTO、Bearer session、当前密码（如已设置）和 TOTP（如已启用）重新认证，并原子更新/释放旧值；覆盖旧值不匹配、重复联系方式、替换释放和 UI 回显。旧 challenge API 保留兼容，不属于当前绑定流程。
 - ✅ TOTP 启用/关闭、登录 challenge、备用恢复码一次性展示和单次消费已通过共享 DTO 与本地 Browser API 闭环；seed 在 IndexedDB 加密保存。验证器需手动录入 otpauth secret。
 - ✅ dev-only 恢复测试资料生成器保留；个人资料通过动态加载 qrcode renderer 生成 PNG，不将二维码 renderer 放进首屏 bundle。
 - ⬜ 在 Composition Root 增加 dev-only `LOCAL_BROWSER_SERVER` 与 `REMOTE`；当前 production build 已验证不含 BrowserApiServer、local JWT issuer、数据库名和测试账号 UI，但生产远端 composition 与自动化产物隔离测试待补。
@@ -340,3 +342,7 @@ Identity application 通过 identity 域私有 `LocalIdentityRepository` port �
 | 2026-10-15 | 完成直属上级 reward_type 社交门禁的 Browser API 与页面接线；修正社交离线范围和生产授权边界说明。 |
 | 2026-10-15 | IndexedDB 升级至 v11，新增通用用户订单本机切片；接入充值 DTO、模拟付款幂等与原子资产入账，并将 USDT 和真实支付留在未闭环清单。 |
 | 2026-10-15 | 在既有通用 `orders` store 上完成 USDT/TRON 本机报价和支付演练：汇率快照、有效窗口内递增尾数、EXPIRED 门禁及客服入口；没有新增 IndexedDB store，演练不生成真实链上地址。 |
+| 2026-10-17 | 将有效流水门禁移至最终提现申请事务；报价可先查看，提交失败不占款并由前端弹出门槛说明。通知 DTO 增加待处理标记，消息导航徽标仅计待本人回复的客服会话和入站好友申请。 |
+| 2026-10-17 | 社区导航增加新帖数量 badge；复用社交帖子读取接口，按用户本地已读游标计算并在进入社区时更新，不增加通知表或 IndexedDB store。 |
+| 2026-10-18 | 联系方式绑定改为免验证码；换绑要求完整旧邮箱/手机号并在本地事务中核验、替换和释放，不再由个人资料调用 challenge inbox。 |
+| 2026-10-18 | Vite serve 模式增加 1 KiB 门槛、级别 6 的 Brotli/gzip 响应压缩，并明确生产压缩由部署边缘层负责。 |

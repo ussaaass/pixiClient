@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { SocialContentStatus, SocialModerationAction, SocialModerationCaseStatus, SocialModerationResourceType, type SocialModerationActionCode, type SocialModerationAuditDto, type SocialModerationCaseDto } from '@gameing/contracts/social';
@@ -235,8 +237,8 @@ const supportHelp = [
         <div class="social-support-panel-heading"><div><h2>话题目录</h2><p>话题封面引用 Asset；平台公共话题和代理域话题必须明确标记 scope。</p></div><button type="button" disabled>＋ 新建话题</button></div>
         <div class="social-support-filter-grid">
           <label>话题名称<input disabled placeholder="输入名称"></label>
-          <label>可见范围<select disabled><option>全部范围</option></select></label>
-          <label>启用状态<select disabled><option>全部状态</option></select></label>
+          <label>可见范围<el-select disabled><AdminSelectOption value="">全部范围</AdminSelectOption></el-select></label>
+          <label>启用状态<el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
           <button type="button" disabled>查询话题</button>
         </div>
         <div class="social-support-empty"><span>◇</span><strong>暂无可读取的话题</strong><p>新增或编辑需选择 Asset 封面、排序和启用状态；保存后由服务端记录版本与操作者，不在浏览器写入社交数据。</p></div>
@@ -247,8 +249,8 @@ const supportHelp = [
       <section class="social-support-query-panel">
         <div class="social-support-panel-heading"><div><h2>社区审核队列</h2><p>仅处理公开话题、帖子、回复和举报；普通私聊与客服会话不出现在此队列。当前使用本机演练数据。</p></div><span>处置原因必填 · 封禁不在此执行</span></div>
         <div class="social-support-filter-grid moderation-filters">
-          <label>内容类型<select v-model="moderationResourceType"><option value="">帖子 / 回复</option><option :value="SocialModerationResourceType.POST">帖子</option><option :value="SocialModerationResourceType.REPLY">回复</option></select></label>
-          <label>处理状态<select v-model="moderationCaseStatus"><option value="">全部状态</option><option :value="String(SocialModerationCaseStatus.OPEN)">待处理</option><option :value="String(SocialModerationCaseStatus.RESOLVED)">已处理</option><option :value="String(SocialModerationCaseStatus.DISMISSED)">已驳回</option></select></label>
+          <label>内容类型<el-select v-model="moderationResourceType"><AdminSelectOption value="">帖子 / 回复</AdminSelectOption><AdminSelectOption :value="SocialModerationResourceType.POST">帖子</AdminSelectOption><AdminSelectOption :value="SocialModerationResourceType.REPLY">回复</AdminSelectOption></el-select></label>
+          <label>处理状态<el-select v-model="moderationCaseStatus"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption :value="String(SocialModerationCaseStatus.OPEN)">待处理</AdminSelectOption><AdminSelectOption :value="String(SocialModerationCaseStatus.RESOLVED)">已处理</AdminSelectOption><AdminSelectOption :value="String(SocialModerationCaseStatus.DISMISSED)">已驳回</AdminSelectOption></el-select></label>
           <label>话题 / 内容 / 作者<input v-model="moderationKeyword" maxlength="80" placeholder="输入关键词"></label>
           <button type="button" @click="loadModerationCases()">{{ moderationLoading ? '查询中…' : '查询队列' }}</button>
         </div>
@@ -270,7 +272,7 @@ const supportHelp = [
             <blockquote>{{ selectedModerationCase.contentBody }}</blockquote>
             <aside class="moderation-report-summary"><strong>反馈摘要 · {{ selectedModerationCase.reporterCount }} 人</strong><p>{{ selectedModerationCase.reasonCode }}：{{ selectedModerationCase.reportSummary }}</p></aside>
             <form v-if="selectedModerationCase.caseStatus===SocialModerationCaseStatus.OPEN" class="moderation-decision-form" @submit.prevent="decideModerationCase">
-              <label>处置方式<select v-model="moderationAction"><option v-for="option in moderationActionOptions" :key="option.value" :value="option.value">{{ option.label }}</option></select></label>
+              <label>处置方式<el-select v-model="moderationAction"><AdminSelectOption v-for="option in moderationActionOptions" :key="option.value" :value="option.value">{{ option.label }}</AdminSelectOption></el-select></label>
               <p class="moderation-effect-note"><template v-if="moderationAction===SocialModerationAction.APPROVE">内容将变为公开并进入话题流。</template><template v-else-if="moderationAction===SocialModerationAction.HIDE">内容将从普通话题流隐藏，原文及审核记录仍保留。</template><template v-else-if="moderationAction===SocialModerationAction.RESTORE">内容将恢复为公开状态。</template><template v-else>只关闭当前举报，不改变内容状态。</template>封禁用户需转交账号安全流程。</p>
               <label>处理原因<textarea v-model="moderationReason" maxlength="500" required placeholder="至少填写 3 个字符，说明证据与决定依据"></textarea><small>{{ moderationReason.trim().length }}/500</small></label>
               <button type="submit" :disabled="moderationSaving || moderationReason.trim().length<3">{{ moderationSaving ? '正在保存…' : '提交处置' }}</button>
@@ -291,7 +293,7 @@ const supportHelp = [
       <section class="social-support-query-panel">
         <div class="social-support-panel-heading"><div><h2>客服会话队列</h2><p>先筛选并领取会话，再读取历史、回复或结束；本页使用独立的本机演练记录。</p></div><span>附件需 Asset 能力接入</span></div>
         <div class="social-support-filter-grid support-queue-filters">
-          <label>队列状态<select v-model="supportStatus"><option value="">全部状态</option><option :value="String(SupportConversationStatus.WAITING_SUPPORT)">等待客服</option><option :value="String(SupportConversationStatus.WAITING_USER)">等待用户</option><option :value="String(SupportConversationStatus.CLOSED)">已结束</option></select></label>
+          <label>队列状态<el-select v-model="supportStatus"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption :value="String(SupportConversationStatus.WAITING_SUPPORT)">等待客服</AdminSelectOption><AdminSelectOption :value="String(SupportConversationStatus.WAITING_USER)">等待用户</AdminSelectOption><AdminSelectOption :value="String(SupportConversationStatus.CLOSED)">已结束</AdminSelectOption></el-select></label>
           <label>用户 / 主题<input v-model="supportKeyword" maxlength="80" placeholder="按脱敏姓名、主题或 ID 查找"></label>
           <div class="support-filter-hint">仅显示当前本机演练数据</div>
           <button type="button" @click="loadSupportQueue()">{{ supportLoading ? '查询中…' : '查询会话' }}</button>

@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import type { SystemConfigDraftDto, SystemConfigEntryDto } from '@gameing/admin-contracts/system-config';
 import PageHelpOverlay from '../components/PageHelpOverlay.vue';
@@ -192,7 +194,7 @@ onBeforeUnmount(() => {
 
       <div class="system-config-filters">
         <label>搜索配置<input v-model="keyword" type="search" placeholder="输入名称或 config key" /></label>
-        <label>配置类型<select v-model="configType"><option value="">全部类型</option><option v-for="type in configTypes" :key="type" :value="type">{{ type }}</option></select></label>
+        <label>配置类型<el-select v-model="configType"><AdminSelectOption value="">全部类型</AdminSelectOption><AdminSelectOption v-for="type in configTypes" :key="type" :value="type">{{ type }}</AdminSelectOption></el-select></label>
         <button type="button" @click="keyword = ''; configType = ''">清除筛选</button>
       </div>
 

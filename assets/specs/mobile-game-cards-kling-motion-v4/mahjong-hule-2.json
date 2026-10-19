@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-kling-v4",
+  "title": "麻将胡了 2 五趾龙爪低幅可见动作候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v4/d8d1983f-ddfc-44e9-81e0-ab90c4579d2c/source.png",
+  "prompt": "Create a seamless 5-second portrait loop from the exact supplied image. Keep the camera fixed and preserve the dragon's exact body curve, head, four legs, and the prominently visible five-toed front paw. Make the action easy to see but anatomically controlled: the dragon raises and lowers its head once, the large front paw reaches forward slightly and flexes its five separate claws open then closed, and a gentle wave travels from the shoulders down the tail. The paw remains visible against the dark sky during the flex; all five claws remain distinct and countable. The movement comes from the dragon itself, not zoom or camera movement. The mahjong tiles stay in their exact positions with their current face symbols crisp and unchanged. Do not redesign or turn the dragon toward another view. Return to the original pose and framing at the end.",
+  "negativePrompt": "static image, camera movement, zoom, pan, dragon redesign, body reshaping, torso twist, body crossing, corkscrew, missing or extra limbs, three claws, four claws, six claws, fused toes, hidden paw, changed tiles, blank tiles, unreadable markings, motion blur, flicker, scene cut, text, logos, watermark",
+  "duration": "5",
+  "mode": "std"
+}

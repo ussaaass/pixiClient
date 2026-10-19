@@ -15,6 +15,8 @@ describe('十三张本地练习的语义化控制', () => {
       placeSelectedCard: vi.fn(),
       retrievePileCard: vi.fn(),
       arrangeOrReplay: vi.fn(),
+      startAutoGame: vi.fn(),
+      stopAutoGame: vi.fn(),
       redeal: vi.fn(),
       reveal: vi.fn(),
       exit: vi.fn(),
@@ -25,6 +27,7 @@ describe('十三张本地练习的语义化控制', () => {
     const initial: PracticeAccessibilityState = {
       phase: 'arranging',
       statusText: '选择一张手牌，再点对应牌墩。',
+      autoGameActive: false,
       hand: [{ id: '0', label: '黑桃2' }, { id: '1', label: '黑桃3' }],
       piles: [
         { name: 'front', label: '头墩', count: 3, rank: '0/3 张', cards: [] },
@@ -34,6 +37,12 @@ describe('十三张本地练习的语义化控制', () => {
       canReveal: false,
       confirmFoul: false,
     };
+    controls.update(initial);
+    controls.element.querySelector<HTMLButtonElement>('button[data-control-key="action-auto-10"]')!.click();
+    expect(actions.startAutoGame).toHaveBeenCalledWith(10);
+    controls.update({ ...initial, autoGameActive: true, statusText: '自动游戏运行中。' });
+    controls.element.querySelector<HTMLButtonElement>('button[data-control-key="action-auto-stop"]')!.click();
+    expect(actions.stopAutoGame).toHaveBeenCalledOnce();
     controls.update(initial);
     const summary = controls.element.querySelector('summary')!;
     summary.click();

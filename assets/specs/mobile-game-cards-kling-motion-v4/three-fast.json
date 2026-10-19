@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-three-fast-kling-v4",
+  "title": "3快号码清晰优先的轻幅碰撞动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-three-fast-openai-v3/9fd948d2-46dd-4c14-b4a3-ba37f4cf763d/source.png",
+  "prompt": "Create a seamless 5-second portrait loop from this exact lottery machine image. Camera, glass chamber, machine, lighting, ball colors, and composition remain completely fixed. Animate the six balls with controlled short movements in their current positions: each ball gently bobs by only a small fraction of its diameter, nudges its nearest neighbor once, and settles back; stagger the motion so the six balls do not all move together. Keep every ball's numbered face flat toward the viewer and fully legible in every frame. Preserve the exact pair of digits on each original ball for the entire clip: red 03, amber 11, cyan 18, blue 27, green 36, violet 44. Do not rotate, tilt, blur, reshape, relabel, duplicate, or replace the balls. The motion should be plainly visible from the balls' gentle bouncing and brief contacts, while all six numerals remain sharp and unchanged. Return to the exact supplied arrangement at the end for a clean loop.",
+  "negativePrompt": "static image, large travel, heavy bounce, fast collision, balls crossing, balls switching positions, spinning, numbered faces turned away, changed or missing digits, blur, malformed numerals, extra balls, blank balls, camera movement, zoom, pan, scene cut, flicker, text outside balls, logos, watermark",
+  "duration": "5",
+  "mode": "std"
+}

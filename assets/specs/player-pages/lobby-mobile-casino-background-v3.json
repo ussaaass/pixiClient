@@ -1,0 +1,17 @@
+{
+  "assetKey": "lobby-mobile-casino-background-v3",
+  "kind": "BACKGROUND",
+  "title": "手机游戏大厅明亮老虎机长廊背景 v3",
+  "intendedUse": "H5 手机游戏大厅竖屏背景；游戏卡片覆盖屏幕中段时，老虎机与暖金灯光仍从卡片上方及两侧清晰露出",
+  "generationTool": "OpenAI Images API via assetgen",
+  "prompt": "Create a bright, polished portrait 9:16 mobile casino arcade background for a premium casual game app. Composition is designed for a phone screen with interface cards covering the middle 35–70% of the image: place the main ornate emerald-and-gold slot machine high in the frame, with its crown, marquee and upper reel area fully visible in the top 15–40%; place two smaller colorful slot machines along the left and right sides, so their glowing reels and cabinet edges remain visible beside the central interface card; put a sparkling spill of gold coins and warm reflections near the lower 72–84%, above a quiet dark footer safe zone. Show a welcoming row of active slot machines, clear spinning reels with classic cherries, bells, lucky sevens and clovers, bright jewel-like cabinet lights, a few airborne coins, rich emerald, ruby, sapphire and vivid warm gold. Make the central machines and symbols crisp, bright and luminous, with balanced midtones and visible detail; avoid a dark vignette and avoid a shadow overlay. The casino machines should feel lively and inviting, not ominous. Keep the top 8% and bottom 10% low-detail for controls. High-quality stylized 3D game illustration, clean readable silhouettes, cinematic warm lighting, saturated but tasteful color. The screen-facing machines fill the upper and side regions; do not place the only important subject behind the central card-safe band. No text, letters, numbers except simple slot symbols, logos, UI, buttons, people or watermark. Opaque image.",
+  "negativePrompt": "dark exposure, black shadows over main machines, heavy vignette, underexposed, muddy colors, dull gold, main slot reels only in the center 40–70% hidden by interface, empty dark upper half, empty dark lower half except footer, machine cut off at frame edge, cropped reels, text, readable words, brand logos, interface, buttons, people, watermark, photorealism, blurry symbols, clutter, flat vector art",
+  "output": {
+    "size": "944x1680",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "styleReference": "assets/specs/style-bible.md",
+  "tags": ["lobby", "mobile", "portrait", "casino", "slots", "bright", "background", "v3"]
+}

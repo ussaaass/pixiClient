@@ -1,0 +1,15 @@
+{
+  "assetKey": "messages-casino-background-v2",
+  "kind": "BACKGROUND",
+  "title": "消息页赌场牌桌背景 v2",
+  "intendedUse": "玩家消息一级页面背景；私信、站内信和客服列表由 H5 单独渲染。以面对面牌桌表达交流，不以信箱走廊为主体",
+  "prompt": "Create a wide 3:2 polished stylized 3D casino-game background for the Messages page. The main subject is a clearly recognizable blackjack TABLE viewed from slightly above, filling about 60% of the frame. Show a bounded dark-green felt surface, thick padded rail, two opposing card positions, traditional playing cards arranged as if two players are exchanging a hand, tidy casino chip stacks, and a few gold coins. Include one small brass dealer bell and one subtle glowing slot machine in the background as supporting details. Ivory mahjong tiles fall from above near the far side of the table. The visual story is a conversation happening across a casino table; cards and table must dominate, while any message-related prop remains secondary. Rich emerald, teal and warm gold, premium casual-game 3D illustration, polished materials and clear silhouettes, not photorealistic. Make the tabletop unmistakable, never an empty corridor, carpet, floor, or lobby. No people, envelopes as the main subject, mailboxes, text, letters, numbers, logos, UI, or watermark.",
+  "negativePrompt": "mailbox corridor, rows of envelopes, empty lobby, empty floor, carpet, pool, green void, table only in distant background, tiny cards or chips, architecture dominating, photorealistic casino photography, readable text, numerals, logos, watermark, UI, buttons, people, clutter hiding tabletop",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "tags": ["player-page", "messages", "casino", "blackjack-table", "background", "v2"]
+}

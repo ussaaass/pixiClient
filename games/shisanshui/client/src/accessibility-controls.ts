@@ -22,6 +22,7 @@ export interface AccessiblePlayerResult {
 export interface PracticeAccessibilityState {
   readonly phase: 'arranging' | 'revealed';
   readonly statusText: string;
+  readonly autoGameActive: boolean;
   readonly hand: readonly AccessibleCard[];
   readonly selectedCardId?: string;
   readonly piles: readonly AccessiblePile[];
@@ -35,6 +36,8 @@ export interface PracticeAccessibilityActions {
   readonly placeSelectedCard: (pile: PileName) => void;
   readonly retrievePileCard: (pile: PileName, cardId: string) => void;
   readonly arrangeOrReplay: () => void;
+  readonly startAutoGame: (rounds: number | 'INFINITE') => void;
+  readonly stopAutoGame: () => void;
   readonly redeal: () => void;
   readonly reveal: () => void;
   readonly exit: () => void;
@@ -151,6 +154,16 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
         content.push(pilesGroup);
 
         const actionsSection = actionsGroup();
+        if (state.autoGameActive) {
+          actionsSection.append(makeButton('停止自动游戏', 'action-auto-stop', actions.stopAutoGame));
+        } else {
+          actionsSection.append(
+            makeButton('自动游戏 10 局', 'action-auto-10', () => actions.startAutoGame(10)),
+            makeButton('自动游戏 50 局', 'action-auto-50', () => actions.startAutoGame(50)),
+            makeButton('自动游戏 100 局', 'action-auto-100', () => actions.startAutoGame(100)),
+            makeButton('自动游戏无限局', 'action-auto-infinite', () => actions.startAutoGame('INFINITE')),
+          );
+        }
         actionsSection.append(
           makeButton('自动摆牌', 'action-arrange', actions.arrangeOrReplay),
           makeButton('重新发牌', 'action-redeal', actions.redeal),
@@ -168,7 +181,9 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
         });
         content.push(resultsGroup);
         const actionsSection = actionsGroup();
-        actionsSection.append(makeButton('再来一局', 'action-arrange', actions.arrangeOrReplay));
+        actionsSection.append(state.autoGameActive
+          ? makeButton('停止自动游戏', 'action-auto-stop', actions.stopAutoGame)
+          : makeButton('再来一局', 'action-arrange', actions.arrangeOrReplay));
         content.push(actionsSection);
       }
 

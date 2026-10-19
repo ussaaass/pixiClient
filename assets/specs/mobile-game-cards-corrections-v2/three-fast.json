@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-three-fast-openai-v3",
+  "kind": "BACKGROUND",
+  "title": "3快 Mobile 号码球碰撞动效构图纠错候选",
+  "intendedUse": "手机大厅 3快卡片背景；号码球号码需清晰，供后续动效制作和人工审核",
+  "prompt": "Create a polished portrait 9:16 mobile game-card illustration for a scheduled lottery draw. Keep the premium deep-indigo and gold transparent lottery drum, glass chamber, and rounded dimensional casual-game finish from the reference. Show exactly six large, glossy, clearly numbered lottery balls inside the chamber, caught at different moments of bouncing and colliding; use these exact two-digit numbers, one per ball: 03, 11, 18, 27, 36, 44. Each number must be printed once, centered on the front of its own ball, upright and high-contrast, with clean unambiguous Arabic numerals. Arrange the six balls with small visible gaps and clear depth overlap so each sphere and its number can be recognized individually at phone-card size. Use distinct red, amber, cyan, blue, green, and violet balls. Suggest impact through short controlled light trails and tiny contact glints, while keeping the ball edges and numerals sharp. Keep the machine in the upper 78 percent and leave the lower 22 percent dark and quiet for H5 text. Camera fixed, no motion blur; this is the clean, readable keyframe for a later animation.",
+  "negativePrompt": "blank balls, missing digits, changed digits, malformed digits, extra digits, duplicate numbers, unreadable numbers, numbers printed twice, balls fused together, cropped balls, balls outside chamber, gumballs, billiard balls, roulette wheel, dice, title text, logos, watermark, UI, people, currency, photorealism, excessive bloom, clutter, motion blur",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/three-fast.png", "purpose": "Match the blue/gold lottery drum, glass, lighting, and established dimensional style." },
+    { "path": "assets/candidates/mobile-game-card-three-fast-openai-v2/e70d8026-066c-43bc-83c9-36b918f14ffb/source.png", "purpose": "Preserve the clear six numbered balls and visual finish, but separate them more clearly and make the composition suitable as a crisp motion keyframe." }
+  ],
+  "tags": ["mobile", "portrait", "three-fast", "numbered-lottery-balls", "motion-keyframe", "correction-v3"]
+}

@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "profile-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机我的页赌场竖版背景动态 v1 AVIF 清晰版",
+  "jobId": "3cedd05e-ee9f-475f-ac5a-91288ad6d920",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "promptVersion": "kling-mp4-to-avif-v3",
+  "sourceSha256": "82635e93ad18524a7f21ed84440d4c76b818886e0b3da1e9a1be76e4e9c16789",
+  "mime": "image/avif",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/profile.webp",
+      "sha256": "142e5939d9223bfec0f88ed9eebb1061586ba617e33e2bbf917a2656edb1a77c"
+    }
+  ],
+  "derivedFrom": {
+    "jobId": "035f0c5d-3ab6-41c6-bda6-d310405c22c3",
+    "sourceSha256": "2c6fc7c468dcb5db5e19fd4fc391f0cd1f5dcc1108ae04dfae1b5e8e2834b08a",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 784,
+      "height": 1176
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 640,
+    "frameHeight": 960,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "width": 640,
+  "height": 960,
+  "bytes": 103193,
+  "releasePath": "assets/releases/profile-mobile-casino-background-motion-v1/3cedd05e-ee9f-475f-ac5a-91288ad6d920/source.avif",
+  "publishedAt": "2026-10-17T20:19:21.200Z",
+  "reviewer": "Codex visual QA (user-directed integration)"
+}

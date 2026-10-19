@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-fishing-openai-v2",
+  "kind": "BACKGROUND",
+  "title": "捕鱼 Mobile 游戏卡片背景纠错候选",
+  "intendedUse": "手机大厅捕鱼游戏卡片背景；游戏标题和 H5 控件单独绘制",
+  "prompt": "Create a vivid portrait 9:16 mobile background for an underwater ocean fish-shooting game. This is a real tropical saltwater coral reef, not a pond or freshwater scene. Show a lively school of unmistakable marine fish swimming through clear blue ocean water: clownfish, blue tangs, butterflyfish, angelfish, and a graceful small reef shark in the distance. Their bodies have natural fish anatomy, visible fins and tails, and varied directions of travel. Coral reef, anemones, sunlight shafts, rising bubbles, turquoise-to-deep-blue water. No koi, carp, goldfish, pond fish, lily pads, freshwater plants, or ornamental garden. Compose the main school in the upper 78 percent with varied sizes and clear silhouettes, leaving the lower 22 percent darker and quieter for app text. Premium colorful game illustration, crisp edges, bright but controlled color, polished dimensional rendering. No text, numbers, logos, watermark, UI, people, currency, or copied screenshots.",
+  "negativePrompt": "koi, carp, goldfish, freshwater fish, pond, lake, lily pads, water lilies, freshwater garden, dragon, blank empty ocean, fish with mammal anatomy, malformed fins, text, numbers, logos, watermark, UI, people, money, photorealism, clutter, muddy colors, excessive bloom",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/fishing.png", "purpose": "Use only for the established game-card illustration finish and saturated underwater lighting; do not copy the existing species or composition." },
+    { "path": "assets/candidates/mobile-game-cards-openai-v1/fishing.png", "purpose": "Use only for the OpenAI mobile candidate set's color finish; explicitly replace its koi with saltwater reef fish." }
+  ],
+  "tags": ["mobile", "portrait", "fishing", "ocean-fish", "correction", "static-candidate"]
+}

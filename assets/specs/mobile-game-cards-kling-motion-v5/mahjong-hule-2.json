@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-kling-v5",
+  "title": "麻将胡了 2 金龙四肢动作候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v6/3a5ddac8-031e-4cb2-b86a-26525f9fb67c/source.png",
+  "prompt": "Create a seamless 5-second portrait loop from this exact image. Keep the camera fixed. Preserve the dragon's exact anatomy and keep all four legs visible for the entire clip: two forelegs and two hind legs, all attached naturally to the same continuous torso. Give the dragon clear body motion rather than camera motion: the head lifts and turns slightly, the torso rises and settles, the tail sweeps in a broad smooth arc, and all four legs make a small alternating swimming/flying stroke so each of the four paws visibly changes position. Keep the four paws separated and countable; do not let a leg disappear behind the torso, tail, or tiles. Preserve the dragon's face, scales, gold/jade colors, body continuity, and all four face-up mahjong tiles with unchanged symbols. Make the action visibly readable at phone-card size, with no abrupt deformation. Return to the starting composition at the end for a smooth loop.",
+  "negativePrompt": "static dragon, camera-only motion, zoom, pan, fewer than four legs, hidden leg, extra fifth leg, detached or merged limbs, changing limb count, legs fused into torso, body twisting, body crossing itself, corkscrew, changing dragon identity, changed tile symbols, blank tiles, blur, flicker, scene cut, text, logos, watermark",
+  "duration": "5",
+  "mode": "std"
+}

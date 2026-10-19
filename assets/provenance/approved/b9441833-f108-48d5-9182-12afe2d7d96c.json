@@ -1,0 +1,71 @@
+{
+  "jobId": "b9441833-f108-48d5-9182-12afe2d7d96c",
+  "assetKey": "mahjong-hule-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了专属游戏厅背景",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-15T16:07:24.173Z",
+  "updatedAt": "2026-10-15T16:15:51.641Z",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "specPath": "assets/specs/games/mahjong-hule/subhall-background.json",
+  "specSha256": "d63da22aba719e057f6c32cdd8e80a1d225b400cc02f74be7bbb1014a5992fb1",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "promptSeed": "Asset: 麻将胡了专属游戏厅背景\nIntended use: 麻将胡了专属子厅背景；网页覆盖游戏标题、玩法和难度选择。\nApproved style brief:\n# Gameing Hall shared art direction\n\nStatus: the external-hall style direction was accepted from the initial icon/background/cover samples. Each generated asset remains a review candidate until individually approved.\n\n## Canonical visual anchor\n\n- Primary reference image: `assets/aigen/icon-game-shisanshui.webp`.\n- Reference use: match its polished casual-game rendering, rounded dimensional forms, teal/ivory/gold palette, soft bevel highlights, and clean premium finish. Do not copy the card fan, medallion, object layout, or exact silhouette unless an asset prompt explicitly asks for those elements.\n- The generated customer-service icon may inform the shape softness of small UI icons, but it is not the global palette/material authority.\n\n## Invariants for every generated asset\n\n- Audience and mood: friendly, premium casual mobile game; welcoming rather than casino-like or realistic.\n- Rendering: stylized 3D game illustration with rounded, softly beveled volumes; smooth enamel/resin-like surfaces; controlled glossy highlights; clear silhouettes and low-noise detail.\n- Palette: deep teal/blue-green is dominant; warm ivory is the main light surface; warm gold is a restrained trim/accent. Red/black suit colors may appear only where the asset depicts playing-card suit symbols.\n- Lighting: soft broad key light from upper-left, gentle fill and contact shadows; consistent warm highlights; no harsh bloom or dramatic cinematic contrast.\n- Camera: near-front view for icons and covers; shallow, readable perspective for room/table environments. Keep the visual mass centered and readable at phone size.\n- Layout: keep H5 title, room labels, balances and buttons out of the generated image. Preserve the asset-specific safe areas described in each spec.\n- Exclusions: no photorealism, realistic landscape photography, flat vector output, watercolor, rough grain, text, letters, numerals, logos, watermarks, signatures, fake card ranks, or UI controls.\n- Shared visual reference files are sent to the image-generation request as input images. Treat them as style/material/color references only; compose the requested asset independently.\n\n## Production outputs\n\n- Generate and review source masters first. Do not publish unreviewed candidates.\n- Deterministic tooling creates size/quality variants. Static client assets are released as WebP; transparent sources may use PNG/WebP during candidate review.\n- The palette, material and lighting are the shared external-hall direction. Game-specific subhalls may establish a separate visual bible while preserving a compatible rendering quality; do not silently let prompts drift within one asset pack.\n\n\n## 变更历史\n\n| 日期 | 变更 |\n| --- | --- |\n| 2026-10-10 | 按项目约束新增变更历史区块；未改动原有正文。 |\nVisual reference images: assets/aigen/icon-game-shisanshui.webp (Shared rounded 3D finish and lighting quality only; do not copy playing-card imagery.). Treat them as style references only; create the subject and composition described below.\nArt direction: Create a wide 3:2 premium casual 3D mahjong game room environment. Show an elegant jade-green mahjong table from a shallow elevated angle, with a few traditional ivory mahjong tiles in a gentle cascading motion across the upper half, subtle gold light trails and soft jade lantern glow. Tile faces must have simple non-readable engraved abstract marks, no invented human faces. Keep the lower middle 45 percent quiet and dark teal for HTML difficulty cards. Match the shared Gameing Hall polished 3D art direction: rounded softly beveled tile edges, deep teal and jade palette, ivory tile bodies, restrained warm-gold trim, soft upper-left light, uncluttered composition.\nMust avoid: photorealism, casino, people, anime characters on tiles, readable Chinese text, letters, numbers, logos, watermark, buttons, UI, poker cards, cash, clutter lower center, harsh bloom, flat vector\nDo not include lettering, numbers, logos, watermarks or UI copy unless the asset spec explicitly requests them.",
+  "promptVersion": "asset-prompt-v2",
+  "cost": {
+    "status": "NOT_RECONCILED",
+    "amount": null,
+    "currency": null
+  },
+  "finalPrompt": "Create a wide 3:2 background for a premium casual mahjong game room, 1536×1024, opaque. In polished stylized 3D, show an elegant jade-green mahjong table from a shallow elevated angle. A few traditional warm-ivory tiles cascade gently across the upper half, accompanied by subtle gold light trails and a soft jade lantern glow. Give the tiles rounded, softly beveled edges and only simple, non-readable engraved abstract marks on their faces.\n\nKeep the lower middle 45% quiet, uncluttered, and dark teal so HTML title, gameplay, and difficulty-selection elements remain legible when overlaid. Use a dominant deep teal and jade palette, warm ivory surfaces, restrained warm-gold trim, smooth enamel-like materials, controlled glossy highlights, clear silhouettes, and low-noise detail. Light with a soft broad upper-left key, gentle fill, warm highlights, and natural contact shadows. The mood is welcoming and premium, not casino-like. Use the supplied reference only for its rounded 3D finish, palette, and lighting quality; do not copy its playing cards or composition.\n\nNo people, faces, poker cards, cash, readable characters, letters, numerals, logos, watermarks, UI elements, or clutter in the lower center. Avoid photorealism, flat vector rendering, rough grain, harsh bloom, and dramatic contrast.",
+  "promptResponseId": "resp_0f86457a04aa4d3e016ad0fa3d253087d0a593adf1495cd4a2",
+  "usage": {
+    "input_tokens": 1333,
+    "input_tokens_details": {
+      "cache_write_tokens": 1330,
+      "cached_tokens": 0
+    },
+    "output_tokens": 334,
+    "output_tokens_details": {
+      "reasoning_tokens": 48
+    },
+    "total_tokens": 1667,
+    "image": {
+      "input_tokens": 4017,
+      "input_tokens_details": {
+        "cache_write_tokens": 1726,
+        "cached_tokens": 0
+      },
+      "output_tokens": 309,
+      "output_tokens_details": {
+        "reasoning_tokens": 0
+      },
+      "total_tokens": 4326
+    }
+  },
+  "imageRequestId": "req_d90b5dcf3dc84745a86f32d8885a5238",
+  "outputSha256": "f5be4e4e2ce88d4357e3aef3f3a243dd659ac68a07e9a4c139a2228c75cc0438",
+  "outputBytes": 1461332,
+  "outputMime": "image/webp",
+  "outputWidth": 1536,
+  "outputHeight": 1024,
+  "generatedAt": "2026-10-15T16:08:44.439Z",
+  "candidatePath": "assets/candidates/mahjong-hule-subhall-background/b9441833-f108-48d5-9182-12afe2d7d96c/source.webp",
+  "sourcePath": "assets/source/mahjong-hule-subhall-background/b9441833-f108-48d5-9182-12afe2d7d96c/source.webp",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-15T16:15:51.262Z"
+  },
+  "releasePath": "assets/releases/mahjong-hule-subhall-background/b9441833-f108-48d5-9182-12afe2d7d96c/source.webp"
+}

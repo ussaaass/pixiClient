@@ -1,0 +1,9 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-kling-v3",
+  "title": "麻将胡了 2 金龙抬爪摆动动效候选（Kling）",
+  "sourceImagePath": "assets/candidates/mobile-game-card-mahjong-hule-2-openai-v3/b2be27db-43d8-4224-ade2-9eaeac0039c6/source.png",
+  "prompt": "Create a clearly animated seamless 5-second portrait loop from this exact image. Camera stays completely locked. The golden dragon must visibly move throughout the clip: its raised head makes a small powerful turn toward the viewer and back; the two visible front legs alternately reach forward; the five separate claws on the nearest front paw open, flex, and close once so the paw motion is unmistakable; a traveling wave moves down the torso into the tail; mane, whiskers, and tail stream with the movement. The motion should be broad enough to notice at phone-card size, while the dragon retains one continuous body and the same limb count, face, gold armor, and overall S-curve. The face-up mahjong tiles remain fixed in place with their bamboo, circle, and red 中 markings sharp and unchanged. Complete the motion and return to the exact starting pose at the end for a clean loop.",
+  "negativePrompt": "static dragon, still pose, only camera motion, zoom, pan, flicker, scene cut, different dragon, three claws, missing claws, merged toes, extra or missing limbs, detached paws, twisted or knotted body, body crossing itself, corkscrew roll, changed tile markings, blank tiles, tile backs, blur, sudden movement, text, logos, watermark",
+  "duration": "5",
+  "mode": "std"
+}

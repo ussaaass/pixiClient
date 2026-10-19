@@ -1,0 +1,61 @@
+{
+  "jobId": "83781c96-0fec-4f9d-adcf-9d38b4fa843b",
+  "assetKey": "lobby-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机游戏大厅明亮老虎机与金币无缝循环动态 v2 AVIF 清晰版",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-18T09:26:57.656Z",
+  "updatedAt": "2026-10-18T09:27:24.017Z",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "specPath": "assets/specs/player-pages/lobby-mobile-casino-background-motion-v1.json",
+  "specSha256": "6fa8d96ede27317eeed43288a3f015e4f196f03c9b3b723475327e7bcf8e2ad3",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/lobby.webp",
+      "sha256": "61e7b1016d09b11fe13cf07cbd2ab52fc762f6c0efb00b8d8ebbc7b8d69a47a0"
+    }
+  ],
+  "promptSeed": "Animate this exact bright portrait casino arcade illustration as a seamless infinite mobile lobby background. Lock the camera completely and preserve the portrait framing, color, brightness, and all three slot cabinet identities. Keep the central cabinet crown and upper reels visible and stable in the top portion, while the side cabinet reels stay visible at the left and right margins. Animate all three sets of slot reels with clear, short spins that settle back on their exact original symbols by the final frame; sequence the cabinet bulbs in a flowing gold light chase; rotate a few existing coins and sweep their highlights in the lower coin band. Add broad, readable motion to the reels and bulbs without moving the cabinets or hiding the machine silhouettes. Maintain the bright emerald, ruby, sapphire and warm-gold illumination throughout; do not darken the scene or add a vignette. Keep the center card-safe region visually calm enough for interface cards while preserving glowing cabinet edges on both sides. The outer 8 percent on every edge stays still. First and last frames match exactly in reel symbols, light level, and object positions. No camera movement, no zoom or pan.\nDerived from review candidate 0f013768-e6d9-4e7b-bd99-457251e21dd7; converted to a 540x960, 8 fps infinite-loop AVIF with mild sharpening.",
+  "promptVersion": "kling-mp4-to-avif-v4",
+  "candidatePath": "assets/candidates/lobby-mobile-casino-background-motion-v1/83781c96-0fec-4f9d-adcf-9d38b4fa843b/source.avif",
+  "outputSha256": "52244084e0537793dbef0d1d5def42fb1b74451bec5ea24f5a140fd268072b4b",
+  "outputBytes": 221758,
+  "outputMime": "image/avif",
+  "outputWidth": 540,
+  "outputHeight": 960,
+  "generatedAt": "2026-10-18T09:26:57.660Z",
+  "cost": {
+    "status": "ACTUAL",
+    "amount": 0,
+    "currency": "USD",
+    "basis": "local transcode; no generation API call"
+  },
+  "derivedFrom": {
+    "jobId": "0f013768-e6d9-4e7b-bd99-457251e21dd7",
+    "sourceSha256": "5387b8991248ec09b3b25c3cd98b39c287c447b7c402b1f8b7b9eb23edc8e6fc",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 720,
+      "height": 1280
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 40,
+    "columns": 40,
+    "rows": 1,
+    "frameWidth": 540,
+    "frameHeight": 960,
+    "framesPerSecond": 8,
+    "repeatCount": 0
+  },
+  "sourcePath": "assets/source/lobby-mobile-casino-background-motion-v1/83781c96-0fec-4f9d-adcf-9d38b4fa843b/source.avif",
+  "review": {
+    "reviewer": "Codex visual review",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-18T09:27:23.816Z"
+  },
+  "releasePath": "assets/releases/lobby-mobile-casino-background-motion-v1/83781c96-0fec-4f9d-adcf-9d38b4fa843b/source.avif"
+}

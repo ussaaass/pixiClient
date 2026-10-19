@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 import { onMounted, ref } from 'vue';
 import { RouterLink } from 'vue-router';
 import {
@@ -69,8 +71,8 @@ onMounted(() => { void searchUsers(); });
       <form class="user-filter-grid" @submit.prevent="searchUsers()">
         <label class="user-filter-field"><span>用户 ID</span><input v-model="userId" type="text" inputmode="numeric" autocomplete="off" maxlength="20" placeholder="输入完整用户 ID"></label>
         <label class="user-filter-field"><span>公开用户名</span><input v-model="username" type="text" autocomplete="off" maxlength="64" placeholder="精确或部分匹配"></label>
-        <label class="user-filter-field"><span>角色</span><select v-model="roleType"><option value="">全部角色</option><option :value="String(AdminUserRoleType.PLAYER)">普通玩家</option><option :value="String(AdminUserRoleType.PLAYER_AGENT)">玩家 / 代理</option></select></label>
-        <label class="user-filter-field"><span>状态</span><select v-model="status"><option value="">全部状态</option><option :value="String(AdminUserStatus.ACTIVE)">正常</option><option :value="String(AdminUserStatus.DISABLED)">已停用</option><option :value="String(AdminUserStatus.CLOSED)">已关闭</option></select></label>
+        <label class="user-filter-field"><span>角色</span><el-select v-model="roleType"><AdminSelectOption value="">全部角色</AdminSelectOption><AdminSelectOption :value="String(AdminUserRoleType.PLAYER)">普通玩家</AdminSelectOption><AdminSelectOption :value="String(AdminUserRoleType.PLAYER_AGENT)">玩家 / 代理</AdminSelectOption></el-select></label>
+        <label class="user-filter-field"><span>状态</span><el-select v-model="status"><AdminSelectOption value="">全部状态</AdminSelectOption><AdminSelectOption :value="String(AdminUserStatus.ACTIVE)">正常</AdminSelectOption><AdminSelectOption :value="String(AdminUserStatus.DISABLED)">已停用</AdminSelectOption><AdminSelectOption :value="String(AdminUserStatus.CLOSED)">已关闭</AdminSelectOption></el-select></label>
         <div class="user-filter-actions"><button type="button" :disabled="loading" @click="resetFilters">清空</button><button class="user-search-button" type="submit" :disabled="loading">{{ loading ? '查询中…' : '查询' }}</button></div>
       </form>
     </section>

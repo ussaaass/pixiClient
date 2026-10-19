@@ -1,0 +1,61 @@
+{
+  "jobId": "3cedd05e-ee9f-475f-ac5a-91288ad6d920",
+  "assetKey": "profile-mobile-casino-background-motion-v1",
+  "kind": "BACKGROUND",
+  "title": "手机我的页赌场竖版背景动态 v1 AVIF 清晰版",
+  "status": "PUBLISHED",
+  "createdAt": "2026-10-17T19:48:52.752Z",
+  "updatedAt": "2026-10-17T20:19:21.535Z",
+  "provider": "derived",
+  "model": "ffmpeg-libaom-av1",
+  "specPath": "assets/specs/player-pages/profile-mobile-casino-background-motion-v1.json",
+  "specSha256": "4939a57e78a9147a1d740685e3ae658b8e9e8966b940d184108031851c0263d6",
+  "visualReferenceImages": [
+    {
+      "path": "apps/web/public/assets/page-backgrounds/mobile/profile.webp",
+      "sha256": "142e5939d9223bfec0f88ed9eebb1061586ba617e33e2bbf917a2656edb1a77c"
+    }
+  ],
+  "promptSeed": "Animate this exact portrait casino table illustration as a premium mobile profile-page background. Keep a locked camera and preserve portrait composition, the playing cards, table, lights, chips and coins. Make the four cards lift and settle in a small elegant fan, rotate one nearby chip stack, and move warm reflections across the gold trim and felt. Let a few distant casino lights breathe in gentle waves. All motion should be visible but restrained enough to remain behind profile UI. Return every moved card and chip to its original pose by the final frame for a clean infinite loop. No camera zoom or pan; do not add or remove objects.\nDerived from review candidate 035f0c5d-3ab6-41c6-bda6-d310405c22c3; converted to a 640x960, 5 fps infinite-loop AVIF with mild sharpening.",
+  "promptVersion": "kling-mp4-to-avif-v3",
+  "candidatePath": "assets/candidates/profile-mobile-casino-background-motion-v1/3cedd05e-ee9f-475f-ac5a-91288ad6d920/source.avif",
+  "outputSha256": "82635e93ad18524a7f21ed84440d4c76b818886e0b3da1e9a1be76e4e9c16789",
+  "outputBytes": 103193,
+  "outputMime": "image/avif",
+  "outputWidth": 640,
+  "outputHeight": 960,
+  "generatedAt": "2026-10-17T19:48:52.754Z",
+  "cost": {
+    "status": "ACTUAL",
+    "amount": 0,
+    "currency": "USD",
+    "basis": "local transcode; no generation API call"
+  },
+  "derivedFrom": {
+    "jobId": "035f0c5d-3ab6-41c6-bda6-d310405c22c3",
+    "sourceSha256": "2c6fc7c468dcb5db5e19fd4fc391f0cd1f5dcc1108ae04dfae1b5e8e2834b08a",
+    "crop": {
+      "x": 0,
+      "y": 0,
+      "width": 784,
+      "height": 1176
+    },
+    "tool": "ffmpeg libaom-av1 + avifdec validation"
+  },
+  "animation": {
+    "frameCount": 25,
+    "columns": 25,
+    "rows": 1,
+    "frameWidth": 640,
+    "frameHeight": 960,
+    "framesPerSecond": 5,
+    "repeatCount": 0
+  },
+  "sourcePath": "assets/source/profile-mobile-casino-background-motion-v1/3cedd05e-ee9f-475f-ac5a-91288ad6d920/source.avif",
+  "review": {
+    "reviewer": "Codex visual QA (user-directed integration)",
+    "decision": "APPROVED",
+    "reviewedAt": "2026-10-17T20:19:21.200Z"
+  },
+  "releasePath": "assets/releases/profile-mobile-casino-background-motion-v1/3cedd05e-ee9f-475f-ac5a-91288ad6d920/source.avif"
+}

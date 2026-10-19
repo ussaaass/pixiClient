@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "jump-high-high-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "跳高高专属游戏厅背景",
+  "jobId": "95764103-9fe1-4042-8233-3bfaceb27ec2",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "promptVersion": "asset-prompt-v2",
+  "sourceSha256": "8a7222d34eb78a2c9e093d0214e89db56fc85f73ce2c30ef526f951b3141f5f0",
+  "mime": "image/webp",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [
+    {
+      "path": "assets/aigen/icon-game-shisanshui.webp",
+      "sha256": "44ff327bb7173c707e4fb49a2d1f8e810dad7b5ef1453f233cd1ebab313c8e56"
+    }
+  ],
+  "width": 1536,
+  "height": 1024,
+  "bytes": 1335684,
+  "releasePath": "assets/releases/jump-high-high-subhall-background/95764103-9fe1-4042-8233-3bfaceb27ec2/source.webp",
+  "publishedAt": "2026-10-15T16:15:50.462Z",
+  "reviewer": "Codex visual review"
+}

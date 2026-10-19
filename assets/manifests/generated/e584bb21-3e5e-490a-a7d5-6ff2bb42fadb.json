@@ -1,0 +1,23 @@
+{
+  "schemaVersion": 1,
+  "assetKey": "lobby-mobile-casino-background-v3",
+  "kind": "BACKGROUND",
+  "title": "手机游戏大厅明亮老虎机长廊背景 v3",
+  "jobId": "e584bb21-3e5e-490a-a7d5-6ff2bb42fadb",
+  "provider": "openai",
+  "model": "gpt-image-2.5-sunburst",
+  "mainModel": "gpt-6-sol",
+  "imageModel": "gpt-image-2.5-sunburst",
+  "promptVersion": "asset-prompt-v2",
+  "sourceSha256": "93777c38cb41eb62b7322d91e8955c7d8087709eccf338ab8ede99ee131491b6",
+  "mime": "image/webp",
+  "styleReferencePath": "assets/specs/style-bible.md",
+  "styleReferenceSha256": "d89c28d75722579aedca413c54cb45302577a40374aa604ed7bf5160b73ee649",
+  "visualReferenceImages": [],
+  "width": 944,
+  "height": 1680,
+  "bytes": 1633042,
+  "releasePath": "assets/releases/lobby-mobile-casino-background-v3/e584bb21-3e5e-490a-a7d5-6ff2bb42fadb/source.webp",
+  "publishedAt": "2026-10-18T09:24:09.909Z",
+  "reviewer": "Codex visual review"
+}

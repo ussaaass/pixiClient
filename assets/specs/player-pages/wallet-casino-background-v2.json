@@ -1,0 +1,15 @@
+{
+  "assetKey": "wallet-casino-background-v2",
+  "kind": "BACKGROUND",
+  "title": "钱包页赌场牌桌背景 v2",
+  "intendedUse": "玩家钱包一级页面背景；余额、流水和操作由 H5 单独渲染。赌桌与赌场器具需在界面覆盖下仍清楚可辨",
+  "prompt": "Create a wide 3:2 polished stylized 3D casino-game background for the Wallet page. The unmistakable main subject is a large roulette gaming TABLE filling about 65% of the frame, viewed from a slightly elevated 30-degree angle. Clearly show a raised padded table rail, bounded green felt tabletop, a real roulette wheel, a visible red-and-black betting layout without readable numerals, neatly stacked casino chips, and scattered gold coins. A few slot machines glow in the distant background. Several ivory mahjong tiles are visibly falling from above toward the far edge of the table. Keep the roulette table, chips, coins and falling mahjong in the main visible composition, not tiny decorations. Premium casual casino game illustration, rich emerald green, deep teal and warm gold, refined soft lighting, crisp readable silhouettes, high material detail without photorealism. The felt must unmistakably be a bounded tabletop, never a floor, carpet, pool, or empty room. Do not let architecture dominate. No people, text, letters, numbers, logos, UI, or watermark.",
+  "negativePrompt": "empty hall, empty floor, carpet, pool, green void, table only in distant background, tiny roulette wheel, hidden table, architecture dominating, mailboxes, photorealistic casino photography, readable text, numerals, logos, watermark, UI, buttons, people, clutter covering the betting surface",
+  "output": {
+    "size": "1536x1024",
+    "format": "webp",
+    "quality": "high",
+    "background": "opaque"
+  },
+  "tags": ["player-page", "wallet", "casino", "table", "background", "v2"]
+}

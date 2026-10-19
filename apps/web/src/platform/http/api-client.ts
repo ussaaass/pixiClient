@@ -19,6 +19,8 @@ import {
   type IdentitySettingsResponseDto,
   type SetUsernameRequestDto,
   type ChangePasswordRequestDto,
+  type SetPhoneContactRequestDto,
+  type SetEmailContactRequestDto,
   type PasswordChangedResponseDto,
   type CreateContactChallengeRequestDto,
   type ContactChallengeResponseDto,
@@ -44,9 +46,12 @@ import {
   type SupportConversationDto,
   type SupportMessageDto,
 } from '@gameing/contracts/support';
-import { SocialEndpoint, type SocialAccessResponseDto, type SocialFriendDto, type SocialMessageDto, type FriendLookupResponseDto, type SocialMessageListResponseDto, type SocialOwnProfileResponseDto } from '@gameing/contracts/social';
-import { InviteAgentEndpoint, type AgentDomainDto, type InviteLinkDto } from '@gameing/contracts/invite-agent';
+import { SocialEndpoint, type SocialAccessResponseDto, type SocialConversationListResponseDto, type SocialFriendDto, type SocialMessageDto, type FriendLookupResponseDto, type SocialMessageListResponseDto, type SocialOwnProfileResponseDto } from '@gameing/contracts/social';
+import { InviteAgentEndpoint, type AgentDomainDto, type InviteLinkDto, type ReferralInviteePageDto, type ReferralRewardPageDto } from '@gameing/contracts/invite-agent';
 import { WalletFundingDevelopmentEndpoint, WalletFundingEndpoint, type CreateFundingOrderRequestDto, type FundingChannelDto, type FundingOrderDto, type SimulateFundingPaymentRequestDto } from '@gameing/contracts/wallet-funding';
+import { GameCatalogEndpoint } from '@gameing/contracts/game-catalog';
+import { GameExperienceEndpoint } from '@gameing/contracts/game-experience';
+import { CoinMarketEndpoint, type CoinMarketListingCreateRequestDto, type CoinMarketListingDto, type CoinMarketListingPageDto, type CoinMarketPriceQuoteDto, type CoinMarketPriceQuoteRequestDto, type CoinMarketTradeCreateRequestDto, type CoinMarketTradeDto, type CoinMarketTradeTextRequestDto } from '@gameing/contracts/coin-market';
 
 export type ApiFetchPort = (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
 
@@ -101,6 +106,43 @@ export function createApiClient(fetchPort: ApiFetchPort) {
   }
 
   return {
+    gameCatalog(): Promise<import('@gameing/contracts/game-catalog').GameCatalogDto[]> {
+      return requestTyped(GameCatalogEndpoint.list);
+    },
+    gameExperiences(): Promise<import('@gameing/contracts/game-experience').GameExperienceDto[]> {
+      return requestTyped(GameExperienceEndpoint.list);
+    },
+    gameExperience(gameKey: string): Promise<import('@gameing/contracts/game-experience').GameExperienceDto> {
+      return requestTyped({ ...GameExperienceEndpoint.detail, path: GameExperienceEndpoint.detail.path.replace(':gameKey', encodeURIComponent(gameKey)) });
+    },
+    gamePreflight(gameKey: string, difficultyKey: string): Promise<import('@gameing/contracts/game-experience').GamePreflightResponseDto> {
+      return requestTyped({ ...GameExperienceEndpoint.preflight, path: GameExperienceEndpoint.preflight.path.replace(':gameKey', encodeURIComponent(gameKey)).replace(':difficultyKey', encodeURIComponent(difficultyKey)) });
+    },
+    coinMarketPriceQuote(body: CoinMarketPriceQuoteRequestDto, accessToken: string): Promise<CoinMarketPriceQuoteDto> {
+      return requestTyped(CoinMarketEndpoint.priceQuote, body, { Authorization: `Bearer ${accessToken}` });
+    },
+    coinMarketMyListings(accessToken: string): Promise<CoinMarketListingDto[]> {
+      return requestTyped(CoinMarketEndpoint.myListings, undefined, { Authorization: `Bearer ${accessToken}` });
+    },
+    coinMarketListings(accessToken: string, cursor?: string): Promise<CoinMarketListingPageDto> {
+      const endpoint = { ...CoinMarketEndpoint.listings, path: `${CoinMarketEndpoint.listings.path}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}` };
+      return requestTyped(endpoint, undefined, { Authorization: `Bearer ${accessToken}` });
+    },
+    coinMarketMyTrades(accessToken: string): Promise<CoinMarketTradeDto[]> { return requestTyped(CoinMarketEndpoint.myTrades, undefined, { Authorization: `Bearer ${accessToken}` }); },
+    coinMarketCreateTrade(listingId: string, body: CoinMarketTradeCreateRequestDto, accessToken: string): Promise<CoinMarketTradeDto> {
+      return requestTyped({ ...CoinMarketEndpoint.createTrade, path: CoinMarketEndpoint.createTrade.path.replace(':listingId', encodeURIComponent(listingId)) }, body, { Authorization: `Bearer ${accessToken}` });
+    },
+    coinMarketTradeCommand(action: 'paymentProof' | 'appeal' | 'buyerEvidence' | 'sellerEvidence' | 'confirmReceipt', tradeId: string, body: CoinMarketTradeTextRequestDto | undefined, accessToken: string): Promise<CoinMarketTradeDto> {
+      const endpoint = CoinMarketEndpoint[action];
+      return requestTyped({ ...endpoint, path: endpoint.path.replace(':tradeId', encodeURIComponent(tradeId)) }, body, { Authorization: `Bearer ${accessToken}` });
+    },
+    coinMarketCreateListing(body: CoinMarketListingCreateRequestDto, accessToken: string): Promise<CoinMarketListingDto> {
+      return requestTyped(CoinMarketEndpoint.createListing, body, { Authorization: `Bearer ${accessToken}` });
+    },
+    coinMarketCancelListing(listingId: string, accessToken: string): Promise<CoinMarketListingDto> {
+      const endpoint = { ...CoinMarketEndpoint.updateListing, path: CoinMarketEndpoint.updateListing.path.replace(':listingId', encodeURIComponent(listingId)) };
+      return requestTyped(endpoint, { action: 'CANCEL' }, { Authorization: `Bearer ${accessToken}` });
+    },
     socialAccess(accessToken: string): Promise<SocialAccessResponseDto> {
       return requestTyped(SocialEndpoint.access, undefined, { Authorization: `Bearer ${accessToken}` });
     },
@@ -143,6 +185,12 @@ export function createApiClient(fetchPort: ApiFetchPort) {
     confirmContactChallenge(challengeId: string, body: ConfirmContactChallengeRequestDto, accessToken: string): Promise<IdentitySettingsResponseDto> {
       const endpoint = { ...IdentityEndpoint.confirmContactChallenge, path: IdentityEndpoint.confirmContactChallenge.path.replace(':challengeId', encodeURIComponent(challengeId)) };
       return requestTyped(endpoint, body, { Authorization: `Bearer ${accessToken}` });
+    },
+    setPhoneContact(body: SetPhoneContactRequestDto, accessToken: string): Promise<IdentitySettingsResponseDto> {
+      return requestTyped(IdentityEndpoint.setPhoneContact, body, { Authorization: `Bearer ${accessToken}` });
+    },
+    setEmailContact(body: SetEmailContactRequestDto, accessToken: string): Promise<IdentitySettingsResponseDto> {
+      return requestTyped(IdentityEndpoint.setEmailContact, body, { Authorization: `Bearer ${accessToken}` });
     },
     startTotpSetup(body: TotpSetupRequestDto, accessToken: string): Promise<TotpSetupResponseDto> {
       return requestTyped(IdentityEndpoint.totpSetup, body, { Authorization: `Bearer ${accessToken}` });
@@ -259,6 +307,9 @@ export function createApiClient(fetchPort: ApiFetchPort) {
       const endpoint = { ...SocialEndpoint.removeFriend, path: SocialEndpoint.removeFriend.path.replace(':userId', encodeURIComponent(userId)) };
       return requestTyped(endpoint, undefined, { Authorization: `Bearer ${accessToken}` });
     },
+    listSocialConversations(accessToken: string): Promise<SocialConversationListResponseDto> {
+      return requestTyped(SocialEndpoint.conversations, undefined, { Authorization: `Bearer ${accessToken}` });
+    },
     openSocialConversation(userId: string, accessToken: string): Promise<{ conversationId: string }> {
       return requestTyped(SocialEndpoint.conversation, { userId }, { Authorization: `Bearer ${accessToken}` });
     },
@@ -266,7 +317,7 @@ export function createApiClient(fetchPort: ApiFetchPort) {
       const endpoint = { ...SocialEndpoint.messages, path: SocialEndpoint.messages.path.replace(':conversationId', encodeURIComponent(conversationId)) };
       return requestTyped(endpoint, undefined, { Authorization: `Bearer ${accessToken}` });
     },
-    sendSocialMessage(conversationId: string, body: { clientMessageId: string; body: string }, accessToken: string): Promise<SocialMessageDto> {
+    sendSocialMessage(conversationId: string, body: { clientMessageId: string; body: string; attachments?: import('@gameing/contracts/social').SocialMessageAttachmentDto[] }, accessToken: string): Promise<SocialMessageDto> {
       const endpoint = { ...SocialEndpoint.sendMessage, path: SocialEndpoint.sendMessage.path.replace(':conversationId', encodeURIComponent(conversationId)) };
       return requestTyped(endpoint, body, { Authorization: `Bearer ${accessToken}` });
     },
@@ -275,6 +326,14 @@ export function createApiClient(fetchPort: ApiFetchPort) {
     },
     issueInviteLink(accessToken: string): Promise<InviteLinkDto> {
       return requestTyped(InviteAgentEndpoint.issueInviteLink, {}, { Authorization: `Bearer ${accessToken}` });
+    },
+    listReferralInvitees(accessToken: string, cursor?: string): Promise<ReferralInviteePageDto> {
+      const endpoint = { ...InviteAgentEndpoint.invitees, path: `${InviteAgentEndpoint.invitees.path}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}` };
+      return requestTyped(endpoint, undefined, { Authorization: `Bearer ${accessToken}` });
+    },
+    listReferralRewards(accessToken: string, cursor?: string): Promise<ReferralRewardPageDto> {
+      const endpoint = { ...InviteAgentEndpoint.rewards, path: `${InviteAgentEndpoint.rewards.path}${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}` };
+      return requestTyped(endpoint, undefined, { Authorization: `Bearer ${accessToken}` });
     },
     getAgentDomain(accessToken: string): Promise<AgentDomainDto | null> {
       return requestTyped(InviteAgentEndpoint.agentDomain, undefined, { Authorization: `Bearer ${accessToken}` });

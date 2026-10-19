@@ -1,0 +1,9 @@
+{
+  "assetKey": "profile-mobile-casino-background-motion-v2",
+  "title": "手机我的页赌场竖版背景动态 v2（中心安全区）",
+  "sourceImagePath": "apps/web/public/assets/page-backgrounds/mobile/profile.webp",
+  "prompt": "Create a seamless-loop animation for a premium mobile casino profile background from this exact portrait image. Lock the camera and preserve the exact composition. Keep every moving card, chip, coin, reflection, and light effect inside the central 60 percent of the frame; the outer 20 percent on every edge must remain visually quiet and stationary as a crop-safe margin. Animate only a small central group of cards lifting and settling, one chip rotating in place, and warm light gliding over the central felt. Keep all objects fully inside the safe area at every frame, with generous space from the edges. Restore every object and light to its exact starting pose and intensity in the final frame. No camera movement, no zoom, no pan, no new or removed objects.",
+  "negativePrompt": "motion near edges, objects touching frame boundary, clipped objects, edge streaks, edge glow, landscape framing, camera movement, zoom, pan, tilt, scene cut, composition change, new objects, disappearing objects, duplicated cards, malformed card suits, warped table, text, logos, watermark, UI, people, flicker, strobing, blurry motion",
+  "duration": "5",
+  "mode": "std"
+}

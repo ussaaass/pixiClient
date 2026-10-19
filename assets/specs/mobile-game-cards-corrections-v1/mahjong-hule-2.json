@@ -1,0 +1,15 @@
+{
+  "assetKey": "mobile-game-card-mahjong-hule-2-openai-v2",
+  "kind": "BACKGROUND",
+  "title": "麻将胡了 2 Mobile 游戏卡片背景纠错候选",
+  "intendedUse": "手机大厅麻将胡了 2 游戏卡片背景；游戏标题和 H5 控件单独绘制",
+  "prompt": "Create a polished portrait 9:16 mobile game-card illustration for a premium Chinese mahjong slot game. Moonlit Chinese palace, deep cobalt sky, luminous gold and jade palette. A majestic golden Chinese dragon moves in one graceful, anatomically coherent S-curve from lower left toward upper right; its long torso is continuous and smoothly connected, with natural scale flow, no knots, no self-crossing, no corkscrew twisting, no duplicate body segments, no extra limbs. Surround it with six clearly recognizable traditional mahjong tiles, all shown face-up toward the viewer, each with a visible traditional suit motif: red and green bamboo sticks, red and green circle pips, and a clean red character-style honor mark. The tiles must not be blank, plain, face-down, or turned to show their backs. Keep each tile large enough to read as a real mahjong face, with clean ivory faces and jade-green sides. Compose the dragon and tiles in the upper 78 percent, leaving the lower 22 percent dark and quiet for app text. Keep the visual uncluttered and preserve the polished dimensional game illustration style of the supplied reference. No game title, lettering, digits, logos, watermark, UI, people, currency, photographic realism, or copied screenshots.",
+  "negativePrompt": "blank tiles, plain ivory blocks, tile backs, unreadable random marks, playing cards, tangled dragon, twisted dragon body, crossed body, broken anatomy, duplicate limbs, extra heads, cropped dragon head, malformed text, numbers, logos, watermark, UI, people, money, photorealism, clutter, excessive bloom",
+  "output": { "size": "1024x1824", "format": "png", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [
+    { "path": "assets/aigen/game-cards-v3-portrait/sources/mahjong-hule-2.png", "purpose": "Use only for the established moonlit palace, golden dragon, jade material, and lighting style; do not copy its dragon pose or tile composition." },
+    { "path": "assets/candidates/mobile-game-cards-openai-v1/mahjong-hule.png", "purpose": "Use only as reference for clear visible mahjong tile faces and the OpenAI candidate set's visual finish; do not copy its garden setting." }
+  ],
+  "tags": ["mobile", "portrait", "mahjong-hule-2", "correction", "static-candidate"]
+}

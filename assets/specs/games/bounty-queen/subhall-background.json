@@ -1,0 +1,12 @@
+{
+  "assetKey": "bounty-queen-subhall-background",
+  "kind": "BACKGROUND",
+  "title": "赏金女王专属游戏厅背景",
+  "intendedUse": "赏金女王主题游戏厅背景；网页绘制玩法、难度和标题。",
+  "prompt": "Create a wide 3:2 premium casual 3D nautical treasure game room environment for Bounty Queen. An elegant original golden compass and a jewel chest on the deck of a stylized teal sailing ship at twilight, with sails and sea visible only as soft framing shapes at the far sides; a few warm-gold sparkles imply a cascading treasure hunt. No human or queen character, no recognizable franchise design. Keep lower middle 45 percent calm, dark teal and uncluttered for HTML difficulty cards. Match the shared Gameing Hall visual language: rounded dimensional forms, deep teal and blue-green, ivory sail accents, restrained warm gold, soft upper-left lighting, smooth glossy finish, friendly premium casual game mood.",
+  "negativePrompt": "photorealism, realistic pirate, skull, human character, recognizable copyrighted art, readable map, text, letters, numbers, logos, watermark, buttons, UI, poker cards, cash, clutter lower center, harsh bloom, flat vector",
+  "output": { "size": "1536x1024", "format": "webp", "quality": "high", "background": "opaque" },
+  "styleReference": "assets/specs/style-bible.md",
+  "visualReferenceImages": [{ "path": "assets/aigen/icon-game-shisanshui.webp", "purpose": "Shared dimensional rendering and polished finish only; do not copy the composition." }],
+  "tags": ["bounty-queen", "subhall", "background"]
+}

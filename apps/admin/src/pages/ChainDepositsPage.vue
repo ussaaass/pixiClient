@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import { ElSelect } from 'element-plus';
+import AdminSelectOption from '../components/AdminSelectOption.vue';
 const matchStages = [
   { title: '创建订单', detail: '锁定 USDT/CNY 报价，并给订单绑定唯一收款地址。' },
   { title: '分配尾数', detail: '基础金额截断到 0.1 USDT 后，按窗口分配不重复递增槽位。' },
@@ -28,7 +30,7 @@ const matchStages = [
         <label><span>订单 ID</span><input type="text" inputmode="numeric" placeholder="完整订单 ID" disabled /></label>
         <label><span>收款地址</span><input type="text" placeholder="完整地址 / 后缀" disabled /></label>
         <label><span>交易哈希</span><input type="text" placeholder="Transaction hash" disabled /></label>
-        <label><span>处理状态</span><select disabled><option>全部状态</option></select></label>
+        <label><span>处理状态</span><el-select disabled><AdminSelectOption value="">全部状态</AdminSelectOption></el-select></label>
         <label><span>发生时间</span><input type="text" placeholder="等待链监测服务" disabled /></label>
         <button type="button" disabled>查询</button>
       </div>

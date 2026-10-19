@@ -22,6 +22,8 @@ export const IdentityErrorCode = {
   REFRESH_REVOKED: 'REFRESH_REVOKED',
   REFRESH_REUSE_DETECTED: 'REFRESH_REUSE_DETECTED',
   IDENTIFIER_ALREADY_USED: 'IDENTIFIER_ALREADY_USED',
+  CURRENT_PHONE_MISMATCH: 'CURRENT_PHONE_MISMATCH',
+  CURRENT_EMAIL_MISMATCH: 'CURRENT_EMAIL_MISMATCH',
   REAUTHENTICATION_FAILED: 'REAUTHENTICATION_FAILED',
   PASSWORD_REUSE: 'PASSWORD_REUSE',
   USERNAME_INVALID: 'USERNAME_INVALID',
@@ -128,11 +130,13 @@ export const IdentityContactType = { EMAIL: 'EMAIL', PHONE: 'PHONE' } as const;
 export const CreateContactChallengeRequestSchema = Type.Object({
   contactType: Type.Union([Type.Literal(IdentityContactType.EMAIL), Type.Literal(IdentityContactType.PHONE)]),
   contactValue: Type.String({ minLength: 3, maxLength: 254 }),
-  password: Type.String({ minLength: 1, maxLength: 256 }),
+  password: Type.Optional(Type.String({ minLength: 1, maxLength: 256 })),
   totp: Type.Optional(TotpOrRecoveryCodeSchema),
 }, { additionalProperties: false });
 export const ContactChallengeResponseSchema = Type.Object({ challengeId: Type.String({ minLength: 1, maxLength: 128 }), expiresAt: IsoDateTimeSchema }, { additionalProperties: false });
 export const ConfirmContactChallengeRequestSchema = Type.Object({ code: Type.String({ pattern: '^[0-9]{6}$' }) }, { additionalProperties: false });
+export const SetPhoneContactRequestSchema = Type.Object({ phone: Type.String({ minLength: 7, maxLength: 20 }), currentPhone: Type.Optional(Type.String({ minLength: 7, maxLength: 20 })), password: Type.Optional(Type.String({ minLength: 1, maxLength: 256 })), totp: Type.Optional(TotpOrRecoveryCodeSchema) }, { additionalProperties: false });
+export const SetEmailContactRequestSchema = Type.Object({ email: Type.String({ minLength: 3, maxLength: 254 }), currentEmail: Type.Optional(Type.String({ minLength: 3, maxLength: 254 })), password: Type.Optional(Type.String({ minLength: 1, maxLength: 256 })), totp: Type.Optional(TotpOrRecoveryCodeSchema) }, { additionalProperties: false });
 export const TotpSetupRequestSchema = Type.Object({ password: Type.String({ minLength: 1, maxLength: 256 }), totp: Type.Optional(Type.String({ pattern: '^[0-9]{6}$' })) }, { additionalProperties: false });
 export const TotpSetupResponseSchema = Type.Object({ setupId: Type.String({ minLength: 1, maxLength: 128 }), otpauthUri: Type.String({ minLength: 1, maxLength: 2048 }), expiresAt: IsoDateTimeSchema }, { additionalProperties: false });
 export const TotpConfirmRequestSchema = Type.Object({ setupId: Type.String({ minLength: 1, maxLength: 128 }), code: Type.String({ pattern: '^[0-9]{6}$' }) }, { additionalProperties: false });
@@ -164,6 +168,8 @@ export type PasswordChangedResponseDto = Static<typeof PasswordChangedResponseSc
 export type CreateContactChallengeRequestDto = Static<typeof CreateContactChallengeRequestSchema>;
 export type ContactChallengeResponseDto = Static<typeof ContactChallengeResponseSchema>;
 export type ConfirmContactChallengeRequestDto = Static<typeof ConfirmContactChallengeRequestSchema>;
+export type SetPhoneContactRequestDto = Static<typeof SetPhoneContactRequestSchema>;
+export type SetEmailContactRequestDto = Static<typeof SetEmailContactRequestSchema>;
 export type TotpSetupRequestDto = Static<typeof TotpSetupRequestSchema>;
 export type TotpSetupResponseDto = Static<typeof TotpSetupResponseSchema>;
 export type TotpConfirmRequestDto = Static<typeof TotpConfirmRequestSchema>;
@@ -198,6 +204,8 @@ export const IdentityEndpoint = {
   changePassword: { method: 'POST', path: '/api/v1/me/identity/password', request: ChangePasswordRequestSchema, response: PasswordChangedResponseSchema, successStatus: 200 },
   createContactChallenge: { method: 'POST', path: '/api/v1/me/identity/contact-challenges', request: CreateContactChallengeRequestSchema, response: ContactChallengeResponseSchema, successStatus: 201 },
   confirmContactChallenge: { method: 'POST', path: '/api/v1/me/identity/contact-challenges/:challengeId/confirm', request: ConfirmContactChallengeRequestSchema, response: IdentitySettingsResponseSchema, successStatus: 200 },
+  setPhoneContact: { method: 'PUT', path: '/api/v1/me/identity/phone', request: SetPhoneContactRequestSchema, response: IdentitySettingsResponseSchema, successStatus: 200 },
+  setEmailContact: { method: 'PUT', path: '/api/v1/me/identity/email', request: SetEmailContactRequestSchema, response: IdentitySettingsResponseSchema, successStatus: 200 },
   totpSetup: { method: 'POST', path: '/api/v1/me/security/totp/setup', request: TotpSetupRequestSchema, response: TotpSetupResponseSchema, successStatus: 201 },
   totpConfirm: { method: 'POST', path: '/api/v1/me/security/totp/confirm', request: TotpConfirmRequestSchema, response: TotpEnabledResponseSchema, successStatus: 200 },
   totpDisable: { method: 'POST', path: '/api/v1/me/security/totp/disable', request: TotpDisableRequestSchema, response: TotpDisabledResponseSchema, successStatus: 200 },
