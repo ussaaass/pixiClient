@@ -63,11 +63,13 @@ export function buildSequelizeOptions(config: DatabaseConfig, logging: NonNullab
     logging,
     // dialectOptions 在 Sequelize v6 的公开类型里没有逐项声明 mysql2 参数，
     // 这里按官方运行时约定传入，仅做类型收窄，不改变实际取值。
+    // 收窄目标是 NonNullable：`exactOptionalPropertyTypes` 下 `Options['dialectOptions']`
+    // 含 undefined，直接断言会让可选属性被赋成 undefined 而报 TS2375。
     dialectOptions: {
       charset: 'utf8mb4',
       supportBigNumbers: true,
       bigNumberStrings: true,
-    } as Options['dialectOptions'],
+    } as NonNullable<Options['dialectOptions']>,
     define: {
       charset: 'utf8mb4',
       collate: 'utf8mb4_0900_ai_ci',

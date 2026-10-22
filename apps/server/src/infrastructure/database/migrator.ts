@@ -2,7 +2,7 @@ import { hostname } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import type { Sequelize } from 'sequelize';
 import { Umzug } from 'umzug';
-import { createLogger, type Logger } from '../logging/logger.js';
+import { createLogger, type Logger, type LogLevel } from '../logging/logger.js';
 import { MigrationHistoryStorage } from './migration-history-storage.js';
 import * as createMigrationHistory from './migrations/0001-create-migration-history.js';
 import * as createUser from './migrations/0002-create-user.js';
@@ -45,6 +45,24 @@ export interface MigratorOptions {
   logger?: Logger;
 }
 
+/**
+ * 把项目结构化 logger 适配成 Umzug 期望的 `{ debug, info, warn, error }` 形状。
+ *
+ * Umzug 的回调收到的是 `{ event, name?, ... }` 这样的对象而不是文本，因此这里把
+ * `event` 提成 message、其余键原样作为结构化字段传下去，而不是把整个对象
+ * `JSON.stringify` 成一段无法按字段检索的字符串。
+ */
+function adaptLoggerForUmzug(logger: Logger): Record<LogLevel, (message: Record<string, unknown>) => void> {
+  const adapt = (level: LogLevel) => {
+    return (message: Record<string, unknown>): void => {
+      const { event, ...fields } = message;
+      const label = typeof event === 'string' && event.length > 0 ? event : 'umzug';
+      logger[level](`迁移事件：${label}`, fields);
+    };
+  };
+  return { debug: adapt('debug'), info: adapt('info'), warn: adapt('warn'), error: adapt('error') };
+}
+
 export function createMigrator(sequelize: Sequelize = getSequelize(), options: MigratorOptions = {}): Umzug<Sequelize> {
   const logger = options.logger ?? createLogger({ base: { service: 'gameing-hall-migrate' } });
   const executorKey = options.executorKey ?? process.env.MIGRATION_EXECUTOR_KEY ?? hostname();
@@ -53,6 +71,6 @@ export function createMigrator(sequelize: Sequelize = getSequelize(), options: M
     migrations: MIGRATIONS,
     context: sequelize,
     storage: new MigrationHistoryStorage(sequelize, MIGRATIONS_DIR, executorKey),
-    logger,
+    logger: adaptLoggerForUmzug(logger),
   });
 }

@@ -1,8 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { createLogger } from './infrastructure/logging/logger.js';
-import { createMigrator } from './infrastructure/database/migrator.js';
-import { closeSequelize, getSequelize } from './infrastructure/database/sequelize.js';
+import type { Sequelize } from 'sequelize';
 
 /**
  * 迁移的真实 MySQL 集成测试。
@@ -14,8 +12,12 @@ import { closeSequelize, getSequelize } from './infrastructure/database/sequeliz
  * **默认跳过**：测试会 DROP 目标库里的业务表。只有显式设置 `MIGRATION_TEST=1`
  * 时才运行，避免 `pnpm test` 在共享开发库上误删数据。
  *
- * 运行方式（dev 容器内）：
+ * 运行方式（dev 容器内，MySQL 来自 compose 的 `mysql` 服务）：
  *   MIGRATION_TEST=1 pnpm --filter @gameing/server test
+ *
+ * **迁移器与连接必须是动态导入**：本文件在 `pnpm test` 里总会被加载，若在顶层
+ * `import` 迁移器，一旦依赖缺失就会在 ESM 解析阶段抛 `ERR_MODULE_NOT_FOUND`，
+ * 让 `skip` 完全失效并把整个测试套件带红（历史缺陷 D1）。
  */
 
 const TABLES = ['user', 'asset_account', 'asset_operation', 'asset_hold', 'asset_entry'] as const;
@@ -33,8 +35,7 @@ interface ColumnRow {
 
 const sqlTableList = TABLES.map((table) => `'${table}'`).join(', ');
 
-async function readColumns(): Promise<ColumnRow[]> {
-  const sequelize = getSequelize();
+async function readColumns(sequelize: Sequelize): Promise<ColumnRow[]> {
   const [rows] = await sequelize.query(
     `SELECT TABLE_NAME AS table_name, COLUMN_NAME AS column_name, COLUMN_TYPE AS column_type,
             COLUMN_COMMENT AS column_comment, EXTRA AS extra
@@ -49,6 +50,10 @@ test(
   '迁移可升可降，且每张表都有公共字段与非空注释',
   { skip: enabled ? false : '未设置 MIGRATION_TEST=1，跳过真实 MySQL 迁移测试' },
   async () => {
+    const { createLogger } = await import('./infrastructure/logging/logger.js');
+    const { createMigrator } = await import('./infrastructure/database/migrator.js');
+    const { closeSequelize, getSequelize } = await import('./infrastructure/database/sequelize.js');
+
     const sequelize = getSequelize();
     const migrator = createMigrator(sequelize, {
       executorKey: 'migration-test',
@@ -73,7 +78,7 @@ test(
         assert.ok(table.table_comment.trim().length > 0, `${table.table_name} 缺少表注释`);
       }
 
-      const columns = await readColumns();
+      const columns = await readColumns(sequelize);
       for (const table of TABLES) {
         const own = columns.filter((column) => column.table_name === table);
         assert.ok(own.length > 0, `${table} 没有任何字段`);

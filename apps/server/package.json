@@ -14,7 +14,10 @@
     "@gameing/contracts": "workspace:*",
     "@koa/router": "15.7.0",
     "@sinclair/typebox": "0.34.52",
-    "koa": "3.2.1"
+    "koa": "3.2.1",
+    "mysql2": "3.24.6",
+    "sequelize": "6.37.8",
+    "umzug": "3.8.3"
   },
   "devDependencies": {
     "@types/koa": "3.0.3",

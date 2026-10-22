@@ -146,9 +146,9 @@ UserModel.init({
 完整、当前的实体字段及功能映射以 [数据库设计 SDD](./数据库设计SDD.md) 为准；本节只展示代表性命名。旧版复数表、独立转账参与方及平台客损表不能直接生成迁移。资产 schema 以 SDD 的统一 asset_account 设计为准。
 
 
-## 8. 实施状态（2026-10-22）
+## 8. 实施状态（2026-10-23）
 
-已落码位置：`apps/server/src/infrastructure/database/`。
+已落码位置：`apps/server/src/infrastructure/database/`。依赖锁定 `sequelize@6.37.8`（v6 最新稳定；v7 仍为 alpha，不采用）、`mysql2@3.24.6`、`umzug@3.8.3`。
 
 | 文件 | 职责 |
 | --- | --- |
@@ -160,13 +160,22 @@ UserModel.init({
 | `src/cli/migrate.ts` | `pnpm --filter @gameing/server migrate [up\|down\|status]` |
 | `src/migrations.test.ts` | 真实 MySQL 集成测试：可升可降 + 公共字段 + 非空注释；`MIGRATION_TEST=1` 才运行 |
 
+**实测验证（2026-10-23，目标为 compose 的 `mysql:9.7.2`，`127.0.0.1:10306`）**：
+
+| 验证项 | 结果 |
+| --- | --- |
+| `pnpm --filter @gameing/server migrate` | 6 个迁移全部 `migrated`（每个 36~127ms） |
+| `SHOW TABLES` | `asset_account`、`asset_entry`、`asset_hold`、`asset_operation`、`migration_history`、`user` 共 6 张 |
+| `migrate status` | 6 executed / 0 pending |
+| `MIGRATION_TEST=1 pnpm --filter @gameing/server test` | **11/11 通过**，含 `down({to:0})` → `up` 可升可降、表注释/字段注释非空、`user.id` 为 `bigint unsigned` 且自增、回滚后无业务表残留 |
+| `migration_history` 行 | 每轮 UP 追加 6 行，`status=2`（SUCCEEDED），`executor_key` 区分 CLI 与 `migration-test`，checksum 随文件内容稳定 |
+
 **尚未闭环**（在跑通前不得视为完成）：
 
-- `sequelize` / `mysql2` / `umzug` 三个依赖未安装，`pnpm-lock.yaml` 未更新，因此 `typecheck` 与 `test` 当前必然失败。
-- 迁移未在真实 MySQL 执行，`information_schema` 断言未产生实际结果。
 - Model 层与仓储未写：按"先打通纵向闭环"的约束，模型随 P1 钱包用例一起落地，不先铺空模型。
 - `user.asset_id` 外键待文件资产域 `asset` 表迁移补建。
 - `migration_history` 的 RUNNING/FAILED 行需要 Umzug `migrating` 事件钩子，当前只记 SUCCEEDED。
+- `migration_history` 表本身不随 `down({to:0})` 删除（它是不可变审计流水），因此历史行会跨轮累积；这是有意设计，但清理策略与保留期需在上线前定义。
 
 ## 变更历史
 
@@ -178,3 +187,4 @@ UserModel.init({
 | 2026-10-10 | 固化 Model/表逐项评审清单，并统一主键与 DATETIME(3) 硬约束。 |
 | 2026-10-10 | 规定所有业务常量/枚举不使用 0，并定义查询筛选 DTO 的 0 哨兵语义。 |
 | 2026-10-22 | 新增 §8 实施状态：记录 Sequelize 连接、Umzug + `migration_history` 存储、6 个首批迁移、迁移 CLI 与集成测试的落码位置，并明确依赖未安装、迁移未执行、Model 未写的未闭环项。 |
+| 2026-10-23 | §8 更新为已实测：锁定 `sequelize@6.37.8`/`mysql2@3.24.6`/`umzug@3.8.3`，补入对 `mysql:9.7.2` 的迁移实测表（6 张表、11/11 集成测试通过、status 6/0）；移除"依赖未安装/迁移未执行"两条已闭环项，新增 `migration_history` 跨轮回滚累积的清理策略待定义项。 |
