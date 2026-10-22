@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "test": "vitest run --maxWorkers=1 --no-file-parallelism",
+    "test:related": "vitest related --run --maxWorkers=1 --no-file-parallelism",
     "test:watch": "vitest",
     "typecheck": "vue-tsc --noEmit -p tsconfig.json",
     "build": "vue-tsc --noEmit -p tsconfig.json && vite build"

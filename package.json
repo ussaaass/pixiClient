@@ -17,7 +17,15 @@
     "lint:fix": "eslint packages games apps/server --fix",
     "format": "prettier --write packages games",
     "format:check": "prettier --check packages games",
-    "prepare": "husky || true"
+    "prepare": "husky || true",
+    "typecheck:changed": "pnpm -r --filter \"...[${SINCE:-origin/main}]\" --if-present typecheck",
+    "test:changed": "pnpm -r --workspace-concurrency=1 --filter \"...[${SINCE:-origin/main}]\" --if-present test",
+    "check:changed": "pnpm lint && pnpm lint:apps && pnpm format:check && pnpm typecheck:changed && pnpm test:changed",
+    "docker:install": "docker compose --profile dev run --rm dev pnpm install --frozen-lockfile --store-dir /pnpm/store",
+    "docker:typecheck": "docker compose --profile dev run --rm dev pnpm typecheck",
+    "docker:test": "docker compose --profile dev run --rm dev pnpm test",
+    "docker:build": "docker compose --profile dev run --rm dev pnpm build",
+    "docker:check": "docker compose --profile dev run --rm dev sh -lc 'pnpm lint && pnpm lint:apps && pnpm format:check && pnpm typecheck && pnpm test && pnpm build'"
   },
   "lint-staged": {
     "*.{ts,vue}": [

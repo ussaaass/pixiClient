@@ -41,7 +41,7 @@ docker compose --profile dev run --rm -e MIGRATION_TEST=1 dev pnpm --filter @gam
 
 ## 质量门禁
 
-仓库已接入 CI（`.github/workflows/ci.yml`），本地可复现同样的五道关卡：
+仓库已接入 CI（`.github/workflows/ci.yml`），本地可复现同样的六道关卡：
 
 ```sh
 pnpm lint          # ESLint（packages / games / apps/server，零容忍）
@@ -53,6 +53,44 @@ pnpm build         # 前端产物 + 服务端产物
 ```
 
 提交时由 husky `pre-commit` 钩子自动对暂存文件跑 `eslint --fix` 与 `prettier --write`。
+
+### 全量门禁只在容器内跑
+
+**构建与部署一律在 Docker 内，不在宿主机直跑。** 宿主机直跑 `apps/web` 的 `vite build` 会因本机工具链的 IPC 管道问题报 `write EPIPE`，且 Vite 清空 `dist` 时会触发批量删除保护。用下面这组脚本，等价于 CI：
+
+```sh
+pnpm docker:install    # pnpm install --frozen-lockfile（顺带校验 lockfile 与 package.json 一致）
+pnpm docker:typecheck  # 容器内全仓类型检查
+pnpm docker:test       # 容器内全仓测试
+pnpm docker:build      # 容器内全仓构建（server / shisanshui-client / admin / web）
+pnpm docker:check      # 容器内连跑六道关卡，等价于 CI 的 verify job
+```
+
+### 本地只跑变动部分
+
+全量 `test` 需要把 8 个包的测试都跑一遍，其中 `apps/admin`（26 个文件）和 `apps/web`（28 个文件）最重。日常改动用增量门禁：
+
+```sh
+pnpm check:changed     # lint + format + 仅变动包的类型检查与测试
+pnpm typecheck:changed # 只对变动包做类型检查
+pnpm test:changed      # 只对变动包跑测试
+```
+
+默认基线是 `origin/main`（即"我还没推上去的改动"）。要换基线用 `SINCE`：
+
+```sh
+SINCE=HEAD~1 pnpm test:changed      # 只跑最后一次提交影响到的包
+SINCE=origin/main pnpm check:changed
+```
+
+包级筛选之外，还能再缩到文件级——`vitest related` 会沿 import 图找出真正受影响的测试文件：
+
+```sh
+pnpm --filter @gameing/web test:related src/platform/social/social-application.ts
+# 实测：28 个测试文件里只挑出 5 个相关文件
+```
+
+**增量门禁只用于本地迭代，合并前必须跑一次 `pnpm docker:check`。**
 
 排版由 Prettier 统一，ESLint 只负责正确性：Vue 侧仅启用 `flat/essential` 规则集，不启用含纯排版规则的 `recommended`/`strongly-recommended`，避免与 Prettier 职责重叠并产生无信息量的告警。
 
@@ -104,3 +142,4 @@ ORM 指定 Sequelize。[数据库规范](./docs/05_data/数据库设计规范与
 | 2026-10-12 | 新增独立 Admin 应用壳并开放本机 `10374` 预览端口；明确当前总览无真实运营数据。 |
 | 2026-10-21 | 补齐工程基线：CI（lint/format/typecheck/test/build 五关）、ESLint + Prettier + EditorConfig + husky/lint-staged；契约包补独立 tsconfig/typecheck/test 与回归测试；工具并入 pnpm workspace；新增统一 envelope、错误码注册表、requestId 贯通、结构化日志、`/health/ready` 与生产镜像 + `prod` profile；修复 Compose 具名卷属主导致的 `pnpm install` 权限失败。 |
 | 2026-10-22 | 增加数据库迁移命令与迁移集成测试的开启方式（`pnpm --filter @gameing/server migrate`、`MIGRATION_TEST=1`）。 |
+| 2026-10-23 | 质量门禁改为六关并补齐增量路径：新增 `docker:install/typecheck/test/build/check` 把全量门禁收敛到容器内（宿主机直跑 web 构建会报 `write EPIPE`），新增 `check:changed`/`typecheck:changed`/`test:changed` 与 `test:related` 供本地只跑变动部分。 |
