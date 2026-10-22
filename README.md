@@ -17,7 +17,7 @@ docker compose --profile full up --build -d --wait
 
 MySQL/Redis 卷由 Compose 标为 `external`，普通 `down` 和 `down -v` 均不会删除它们；`docker volume prune --all`、显式 volume rm 和主机磁盘故障仍需通过运维限制与异机备份防护。
 
-本机端口固定在 `10300–10400` 区间：服务端 `10300`、MySQL `10306`、Redis `10371`、Vue 大厅 `10373`、独立 Admin 后台 `10374`。浏览器打开 `http://localhost:10373` 进入玩家大厅，打开 `http://localhost:10374` 预览 Admin 页面壳；服务端探活为 `http://localhost:10300/api/v1/health/live`，就绪探针为 `http://localhost:10300/api/v1/health/ready`。Admin 当前只提供响应式导航/总览页面，不显示伪造运营数据，其领域 API 尚未接入。容器间仍使用 MySQL `3306`、Redis `6379`、服务端 `3000` 和 Vite `5173/5174`。类型检查、测试和前端构建均在 Docker dev 容器执行。前端单元/DOM 测试使用 Vitest + Happy DOM，不启动真实浏览器；测试默认单 worker，避免并行测试增加内存占用：
+本机端口固定在 `10300–10400` 区间：服务端 `10300`、MySQL `10306`、Redis `10371`、Vue 大厅 `10373`、独立 Admin 后台 `10374`。浏览器打开 `http://localhost:10373` 进入玩家大厅，打开 `http://localhost:10374` 预览 Admin 页面壳；服务端探活为 `http://localhost:10300/api/v1/health/live`，就绪探针为 `http://localhost:10300/api/v1/health/ready`。Admin 当前只提供响应式导航/总览页面，不显示伪造运营数据，其领域 API 尚未接入。容器间仍使用 MySQL `3306`、Redis `6379`、服务端 `3000` 和 Vite `5173/5174`。类型检查、测试和前端构建均在 Docker dev 容器执行。前端单元/DOM 测试使用 Vitest + Happy DOM，不启动真实浏览器；`apps/web`、`apps/admin` 固定 4 个 worker 并行（26~28 个测试文件串行时每个都要各建一次 happy-dom，并行后墙钟时间约降到 1/4；上限压在 4 而非 CPU 数，用于控制 happy-dom 实例的常驻内存）。内存吃紧的机器可临时降回单 worker：
 
 ```sh
 docker compose --profile dev run --rm dev pnpm typecheck
@@ -25,6 +25,12 @@ docker compose --profile dev run --rm dev pnpm test
 docker compose --profile dev run --rm dev pnpm --filter @gameing/web test
 docker compose --profile dev run --rm dev pnpm --filter @gameing/web build
 docker compose --profile dev run --rm dev pnpm --filter @gameing/admin build
+```
+
+内存吃紧时可临时降回单 worker（命令行参数覆盖脚本里的 4，只影响本次执行）：
+
+```sh
+docker compose --profile dev run --rm dev pnpm --filter @gameing/admin test --maxWorkers=1 --no-file-parallelism
 ```
 
 表结构只通过迁移变更，不在启动路径 `sync()`。迁移命令（`up` 为默认，另有 `down` / `status`）：
@@ -143,3 +149,4 @@ ORM 指定 Sequelize。[数据库规范](./docs/05_data/数据库设计规范与
 | 2026-10-21 | 补齐工程基线：CI（lint/format/typecheck/test/build 五关）、ESLint + Prettier + EditorConfig + husky/lint-staged；契约包补独立 tsconfig/typecheck/test 与回归测试；工具并入 pnpm workspace；新增统一 envelope、错误码注册表、requestId 贯通、结构化日志、`/health/ready` 与生产镜像 + `prod` profile；修复 Compose 具名卷属主导致的 `pnpm install` 权限失败。 |
 | 2026-10-22 | 增加数据库迁移命令与迁移集成测试的开启方式（`pnpm --filter @gameing/server migrate`、`MIGRATION_TEST=1`）。 |
 | 2026-10-23 | 质量门禁改为六关并补齐增量路径：新增 `docker:install/typecheck/test/build/check` 把全量门禁收敛到容器内（宿主机直跑 web 构建会报 `write EPIPE`），新增 `check:changed`/`typecheck:changed`/`test:changed` 与 `test:related` 供本地只跑变动部分。 |
+| 2026-10-23 | `apps/web`、`apps/admin` 的 Vitest 由单 worker 改为 4 worker 并行（串行时 26~28 个测试文件各建一次 happy-dom，是主要耗时），并注明内存吃紧时的降级命令。 |
