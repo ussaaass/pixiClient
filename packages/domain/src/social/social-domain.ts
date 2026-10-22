@@ -1,6 +1,21 @@
-import { SocialContentStatus, type CreateSocialPostReplyRequestDto, type CreateSocialPostRequestDto, type SocialPostDto, type SocialPostReplyDto, type SocialTopicDto } from '@gameing/contracts/social';
+import {
+  SocialContentStatus,
+  type CreateSocialPostReplyRequestDto,
+  type CreateSocialPostRequestDto,
+  type SocialPostDto,
+  type SocialPostReplyDto,
+  type SocialTopicDto,
+} from '@gameing/contracts/social';
 
-export type SocialFailureCode = 'INVALID_REQUEST' | 'AUTHENTICATION_REQUIRED' | 'TOPIC_NOT_FOUND' | 'TITLE_REQUIRED' | 'BODY_REQUIRED' | 'POST_NOT_FOUND' | 'REPLY_NOT_FOUND' | 'REPLY_DEPTH_EXCEEDED';
+export type SocialFailureCode =
+  | 'INVALID_REQUEST'
+  | 'AUTHENTICATION_REQUIRED'
+  | 'TOPIC_NOT_FOUND'
+  | 'TITLE_REQUIRED'
+  | 'BODY_REQUIRED'
+  | 'POST_NOT_FOUND'
+  | 'REPLY_NOT_FOUND'
+  | 'REPLY_DEPTH_EXCEEDED';
 export type SocialResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: SocialFailureCode };
 
 const failure = <T>(code: SocialFailureCode): SocialResult<T> => ({ ok: false, code });

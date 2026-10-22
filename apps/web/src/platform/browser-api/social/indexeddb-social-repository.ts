@@ -1,9 +1,28 @@
-import type { SocialContentActionRequestDto, SocialContentActionStateDto, SocialMessageDto, SocialOwnProfileResponseDto, SocialPostDto, SocialPostReplyDto, SocialPublicProfileDto, SocialPublicProfileRelationshipValue, SocialTopicDto } from '@gameing/contracts/social';
-import type { BrowserDevelopmentDatabase, LocalEncryptedAsset, LocalSocialContent, LocalSocialConversation, LocalSocialFriendship, LocalSocialInteraction, LocalSocialMessage, LocalUser } from '../database';
+import type {
+  SocialContentActionRequestDto,
+  SocialContentActionStateDto,
+  SocialMessageDto,
+  SocialOwnProfileResponseDto,
+  SocialPostDto,
+  SocialPostReplyDto,
+  SocialPublicProfileDto,
+  SocialPublicProfileRelationshipValue,
+  SocialTopicDto,
+} from '@gameing/contracts/social';
+import type {
+  BrowserDevelopmentDatabase,
+  LocalEncryptedAsset,
+  LocalSocialContent,
+  LocalSocialConversation,
+  LocalSocialFriendship,
+  LocalSocialInteraction,
+  LocalSocialMessage,
+  LocalUser,
+} from '../database';
 import type { EncryptedMessageAsset, SocialMessageAssetRepository } from '../../assets/social-message-asset-application';
 import type { ConversationRecord, FriendshipRecord, SocialFriendsRepositoryPort } from '../../social/social-friends-use-cases';
 import type { SocialRepositoryPort } from '../../social/social-application';
-import type { SocialAccessRepositoryPort } from '../../social/social-access-policy';
+import type { SocialAccessRepositoryPort } from '@gameing/domain/social/access-policy';
 import { RewardType } from '@gameing/contracts/referral';
 import { ensureLocalDemoCommunity, ensureLocalDemoSocialUsers, localDemoProfileOutcomes } from './local-demo-social-seed';
 import { CoinMarketTradeStatus } from '@gameing/contracts/coin-market';
@@ -17,7 +36,9 @@ const LOCAL_TOPICS: SocialTopicDto[] = [
   { topicId: '7103', topicKey: 'HALL_CHAT', title: '大厅交流', description: '分享对游戏大厅的建议。', status: 'ACTIVE' },
 ];
 
-export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, SocialRepositoryPort, SocialAccessRepositoryPort, SocialMessageAssetRepository {
+export class IndexedDbSocialRepository
+  implements SocialFriendsRepositoryPort, SocialRepositoryPort, SocialAccessRepositoryPort, SocialMessageAssetRepository
+{
   constructor(
     private readonly database: BrowserDevelopmentDatabase,
     private readonly getActor: () => { userId: string; displayName: string } | null = () => null,
@@ -48,12 +69,16 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
   async listPosts(topicKey: string): Promise<SocialPostDto[]> {
     const actorForSeed = await this.currentActor();
     if (actorForSeed) await ensureLocalDemoCommunity(this.database, actorForSeed.userId, actorForSeed.displayName);
-    const rows = await this.database.getAllFromIndex('social_content', 'by-topic-created', IDBKeyRange.bound([topicKey, ''], [topicKey, '\uffff']));
+    const rows = await this.database.getAllFromIndex(
+      'social_content',
+      'by-topic-created',
+      IDBKeyRange.bound([topicKey, ''], [topicKey, '\uffff']),
+    );
     const actor = await this.currentActor();
     const visibleRows: LocalSocialContent[] = [];
     for (const row of rows) {
       if (row.contentType !== SOCIAL_CONTENT_TYPE.POST || !row.post) continue;
-      if (actor && await this.isUserBlocked(actor.userId, row.ownerUserId)) continue;
+      if (actor && (await this.isUserBlocked(actor.userId, row.ownerUserId))) continue;
       visibleRows.push(row);
     }
     return visibleRows
@@ -67,7 +92,7 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const row = await this.database.get('social_content', postId);
     if (!row || row.contentType !== SOCIAL_CONTENT_TYPE.POST || !row.post) return null;
     const actor = await this.currentActor();
-    if (actor && await this.isUserBlocked(actor.userId, row.ownerUserId)) return null;
+    if (actor && (await this.isUserBlocked(actor.userId, row.ownerUserId))) return null;
     return this.toPost(row, actor?.userId);
   }
 
@@ -84,18 +109,28 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
       postId: post.postId,
       ownerUserId: actor.userId,
       createdAt: post.createdAt,
-      post: { ...post, authorLabel: actor.displayName, authorProfileKey: profile.friendCode, isOwnPost: true, assetIds: [...post.assetIds] },
+      post: {
+        ...post,
+        authorLabel: actor.displayName,
+        authorProfileKey: profile.friendCode,
+        isOwnPost: true,
+        assetIds: [...post.assetIds],
+      },
     };
     await this.database.add('social_content', row);
   }
 
   async listReplies(postId: string): Promise<SocialPostReplyDto[]> {
-    const rows = await this.database.getAllFromIndex('social_content', 'by-post-created', IDBKeyRange.bound([postId, ''], [postId, '\uffff']));
+    const rows = await this.database.getAllFromIndex(
+      'social_content',
+      'by-post-created',
+      IDBKeyRange.bound([postId, ''], [postId, '\uffff']),
+    );
     const actor = await this.currentActor();
     const visibleRows: LocalSocialContent[] = [];
     for (const row of rows) {
       if (row.contentType !== SOCIAL_CONTENT_TYPE.REPLY || !row.reply) continue;
-      if (actor && await this.isUserBlocked(actor.userId, row.ownerUserId)) continue;
+      if (actor && (await this.isUserBlocked(actor.userId, row.ownerUserId))) continue;
       visibleRows.push(row);
     }
     return visibleRows
@@ -107,7 +142,7 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const row = await this.database.get('social_content', replyId);
     if (!row || row.contentType !== SOCIAL_CONTENT_TYPE.REPLY || !row.reply) return null;
     const actor = await this.currentActor();
-    if (actor && await this.isUserBlocked(actor.userId, row.ownerUserId)) return null;
+    if (actor && (await this.isUserBlocked(actor.userId, row.ownerUserId))) return null;
     return this.toReply(row, actor?.userId);
   }
 
@@ -125,7 +160,13 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
       postId: reply.postId,
       ownerUserId: actor.userId,
       createdAt: reply.createdAt,
-      reply: { ...reply, authorLabel: actor.displayName, authorProfileKey: profile.friendCode, isOwnReply: true, assetIds: [...reply.assetIds] },
+      reply: {
+        ...reply,
+        authorLabel: actor.displayName,
+        authorProfileKey: profile.friendCode,
+        isOwnReply: true,
+        assetIds: [...reply.assetIds],
+      },
     };
     await this.database.add('social_content', row);
   }
@@ -136,12 +177,17 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const contentAction = await this.database.get('social_interactions', `${actorUserId}:${resourceType}:${resourceId}:DISLIKE`);
     const reportAction = await this.database.get('social_interactions', `${actorUserId}:${resourceType}:${resourceId}:REPORT`);
     const authorAction = await this.database.get('social_interactions', `${actorUserId}:USER:${target.ownerUserId}:FOLLOW_AUTHOR`);
-    return { disliked: contentAction?.active ?? false, followingAuthor: authorAction?.active ?? false, reported: reportAction?.active ?? false };
+    return {
+      disliked: contentAction?.active ?? false,
+      followingAuthor: authorAction?.active ?? false,
+      reported: reportAction?.active ?? false,
+    };
   }
 
   async applyContentAction(actorUserId: string, request: SocialContentActionRequestDto): Promise<SocialContentActionStateDto> {
     const target = await this.database.get('social_content', request.resourceId);
-    if (!target || target.contentType !== (request.resourceType === 'POST' ? SOCIAL_CONTENT_TYPE.POST : SOCIAL_CONTENT_TYPE.REPLY)) throw new Error('SOCIAL_CONTENT_NOT_FOUND');
+    if (!target || target.contentType !== (request.resourceType === 'POST' ? SOCIAL_CONTENT_TYPE.POST : SOCIAL_CONTENT_TYPE.REPLY))
+      throw new Error('SOCIAL_CONTENT_NOT_FOUND');
     const targetType = request.action === 'FOLLOW_AUTHOR' || request.action === 'UNFOLLOW_AUTHOR' ? 'USER' : request.resourceType;
     const targetId = targetType === 'USER' ? target.ownerUserId : request.resourceId;
     const action = request.action === 'CLEAR_DISLIKE' ? 'DISLIKE' : request.action === 'UNFOLLOW_AUTHOR' ? 'FOLLOW_AUTHOR' : request.action;
@@ -149,11 +195,20 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const active = request.action !== 'CLEAR_DISLIKE' && request.action !== 'UNFOLLOW_AUTHOR';
     const existing = await this.database.get('social_interactions', interactionKey);
     const interaction: LocalSocialInteraction = {
-      interactionKey, actorUserId, targetType, targetId, action,
+      interactionKey,
+      actorUserId,
+      targetType,
+      targetId,
+      action,
       active: action === 'REPORT' && existing?.active ? true : active,
-      ...(action === 'REPORT' && (existing?.reasonCode ?? request.reasonCode) ? { reasonCode: existing?.reasonCode ?? request.reasonCode! } : {}),
-      ...(action === 'REPORT' && (existing?.details ?? request.details?.trim()) ? { details: existing?.details ?? request.details!.trim() } : {}),
-      createdAt: existing?.createdAt ?? this.now(), updatedAt: this.now(),
+      ...(action === 'REPORT' && (existing?.reasonCode ?? request.reasonCode)
+        ? { reasonCode: existing?.reasonCode ?? request.reasonCode! }
+        : {}),
+      ...(action === 'REPORT' && (existing?.details ?? request.details?.trim())
+        ? { details: existing?.details ?? request.details!.trim() }
+        : {}),
+      createdAt: existing?.createdAt ?? this.now(),
+      updatedAt: this.now(),
     };
     await this.database.put('social_interactions', interaction);
     return this.contentActionState(actorUserId, request.resourceType, request.resourceId);
@@ -173,11 +228,21 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const own = await this.ensureProfile(user);
     const pair = BigInt(actor.userId) < BigInt(user.userId) ? `${actor.userId}:${user.userId}` : `${user.userId}:${actor.userId}`;
     const friendship = await this.database.get('social_friendships', pair);
-    const relationship: SocialPublicProfileRelationshipValue = user.userId === actor.userId ? 'NONE' : friendship?.state === 'ACCEPTED' ? 'FRIEND'
-      : friendship?.state === 'PENDING' ? (friendship.requesterUserId === actor.userId ? 'REQUEST_SENT' : 'REQUEST_RECEIVED') : 'NONE';
+    const relationship: SocialPublicProfileRelationshipValue =
+      user.userId === actor.userId
+        ? 'NONE'
+        : friendship?.state === 'ACCEPTED'
+          ? 'FRIEND'
+          : friendship?.state === 'PENDING'
+            ? friendship.requesterUserId === actor.userId
+              ? 'REQUEST_SENT'
+              : 'REQUEST_RECEIVED'
+            : 'NONE';
     const blockedByMe = (await this.database.get('social_interactions', `${actor.userId}:USER:${user.userId}:BLOCK_USER`))?.active ?? false;
-    const reportedByMe = (await this.database.get('social_interactions', `${actor.userId}:USER:${user.userId}:REPORT_USER`))?.active ?? false;
-    const followedByMe = (await this.database.get('social_interactions', `${actor.userId}:USER:${user.userId}:FOLLOW_AUTHOR`))?.active ?? false;
+    const reportedByMe =
+      (await this.database.get('social_interactions', `${actor.userId}:USER:${user.userId}:REPORT_USER`))?.active ?? false;
+    const followedByMe =
+      (await this.database.get('social_interactions', `${actor.userId}:USER:${user.userId}:FOLLOW_AUTHOR`))?.active ?? false;
     const outcomes = user.isDemoFixture ? localDemoProfileOutcomes(user.userId, Date.now()) : [];
     const inPeriod = outcomes.filter((item) => Date.now() - Date.parse(item.settledAt) <= 30 * 24 * 60 * 60 * 1000);
     const wins = inPeriod.filter((item) => item.netCoins > 0).length;
@@ -193,7 +258,10 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const tradeRows = await this.database.getAll('coin_market_trades');
     const completedCoinMarketTradeCount = user.isDemoFixture
       ? [12, 7, 4, 2, 1][Number(user.userId.slice(-1)) % 5]!
-      : tradeRows.filter((trade) => (trade.buyerUserId === user.userId || trade.sellerUserId === user.userId) && trade.status === CoinMarketTradeStatus.RELEASED).length;
+      : tradeRows.filter(
+          (trade) =>
+            (trade.buyerUserId === user.userId || trade.sellerUserId === user.userId) && trade.status === CoinMarketTradeStatus.RELEASED,
+        ).length;
     const sessionRows = await this.database.getAllFromIndex('sessions', 'by-user', user.userId);
     const firstSeen = sessionRows.map((session) => session.createdAt).sort()[0];
     const joinedAt = user.createdAt ?? firstSeen ?? this.now();
@@ -205,12 +273,24 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
       avatarAssetId: null,
       bio: user.bio ?? null,
       joinedMonth: joinedAt.slice(0, 7),
-      recentWonCoins: inPeriod.filter((item) => item.netCoins > 0).reduce((sum, item) => sum + BigInt(item.netCoins), 0n).toString(),
-      recentWinRate: { wins, losses, draws, rateBps: decided ? Math.round(wins * 10_000 / decided) : null, periodDays: 30 },
-      favoriteGames: [...gameCounts.values()].sort((left, right) => right.settledRounds - left.settledRounds || left.gameKey.localeCompare(right.gameKey)).slice(0, 3).map((game) => ({
-        ...game,
-      recentResults: inPeriod.filter((item) => item.gameKey === game.gameKey).slice(0, 5).map((item) => ({ result: item.netCoins > 0 ? 'WIN' as const : item.netCoins < 0 ? 'LOSS' as const : 'DRAW' as const, settledAt: item.settledAt })),
-      })),
+      recentWonCoins: inPeriod
+        .filter((item) => item.netCoins > 0)
+        .reduce((sum, item) => sum + BigInt(item.netCoins), 0n)
+        .toString(),
+      recentWinRate: { wins, losses, draws, rateBps: decided ? Math.round((wins * 10_000) / decided) : null, periodDays: 30 },
+      favoriteGames: [...gameCounts.values()]
+        .sort((left, right) => right.settledRounds - left.settledRounds || left.gameKey.localeCompare(right.gameKey))
+        .slice(0, 3)
+        .map((game) => ({
+          ...game,
+          recentResults: inPeriod
+            .filter((item) => item.gameKey === game.gameKey)
+            .slice(0, 5)
+            .map((item) => ({
+              result: item.netCoins > 0 ? ('WIN' as const) : item.netCoins < 0 ? ('LOSS' as const) : ('DRAW' as const),
+              settledAt: item.settledAt,
+            })),
+        })),
       completedCoinMarketTradeCount,
       profileLandingUrl: `${window.location.origin}/social/users/${encodeURIComponent(own.friendCode)}`,
       relationship,
@@ -229,8 +309,14 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const interactionKey = `${actor.userId}:USER:${user.userId}:FOLLOW_AUTHOR`;
     const existing = await this.database.get('social_interactions', interactionKey);
     await this.database.put('social_interactions', {
-      interactionKey, actorUserId: actor.userId, targetType: 'USER', targetId: user.userId,
-      action: 'FOLLOW_AUTHOR', active: followed, createdAt: existing?.createdAt ?? this.now(), updatedAt: this.now(),
+      interactionKey,
+      actorUserId: actor.userId,
+      targetType: 'USER',
+      targetId: user.userId,
+      action: 'FOLLOW_AUTHOR',
+      active: followed,
+      createdAt: existing?.createdAt ?? this.now(),
+      updatedAt: this.now(),
     });
     return followed;
   }
@@ -243,9 +329,15 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     if (!user || user.status !== 'ACTIVE') return { items: [], nextCursor: null };
     if (await this.isUserBlocked(actor.userId, user.userId)) return { items: [], nextCursor: null };
     const rows = await this.database.getAll('social_content');
-    const items = await Promise.all(rows.filter((row) => row.ownerUserId === user.userId && row.contentType === SOCIAL_CONTENT_TYPE.POST && row.post?.status === 'PUBLISHED')
-      .sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.contentId.localeCompare(left.contentId))
-      .slice(0, 100).map(async (row) => ({ ...this.toPost(row, actor.userId), authorProfileKey: (await this.ensureProfile(user)).friendCode })));
+    const items = await Promise.all(
+      rows
+        .filter(
+          (row) => row.ownerUserId === user.userId && row.contentType === SOCIAL_CONTENT_TYPE.POST && row.post?.status === 'PUBLISHED',
+        )
+        .sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.contentId.localeCompare(left.contentId))
+        .slice(0, 100)
+        .map(async (row) => ({ ...this.toPost(row, actor.userId), authorProfileKey: (await this.ensureProfile(user)).friendCode })),
+    );
     return { items, nextCursor: null };
   }
 
@@ -266,8 +358,14 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const interactionKey = `${actor.userId}:USER:${target.userId}:BLOCK_USER`;
     const existing = await this.database.get('social_interactions', interactionKey);
     await this.database.put('social_interactions', {
-      interactionKey, actorUserId: actor.userId, targetType: 'USER', targetId: target.userId, action: 'BLOCK_USER', active: blocked,
-      createdAt: existing?.createdAt ?? this.now(), updatedAt: this.now(),
+      interactionKey,
+      actorUserId: actor.userId,
+      targetType: 'USER',
+      targetId: target.userId,
+      action: 'BLOCK_USER',
+      active: blocked,
+      createdAt: existing?.createdAt ?? this.now(),
+      updatedAt: this.now(),
     });
     return blocked;
   }
@@ -280,14 +378,22 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const interactionKey = `${actor.userId}:USER:${target.userId}:REPORT_USER`;
     const existing = await this.database.get('social_interactions', interactionKey);
     await this.database.put('social_interactions', {
-      interactionKey, actorUserId: actor.userId, targetType: 'USER', targetId: target.userId, action: 'REPORT_USER', active: true,
+      interactionKey,
+      actorUserId: actor.userId,
+      targetType: 'USER',
+      targetId: target.userId,
+      action: 'REPORT_USER',
+      active: true,
       reasonCode: existing?.reasonCode ?? request.reasonCode,
-      ...(existing?.details ?? request.details?.trim() ? { details: existing?.details ?? request.details!.trim() } : {}),
-      createdAt: existing?.createdAt ?? this.now(), updatedAt: this.now(),
+      ...((existing?.details ?? request.details?.trim()) ? { details: existing?.details ?? request.details!.trim() } : {}),
+      createdAt: existing?.createdAt ?? this.now(),
+      updatedAt: this.now(),
     });
   }
 
-  now(): string { return new Date().toISOString(); }
+  now(): string {
+    return new Date().toISOString();
+  }
 
   async createId(): Promise<string> {
     const tx = this.database.transaction('settings', 'readwrite');
@@ -367,8 +473,15 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
   async listMessages(conversationId: string): Promise<SocialMessageDto[]> {
     const actor = await this.currentActor();
     if (actor) await ensureLocalDemoCommunity(this.database, actor.userId, actor.displayName);
-    const rows = await this.database.getAllFromIndex('social_messages', 'by-conversation', IDBKeyRange.bound([conversationId, ''], [conversationId, '\uffff']));
-    return rows.sort((a, b) => a.createdAt.localeCompare(b.createdAt)).slice(-100).map((row) => this.toDto(row));
+    const rows = await this.database.getAllFromIndex(
+      'social_messages',
+      'by-conversation',
+      IDBKeyRange.bound([conversationId, ''], [conversationId, '\uffff']),
+    );
+    return rows
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      .slice(-100)
+      .map((row) => this.toDto(row));
   }
 
   async findMessageByClientId(clientMessageId: string): Promise<SocialMessageDto | null> {
@@ -380,14 +493,29 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
     const tx = this.database.transaction(['social_messages', 'social_conversations'], 'readwrite');
     const conversations = tx.objectStore('social_conversations');
     const conversation = await conversations.get(message.conversationId);
-    if (!conversation) { tx.abort(); throw new Error('SOCIAL_CONVERSATION_NOT_FOUND'); }
+    if (!conversation) {
+      tx.abort();
+      throw new Error('SOCIAL_CONVERSATION_NOT_FOUND');
+    }
     await tx.objectStore('social_messages').put({ ...message } satisfies LocalSocialMessage);
     await conversations.put(updatedConversation ? { ...updatedConversation } : { ...conversation, updatedAt: message.createdAt });
     await tx.done;
   }
 
   async save(asset: EncryptedMessageAsset): Promise<void> {
-    await this.database.add('assets', { assetId: asset.assetId, ownerUserId: asset.ownerUserId, authorizedUserIds: [...asset.authorizedUserIds], kind: asset.kind, mimeType: asset.mimeType, fileName: asset.fileName, byteSize: asset.byteSize, ciphertext: asset.ciphertext, aes128Key: asset.keys.aes128Key, hmacSha256Key: asset.keys.hmacSha256Key, createdAt: asset.createdAt } satisfies LocalEncryptedAsset);
+    await this.database.add('assets', {
+      assetId: asset.assetId,
+      ownerUserId: asset.ownerUserId,
+      authorizedUserIds: [...asset.authorizedUserIds],
+      kind: asset.kind,
+      mimeType: asset.mimeType,
+      fileName: asset.fileName,
+      byteSize: asset.byteSize,
+      ciphertext: asset.ciphertext,
+      aes128Key: asset.keys.aes128Key,
+      hmacSha256Key: asset.keys.hmacSha256Key,
+      createdAt: asset.createdAt,
+    } satisfies LocalEncryptedAsset);
   }
 
   async find(assetId: string): Promise<EncryptedMessageAsset | undefined> {
@@ -422,6 +550,14 @@ export class IndexedDbSocialRepository implements SocialFriendsRepositoryPort, S
   }
 
   private toDto(row: LocalSocialMessage): SocialMessageDto {
-    return { messageId: row.messageId, conversationId: row.conversationId, clientMessageId: row.clientMessageId, senderUserId: row.senderUserId, body: row.body, ...(row.attachments?.length ? { attachments: row.attachments.map((attachment) => ({ ...attachment })) } : {}), createdAt: row.createdAt };
+    return {
+      messageId: row.messageId,
+      conversationId: row.conversationId,
+      clientMessageId: row.clientMessageId,
+      senderUserId: row.senderUserId,
+      body: row.body,
+      ...(row.attachments?.length ? { attachments: row.attachments.map((attachment) => ({ ...attachment })) } : {}),
+      createdAt: row.createdAt,
+    };
   }
 }

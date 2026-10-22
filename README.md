@@ -13,9 +13,11 @@ docker compose --profile dev run --rm dev pnpm install
 docker compose --profile full up --build -d --wait
 ```
 
+> **关于 `prepare-volumes`**：Docker 创建具名卷时属主是 `root`，而 `dev`/`server`/`web`/`admin` 都以 `user: node` 运行。只要 lockfile 变化需要真正更新 `node_modules`，非 root 就会因权限不足而失败（`ERR_PNPM_PACKAGE_MANAGER_REMOVE_MODULES_DIR`）。Compose 已内置一次性服务 `prepare-volumes`（`user: root`）把各 `node_modules` 卷与 pnpm store 交给 `node` 后退出，四个工作服务都以 `condition: service_completed_successfully` 依赖它，因此上述安装命令无需手工干预。
+
 MySQL/Redis 卷由 Compose 标为 `external`，普通 `down` 和 `down -v` 均不会删除它们；`docker volume prune --all`、显式 volume rm 和主机磁盘故障仍需通过运维限制与异机备份防护。
 
-本机端口固定在 `10300–10400` 区间：服务端 `10300`、MySQL `10306`、Redis `10371`、Vue 大厅 `10373`、独立 Admin 后台 `10374`。浏览器打开 `http://localhost:10373` 进入玩家大厅，打开 `http://localhost:10374` 预览 Admin 页面壳；服务端探活为 `http://localhost:10300/api/v1/health/live`。Admin 当前只提供响应式导航/总览页面，不显示伪造运营数据，其领域 API 尚未接入。容器间仍使用 MySQL `3306`、Redis `6379`、服务端 `3000` 和 Vite `5173/5174`。类型检查、测试和前端构建均在 Docker dev 容器执行。前端单元/DOM 测试使用 Vitest + Happy DOM，不启动真实浏览器；测试默认单 worker，避免并行测试增加内存占用：
+本机端口固定在 `10300–10400` 区间：服务端 `10300`、MySQL `10306`、Redis `10371`、Vue 大厅 `10373`、独立 Admin 后台 `10374`。浏览器打开 `http://localhost:10373` 进入玩家大厅，打开 `http://localhost:10374` 预览 Admin 页面壳；服务端探活为 `http://localhost:10300/api/v1/health/live`，就绪探针为 `http://localhost:10300/api/v1/health/ready`。Admin 当前只提供响应式导航/总览页面，不显示伪造运营数据，其领域 API 尚未接入。容器间仍使用 MySQL `3306`、Redis `6379`、服务端 `3000` 和 Vite `5173/5174`。类型检查、测试和前端构建均在 Docker dev 容器执行。前端单元/DOM 测试使用 Vitest + Happy DOM，不启动真实浏览器；测试默认单 worker，避免并行测试增加内存占用：
 
 ```sh
 docker compose --profile dev run --rm dev pnpm typecheck
@@ -24,6 +26,45 @@ docker compose --profile dev run --rm dev pnpm --filter @gameing/web test
 docker compose --profile dev run --rm dev pnpm --filter @gameing/web build
 docker compose --profile dev run --rm dev pnpm --filter @gameing/admin build
 ```
+
+表结构只通过迁移变更，不在启动路径 `sync()`。迁移命令（`up` 为默认，另有 `down` / `status`）：
+
+```sh
+docker compose --profile dev run --rm dev pnpm --filter @gameing/server migrate
+```
+
+迁移依赖真实 MySQL；集成测试默认跳过，显式开启才会在目标库建表并回滚：
+
+```sh
+docker compose --profile dev run --rm -e MIGRATION_TEST=1 dev pnpm --filter @gameing/server test
+```
+
+## 质量门禁
+
+仓库已接入 CI（`.github/workflows/ci.yml`），本地可复现同样的五道关卡：
+
+```sh
+pnpm lint          # ESLint（packages / games / apps/server，零容忍）
+pnpm lint:apps     # ESLint（apps/web / apps/admin）
+pnpm format:check  # Prettier（packages / games）
+pnpm typecheck     # 全仓 tsc / vue-tsc
+pnpm test          # 单元 + 契约测试
+pnpm build         # 前端产物 + 服务端产物
+```
+
+提交时由 husky `pre-commit` 钩子自动对暂存文件跑 `eslint --fix` 与 `prettier --write`。
+
+排版由 Prettier 统一，ESLint 只负责正确性：Vue 侧仅启用 `flat/essential` 规则集，不启用含纯排版规则的 `recommended`/`strongly-recommended`，避免与 Prettier 职责重叠并产生无信息量的告警。
+
+## 生产镜像
+
+开发态用 `Dockerfile.dev`（挂载源码 + watch），生产态用根目录 `Dockerfile`（多阶段构建，运行层只含打包后的自包含 ESM 产物，非 root 运行，自带 HEALTHCHECK）：
+
+```sh
+docker compose --profile prod up -d --wait   # 生产 API（就绪探针打 /health/ready）
+```
+
+服务端生产产物由 esbuild 打成单个 ESM 文件（`apps/server/scripts/build.mjs`）。之所以不用 `tsc` 直接产出可运行文件：`@gameing/contracts` 等工作区包以 TypeScript 源码形式导出（`exports` 指向 `src/*.ts`），`tsc` 产物在运行时无法解析这些 `.ts`。
 
 当前已提供 H5 大厅 → 十三张子厅 → 本地练习档位 → PixiJS 本地牌桌的可玩原型；本地演示不登录、不扣资产、不连接真实牌局。联机、房间、账号和真实结算仍未完成。
 
@@ -61,3 +102,5 @@ ORM 指定 Sequelize。[数据库规范](./docs/05_data/数据库设计规范与
 | 2026-10-10 | 为十三张子厅接入专属 AI WebP 背景和进厅转场；难度厅改为横向直达牌桌。 |
 | 2026-10-10 | 将大厅/子厅背景改为独立视口图层，保持图像比例并在视口内裁切，避免页面转场容器影响背景尺寸。 |
 | 2026-10-12 | 新增独立 Admin 应用壳并开放本机 `10374` 预览端口；明确当前总览无真实运营数据。 |
+| 2026-10-21 | 补齐工程基线：CI（lint/format/typecheck/test/build 五关）、ESLint + Prettier + EditorConfig + husky/lint-staged；契约包补独立 tsconfig/typecheck/test 与回归测试；工具并入 pnpm workspace；新增统一 envelope、错误码注册表、requestId 贯通、结构化日志、`/health/ready` 与生产镜像 + `prod` profile；修复 Compose 具名卷属主导致的 `pnpm install` 权限失败。 |
+| 2026-10-22 | 增加数据库迁移命令与迁移集成测试的开启方式（`pnpm --filter @gameing/server migrate`、`MIGRATION_TEST=1`）。 |

@@ -1,0 +1,31 @@
+# Graphify 忽略规则
+# .gitignore 已被 graphify 自动继承，这里只补充图谱不需要的目录。
+
+# 构建产物与依赖
+**/node_modules/
+**/dist/
+**/coverage/
+**/.vite/
+
+# Docker 卷与本地运行态
+**/.pnpm-store/
+**/logs/
+
+# 资产生成中间产物（体积大且无语义）
+assets/candidates/
+assets/provenance/jobs/
+
+# Graphify 自身的产物，避免自我递归索引
+graphify-out/
+.graphify/
+
+# 本地密钥与环境覆盖
+.env
+.env.*
+!.env.example
+
+# 版本控制与编辑器噪音
+.git/
+.DS_Store
+.idea/
+.vscode/

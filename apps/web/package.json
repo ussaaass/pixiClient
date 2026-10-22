@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@gameing/contracts": "workspace:*",
+    "@gameing/domain": "workspace:*",
     "@gameing/shisanshui-client": "workspace:*",
     "@sinclair/typebox": "0.34.52",
     "idb": "^8.0.4",

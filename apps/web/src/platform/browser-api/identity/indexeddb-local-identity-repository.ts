@@ -1,4 +1,11 @@
-import { openBrowserDevelopmentDatabase, type BrowserDevelopmentDatabase, type LocalChallenge, type LocalCredential, type LocalSession, type LocalUser } from '../database';
+import {
+  openBrowserDevelopmentDatabase,
+  type BrowserDevelopmentDatabase,
+  type LocalChallenge,
+  type LocalCredential,
+  type LocalSession,
+  type LocalUser,
+} from '../database';
 import type { LocalIdentityRepository } from './identity-repository';
 
 export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository {
@@ -17,13 +24,27 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
     return id.toString();
   }
 
-  findUser(userId: string): Promise<LocalUser | undefined> { return this.database.get('users', userId); }
-  findCredential(credentialId: string): Promise<LocalCredential | undefined> { return this.database.get('credentials', credentialId); }
-  findCredentialByLookup(lookupKey: string): Promise<LocalCredential | undefined> { return this.database.getFromIndex('credentials', 'by-lookup', lookupKey); }
-  findCredentialBySecretHash(secretHash: string): Promise<LocalCredential | undefined> { return this.database.getFromIndex('credentials', 'by-secret-hash', secretHash); }
-  findCredentialByUserKind(userId: string, kind: LocalCredential['kind']): Promise<LocalCredential | undefined> { return this.database.getFromIndex('credentials', 'by-user-kind', [userId, kind]); }
-  findCredentialsByUserKind(userId: string, kind: LocalCredential['kind']): Promise<LocalCredential[]> { return this.database.getAllFromIndex('credentials', 'by-user-kind', [userId, kind]); }
-  findChallenge(challengeId: string): Promise<LocalChallenge | undefined> { return this.database.get('challenges', challengeId); }
+  findUser(userId: string): Promise<LocalUser | undefined> {
+    return this.database.get('users', userId);
+  }
+  findCredential(credentialId: string): Promise<LocalCredential | undefined> {
+    return this.database.get('credentials', credentialId);
+  }
+  findCredentialByLookup(lookupKey: string): Promise<LocalCredential | undefined> {
+    return this.database.getFromIndex('credentials', 'by-lookup', lookupKey);
+  }
+  findCredentialBySecretHash(secretHash: string): Promise<LocalCredential | undefined> {
+    return this.database.getFromIndex('credentials', 'by-secret-hash', secretHash);
+  }
+  findCredentialByUserKind(userId: string, kind: LocalCredential['kind']): Promise<LocalCredential | undefined> {
+    return this.database.getFromIndex('credentials', 'by-user-kind', [userId, kind]);
+  }
+  findCredentialsByUserKind(userId: string, kind: LocalCredential['kind']): Promise<LocalCredential[]> {
+    return this.database.getAllFromIndex('credentials', 'by-user-kind', [userId, kind]);
+  }
+  findChallenge(challengeId: string): Promise<LocalChallenge | undefined> {
+    return this.database.get('challenges', challengeId);
+  }
   async createChallenge(challenge: LocalChallenge): Promise<void> {
     const transaction = this.database.transaction('challenges', 'readwrite');
     const active = await transaction.store.index('by-user-type').getAll([challenge.userId!, challenge.type]);
@@ -90,7 +111,9 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
     await transaction.done;
   }
 
-  async saveCredential(credential: LocalCredential): Promise<void> { await this.database.put('credentials', credential); }
+  async saveCredential(credential: LocalCredential): Promise<void> {
+    await this.database.put('credentials', credential);
+  }
 
   async savePreparedRecoveryCredential(credential: LocalCredential): Promise<void> {
     const transaction = this.database.transaction('credentials', 'readwrite');
@@ -147,10 +170,18 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
     return true;
   }
 
-  async createSession(session: LocalSession): Promise<void> { await this.database.put('sessions', session); }
-  findSessionByRefreshHash(refreshHash: string): Promise<LocalSession | undefined> { return this.database.getFromIndex('sessions', 'by-refresh-hash', refreshHash); }
-  async saveSession(session: LocalSession): Promise<void> { await this.database.put('sessions', session); }
-  listSessions(userId: string): Promise<LocalSession[]> { return this.database.getAllFromIndex('sessions', 'by-user', userId); }
+  async createSession(session: LocalSession): Promise<void> {
+    await this.database.put('sessions', session);
+  }
+  findSessionByRefreshHash(refreshHash: string): Promise<LocalSession | undefined> {
+    return this.database.getFromIndex('sessions', 'by-refresh-hash', refreshHash);
+  }
+  async saveSession(session: LocalSession): Promise<void> {
+    await this.database.put('sessions', session);
+  }
+  listSessions(userId: string): Promise<LocalSession[]> {
+    return this.database.getAllFromIndex('sessions', 'by-user', userId);
+  }
 
   async savePasswordAndRevokeOtherSessions(userId: string, credential: LocalCredential, currentSessionId: string): Promise<void> {
     const transaction = this.database.transaction(['credentials', 'sessions'], 'readwrite');
@@ -168,21 +199,45 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
   async protectSecret(secret: string): Promise<string> {
     const key = await this.localSecretKey();
     const nonce = crypto.getRandomValues(new Uint8Array(12));
-    const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: nonce, additionalData: new TextEncoder().encode('LG-LOCAL-IDENTITY-SECRET-V1') }, key, new TextEncoder().encode(secret));
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv: nonce, additionalData: new TextEncoder().encode('LG-LOCAL-IDENTITY-SECRET-V1') },
+      key,
+      new TextEncoder().encode(secret),
+    );
     return `${toBase64Url(nonce)}.${toBase64Url(new Uint8Array(ciphertext))}`;
   }
 
   async revealSecret(value: string): Promise<string> {
     const [noncePart, ciphertextPart] = value.split('.');
     if (!noncePart || !ciphertextPart) throw new Error('LOCAL_SECRET_INVALID');
-    const plaintext = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: copyBuffer(fromBase64Url(noncePart)), additionalData: new TextEncoder().encode('LG-LOCAL-IDENTITY-SECRET-V1') }, await this.localSecretKey(), copyBuffer(fromBase64Url(ciphertextPart)));
+    const plaintext = await crypto.subtle.decrypt(
+      {
+        name: 'AES-GCM',
+        iv: copyBuffer(fromBase64Url(noncePart)),
+        additionalData: new TextEncoder().encode('LG-LOCAL-IDENTITY-SECRET-V1'),
+      },
+      await this.localSecretKey(),
+      copyBuffer(fromBase64Url(ciphertextPart)),
+    );
     return new TextDecoder().decode(plaintext);
   }
 
-  async enableTotp(challengeId: string, userId: string, credential: LocalCredential, recoveryCredentials: LocalCredential[]): Promise<void> {
+  async enableTotp(
+    challengeId: string,
+    userId: string,
+    credential: LocalCredential,
+    recoveryCredentials: LocalCredential[],
+  ): Promise<void> {
     const transaction = this.database.transaction(['challenges', 'credentials'], 'readwrite');
     const challenge = await transaction.objectStore('challenges').get(challengeId);
-    if (!challenge || challenge.userId !== userId || challenge.type !== 'TOTP_SETUP' || challenge.state !== 'ACTIVE' || challenge.expiresAt <= new Date().toISOString()) throw new Error('SETUP_EXPIRED');
+    if (
+      !challenge ||
+      challenge.userId !== userId ||
+      challenge.type !== 'TOTP_SETUP' ||
+      challenge.state !== 'ACTIVE' ||
+      challenge.expiresAt <= new Date().toISOString()
+    )
+      throw new Error('SETUP_EXPIRED');
     const credentials = transaction.objectStore('credentials');
     for (const existing of await credentials.index('by-user-kind').getAll([userId, 'TOTP'])) {
       if (existing.state === 'ACTIVE') await credentials.put({ ...existing, state: 'REVOKED' });
@@ -221,7 +276,12 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
     const transaction = this.database.transaction('challenges', 'readwrite');
     const store = transaction.objectStore('challenges');
     const challenge = await store.get(challengeId);
-    const valid = !!challenge && challenge.userId === userId && challenge.type === 'LOGIN_TOTP' && challenge.state === 'ACTIVE' && challenge.expiresAt > new Date().toISOString();
+    const valid =
+      !!challenge &&
+      challenge.userId === userId &&
+      challenge.type === 'LOGIN_TOTP' &&
+      challenge.state === 'ACTIVE' &&
+      challenge.expiresAt > new Date().toISOString();
     if (valid) await store.put({ ...challenge!, state: 'CONSUMED' });
     await transaction.done;
     return valid;
@@ -239,7 +299,8 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
 
   private async localSecretKey(): Promise<CryptoKey> {
     const existing = await this.database.get('settings', 'local-identity-secret-key');
-    if (existing?.value && typeof existing.value === 'object' && 'algorithm' in existing.value && 'usages' in existing.value) return existing.value as CryptoKey;
+    if (existing?.value && typeof existing.value === 'object' && 'algorithm' in existing.value && 'usages' in existing.value)
+      return existing.value as CryptoKey;
     const key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
     try {
       await this.database.add('settings', { key: 'local-identity-secret-key', value: key });
@@ -247,8 +308,9 @@ export class IndexedDbLocalIdentityRepository implements LocalIdentityRepository
     } catch (error) {
       if (!(error instanceof DOMException) || error.name !== 'ConstraintError') throw error;
       const winner = await this.database.get('settings', 'local-identity-secret-key');
-      if (winner?.value && typeof winner.value === 'object' && 'algorithm' in winner.value && 'usages' in winner.value) return winner.value as CryptoKey;
-      throw new Error('IDENTITY_STORAGE_UNAVAILABLE');
+      if (winner?.value && typeof winner.value === 'object' && 'algorithm' in winner.value && 'usages' in winner.value)
+        return winner.value as CryptoKey;
+      throw new Error('IDENTITY_STORAGE_UNAVAILABLE', { cause: error });
     }
   }
 }
@@ -260,7 +322,7 @@ function toBase64Url(bytes: Uint8Array): string {
 }
 
 function fromBase64Url(value: string): Uint8Array {
-  const base64 = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - value.length % 4) % 4);
+  const base64 = value.replace(/-/g, '+').replace(/_/g, '/') + '='.repeat((4 - (value.length % 4)) % 4);
   return Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
 }
 

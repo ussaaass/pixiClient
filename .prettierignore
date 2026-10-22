@@ -1,0 +1,9 @@
+node_modules
+dist
+coverage
+.pnpm-store
+assets
+tools/asset-generation/node_modules
+docs
+*.md
+pnpm-lock.yaml

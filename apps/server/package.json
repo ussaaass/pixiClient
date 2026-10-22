@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/main.ts",
+    "build": "node scripts/build.mjs",
+    "start": "node dist/server.js",
+    "migrate": "tsx src/cli/migrate.ts",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "node --import tsx --test src/*.test.ts"
   },
@@ -16,6 +19,7 @@
   "devDependencies": {
     "@types/koa": "3.0.3",
     "@types/node": "24.19.1",
+    "esbuild": "0.28.2",
     "tsx": "4.23.15",
     "typescript": "6.0.3"
   }

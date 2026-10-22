@@ -1,9 +1,14 @@
 import { SupportConversationStatus, SupportSenderType } from '@gameing/contracts/support';
-import type { CreateSupportConversationRequestDto, SendSupportMessageRequestDto, SupportConversationDto, SupportMessageDto } from '@gameing/contracts/support';
+import type {
+  CreateSupportConversationRequestDto,
+  SendSupportMessageRequestDto,
+  SupportConversationDto,
+  SupportMessageDto,
+} from '@gameing/contracts/support';
 import type { LocalSupportConversation, LocalSupportMessage } from '../database';
 import { openBrowserDevelopmentDatabase, type BrowserDevelopmentDatabase } from '../database';
 import { SupportRepositoryConflictError, type SupportRepository } from '../../support/support-application';
-import { statusAfterCustomerClose, statusAfterCustomerReply } from '../../support/support-domain';
+import { statusAfterCustomerClose, statusAfterCustomerReply } from '@gameing/domain/support';
 
 function toConversation(row: LocalSupportConversation): SupportConversationDto {
   return {
@@ -37,18 +42,35 @@ export class IndexedDbSupportRepository implements SupportRepository {
   }
 
   async listConversations(userId: string): Promise<SupportConversationDto[]> {
-    const rows = await this.database.getAllFromIndex('support_conversations', 'by-user-updated', IDBKeyRange.bound([userId, ''], [userId, '\uffff']));
+    const rows = await this.database.getAllFromIndex(
+      'support_conversations',
+      'by-user-updated',
+      IDBKeyRange.bound([userId, ''], [userId, '\uffff']),
+    );
     return rows.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt)).map(toConversation);
   }
 
-  async listMessages(userId: string, conversationId: string): Promise<{ conversation: SupportConversationDto; messages: SupportMessageDto[] } | null> {
+  async listMessages(
+    userId: string,
+    conversationId: string,
+  ): Promise<{ conversation: SupportConversationDto; messages: SupportMessageDto[] } | null> {
     const conversation = await this.database.get('support_conversations', conversationId);
     if (!conversation || conversation.userId !== userId) return null;
-    const rows = await this.database.getAllFromIndex('support_messages', 'by-conversation', IDBKeyRange.bound([conversationId, ''], [conversationId, '\uffff']));
-    return { conversation: toConversation(conversation), messages: rows.sort((left, right) => left.createdAt.localeCompare(right.createdAt)).map(toMessage) };
+    const rows = await this.database.getAllFromIndex(
+      'support_messages',
+      'by-conversation',
+      IDBKeyRange.bound([conversationId, ''], [conversationId, '\uffff']),
+    );
+    return {
+      conversation: toConversation(conversation),
+      messages: rows.sort((left, right) => left.createdAt.localeCompare(right.createdAt)).map(toMessage),
+    };
   }
 
-  async createConversation(userId: string, request: CreateSupportConversationRequestDto): Promise<{ conversation: SupportConversationDto; firstMessage: SupportMessageDto }> {
+  async createConversation(
+    userId: string,
+    request: CreateSupportConversationRequestDto,
+  ): Promise<{ conversation: SupportConversationDto; firstMessage: SupportMessageDto }> {
     const transaction = this.database.transaction(['settings', 'support_conversations', 'support_messages'], 'readwrite');
     const conversations = transaction.objectStore('support_conversations');
     const messages = transaction.objectStore('support_messages');
@@ -71,14 +93,23 @@ export class IndexedDbSupportRepository implements SupportRepository {
       return id.toString();
     };
     const conversation: LocalSupportConversation = {
-      conversationId: await allocateId(), userId, categoryType: request.categoryType,
-      subject: request.subject.trim(), status: SupportConversationStatus.WAITING_SUPPORT,
-      lastMessageAt: createdAt, createdAt, updatedAt: createdAt,
+      conversationId: await allocateId(),
+      userId,
+      categoryType: request.categoryType,
+      subject: request.subject.trim(),
+      status: SupportConversationStatus.WAITING_SUPPORT,
+      lastMessageAt: createdAt,
+      createdAt,
+      updatedAt: createdAt,
     };
     const message: LocalSupportMessage = {
-      messageId: await allocateId(), conversationId: conversation.conversationId,
-      messageKey: request.messageKey, senderUserId: userId,
-      senderType: SupportSenderType.CUSTOMER, bodyText: request.bodyText.trim(), createdAt,
+      messageId: await allocateId(),
+      conversationId: conversation.conversationId,
+      messageKey: request.messageKey,
+      senderUserId: userId,
+      senderType: SupportSenderType.CUSTOMER,
+      bodyText: request.bodyText.trim(),
+      createdAt,
     };
     await conversations.put(conversation);
     await messages.put(message);
@@ -86,7 +117,11 @@ export class IndexedDbSupportRepository implements SupportRepository {
     return { conversation: toConversation(conversation), firstMessage: toMessage(message) };
   }
 
-  async sendMessage(userId: string, conversationId: string, request: SendSupportMessageRequestDto): Promise<SupportMessageDto | 'NOT_FOUND' | 'CLOSED'> {
+  async sendMessage(
+    userId: string,
+    conversationId: string,
+    request: SendSupportMessageRequestDto,
+  ): Promise<SupportMessageDto | 'NOT_FOUND' | 'CLOSED'> {
     const transaction = this.database.transaction(['settings', 'support_conversations', 'support_messages'], 'readwrite');
     const conversations = transaction.objectStore('support_conversations');
     const messages = transaction.objectStore('support_messages');
@@ -116,9 +151,13 @@ export class IndexedDbSupportRepository implements SupportRepository {
     await settings.put({ key: 'next-id', value: (id + 1n).toString() });
     const createdAt = new Date().toISOString();
     const message: LocalSupportMessage = {
-      messageId: id.toString(), conversationId, messageKey: request.messageKey,
-      senderUserId: userId, senderType: SupportSenderType.CUSTOMER,
-      bodyText: request.bodyText.trim(), createdAt,
+      messageId: id.toString(),
+      conversationId,
+      messageKey: request.messageKey,
+      senderUserId: userId,
+      senderType: SupportSenderType.CUSTOMER,
+      bodyText: request.bodyText.trim(),
+      createdAt,
     };
     await messages.put(message);
     await conversations.put({ ...conversation, status: nextStatus, lastMessageAt: createdAt, updatedAt: createdAt });

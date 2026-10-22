@@ -51,6 +51,7 @@ export function createSocialMessageAssetApplication(
       const keys = createAssetContentKeys();
       const stream = encryptAssetStream(file.stream(), file.size, assetId, keys);
       const ciphertext = await new Response(stream).blob();
+      // eslint-disable-next-line no-control-regex -- 该正则用于清洗文件名中的控制字符，控制字符是匹配目标而非误植
       const fileName = file.name.replace(/[\\/\u0000-\u001f]/g, '_').trim().slice(0, 160) || 'attachment';
       await repository.save({ assetId, ownerUserId, authorizedUserIds: [...new Set([ownerUserId, recipientUserId])], kind, mimeType, fileName, byteSize: file.size, ciphertext, keys, createdAt: now() });
       return { assetId, kind, mimeType, fileName, byteSize: file.size };

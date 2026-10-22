@@ -4,6 +4,9 @@
   "private": true,
   "type": "module",
   "exports": {
+    "./common/api-envelope": "./src/common/api-envelope.ts",
+    "./common/api-errors": "./src/common/api-errors.ts",
+    "./common/primitives": "./src/common/primitives.ts",
     "./health": "./src/health.ts",
     "./mock-payment": "./src/mock-payment.ts",
     "./platform-events/announcement": "./src/platform-events/announcement.ts",
@@ -33,5 +36,13 @@
   },
   "dependencies": {
     "@sinclair/typebox": "0.34.52"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism"
   }
 }

@@ -16,7 +16,7 @@ import {
   startRoom,
   type RoomFailureCode,
   type RoomResult,
-} from './room-domain';
+} from '@gameing/domain/rooms';
 
 export interface RoomRepositoryPort {
   findById(roomId: string): Promise<GameRoomSnapshotDto | null>;
@@ -29,8 +29,10 @@ export interface RoomRepositoryPort {
   createCode(): Promise<string>;
 }
 
-export type RoomApplicationFailureCode = RoomFailureCode | 'INVALID_REQUEST' | 'ROOM_NOT_FOUND' | 'INVALID_PASSWORD' | 'DUPLICATE_ROOM_CODE';
-export type RoomApplicationResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: RoomApplicationFailureCode };
+export type RoomApplicationFailureCode =
+  RoomFailureCode | 'INVALID_REQUEST' | 'ROOM_NOT_FOUND' | 'INVALID_PASSWORD' | 'DUPLICATE_ROOM_CODE';
+export type RoomApplicationResult<T> =
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: RoomApplicationFailureCode };
 
 function failed<T>(code: RoomApplicationFailureCode): RoomApplicationResult<T> {
   return { ok: false, code };
@@ -65,9 +67,14 @@ export function createRoomApplication(repository: RoomRepositoryPort): RoomAppli
       const roomCode = await repository.createCode();
       if (await repository.findByCode(roomCode)) return failed('DUPLICATE_ROOM_CODE');
       const initial: GameRoomSnapshotDto = {
-        roomId: repository.createId(), roomCode, gameKey: request.gameKey,
-        difficultyKey: request.difficultyKey, status: 'WAITING', ownerSeat: 1,
-        capacity: 4, stateVersion: 1,
+        roomId: repository.createId(),
+        roomCode,
+        gameKey: request.gameKey,
+        difficultyKey: request.difficultyKey,
+        status: 'WAITING',
+        ownerSeat: 1,
+        capacity: 4,
+        stateVersion: 1,
         members: [{ seat: 1, displayName: '你', participantType: 'PLAYER', isReady: false, isCurrentPlayer: true }],
       };
       if (!Value.Check(GameRoomSnapshotSchema, initial)) return failed('INVALID_REQUEST');
@@ -89,7 +96,7 @@ export function createRoomApplication(repository: RoomRepositoryPort): RoomAppli
       if (!Value.Check(JoinGameRoomRequestSchema, request)) return failed('INVALID_REQUEST');
       const room = await repository.findByCode(request.roomCode);
       if (!room || room.status !== 'WAITING') return failed('ROOM_NOT_FOUND');
-      if (!await repository.checkPassword(request.roomCode, request.roomPassword)) return failed('INVALID_PASSWORD');
+      if (!(await repository.checkPassword(request.roomCode, request.roomPassword))) return failed('INVALID_PASSWORD');
       const joined = addCurrentPlayer(room, '你');
       if (!joined.ok) return fromDomain(joined);
       await repository.save(joined.value);

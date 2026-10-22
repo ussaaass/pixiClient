@@ -64,13 +64,7 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
   status.setAttribute('aria-live', 'polite');
   status.setAttribute('aria-atomic', 'true');
 
-  const makeButton = (
-    label: string,
-    key: string,
-    action: () => void,
-    disabled = false,
-    pressed?: boolean,
-  ): HTMLButtonElement => {
+  const makeButton = (label: string, key: string, action: () => void, disabled = false, pressed?: boolean): HTMLButtonElement => {
     const button = document.createElement('button');
     button.type = 'button';
     button.textContent = label;
@@ -119,13 +113,15 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
           handList.className = 'practice-accessibility-buttons';
           state.hand.forEach((card) => {
             const selected = state.selectedCardId === card.id;
-            handList.append(makeButton(
-              `${card.label}${selected ? '，已选中' : ''}`,
-              `hand-${card.id}`,
-              () => actions.selectHandCard(card.id),
-              false,
-              selected,
-            ));
+            handList.append(
+              makeButton(
+                `${card.label}${selected ? '，已选中' : ''}`,
+                `hand-${card.id}`,
+                () => actions.selectHandCard(card.id),
+                false,
+                selected,
+              ),
+            );
           });
           handGroup.append(handList);
         }
@@ -138,9 +134,11 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
           const cardList = document.createElement('div');
           cardList.className = 'practice-accessibility-buttons';
           pile.cards.forEach((card) => {
-            cardList.append(makeButton(`取回${card.label}`, `pile-${pile.name}-${card.id}`, () => {
-              actions.retrievePileCard(pile.name, card.id);
-            }));
+            cardList.append(
+              makeButton(`取回${card.label}`, `pile-${pile.name}-${card.id}`, () => {
+                actions.retrievePileCard(pile.name, card.id);
+              }),
+            );
           });
           const placeButton = makeButton(
             `将已选牌放入${pile.label}（${pile.cards.length}/${pile.count}）`,
@@ -181,9 +179,11 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
         });
         content.push(resultsGroup);
         const actionsSection = actionsGroup();
-        actionsSection.append(state.autoGameActive
-          ? makeButton('停止自动游戏', 'action-auto-stop', actions.stopAutoGame)
-          : makeButton('再来一局', 'action-arrange', actions.arrangeOrReplay));
+        actionsSection.append(
+          state.autoGameActive
+            ? makeButton('停止自动游戏', 'action-auto-stop', actions.stopAutoGame)
+            : makeButton('再来一局', 'action-arrange', actions.arrangeOrReplay),
+        );
         content.push(actionsSection);
       }
 
@@ -193,8 +193,9 @@ export function createPracticeAccessibilityControls(actions: PracticeAccessibili
       panel.replaceChildren(instructions, status, ...content);
 
       if (activeKey) {
-        let replacement = Array.from(panel.querySelectorAll<HTMLButtonElement>('button[data-control-key]'))
-          .find((button) => button.dataset.controlKey === activeKey && !button.disabled);
+        let replacement = Array.from(panel.querySelectorAll<HTMLButtonElement>('button[data-control-key]')).find(
+          (button) => button.dataset.controlKey === activeKey && !button.disabled,
+        );
         if (!replacement && activeKey.startsWith('place-')) {
           const pileName = activeKey.slice('place-'.length);
           replacement = Array.from(panel.querySelectorAll<HTMLButtonElement>(`button[data-control-key^="pile-${pileName}-"]`)).at(-1);

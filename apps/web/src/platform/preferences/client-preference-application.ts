@@ -5,7 +5,7 @@ import {
   type ClientPreferenceDto,
   type UpdateClientPreferenceRequestDto,
 } from '@gameing/contracts/client-preferences';
-import { DEFAULT_CLIENT_PREFERENCES, updateClientPreference } from './preferences-domain';
+import { DEFAULT_CLIENT_PREFERENCES, updateClientPreference } from '@gameing/domain/preferences';
 
 export interface ClientPreferenceRepositoryPort {
   load(): Promise<unknown>;
@@ -13,8 +13,7 @@ export interface ClientPreferenceRepositoryPort {
 }
 
 export type ClientPreferenceResult<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly code: 'INVALID_REQUEST' | 'PREFERENCE_STORAGE_FAILED' };
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: 'INVALID_REQUEST' | 'PREFERENCE_STORAGE_FAILED' };
 
 export interface ClientPreferenceApplication {
   getPreferences(): Promise<ClientPreferenceDto>;
@@ -34,7 +33,10 @@ export function createClientPreferenceApplication(repository: ClientPreferenceRe
           : { ...DEFAULT_CLIENT_PREFERENCES };
         return { ...current };
       });
-      commandQueue = query.then(() => undefined, () => undefined);
+      commandQueue = query.then(
+        () => undefined,
+        () => undefined,
+      );
       return query;
     },
 
@@ -50,7 +52,10 @@ export function createClientPreferenceApplication(repository: ClientPreferenceRe
         current = updated;
         return { ok: true, value: { ...current } };
       });
-      commandQueue = command.then(() => undefined, () => undefined);
+      commandQueue = command.then(
+        () => undefined,
+        () => undefined,
+      );
       return command;
     },
   };

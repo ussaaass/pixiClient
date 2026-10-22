@@ -301,9 +301,9 @@ endpoint registry 与 TypeBox schema 生成 OpenAPI 3.x 文档；CI 检查生成
 - ✅ 明确统一 HTTP status + `{requestId, code, message, data, serverNow}` 协议及错误/成功形状。
 - ✅ 明确玩家与 Admin contracts 隔离、TypeBox 单一来源、DTO 静态推导、OpenAPI 生成方向。
 - ✅ 明确 BIGINT ID/金额/时间/状态、分页、validation details、幂等重试和 Socket 共用 payload/独立 envelope。
-- ⬜ 建立 `packages/contracts`、`packages/admin-contracts` 公共 schema 与 `Result`/错误 registry。
+- 🟡 公共 schema 与错误 registry 已建立：`packages/contracts/src/common/` 下 `api-errors.ts`（错误码→HTTP status 唯一映射表 + 可重试集合 + 字段级 details）、`api-envelope.ts`（统一成功/失败 envelope schema）、`primitives.ts`（BigIntId/金额/时间/UUID 标量）；`packages/admin-contracts` 已独立 typecheck 与 test。**领域级 `Result` 判别联合尚未落地**，当前服务端以 `ApiError` 承载预期业务拒绝。
 - ⬜ 选择并验证 TypeBox 到 OpenAPI 3.x 的生成器，生成 endpoint registry 与版本 diff 检查。
-- ⬜ 创建 `httpClient` 与 Koa envelope/error middleware；覆盖 2xx/400/401/403/404/409/422/429/5xx 和结果未知重查。
+- 🟡 Koa envelope/error middleware 已建立（`apps/server/src/infrastructure/http/`）：统一成功响应自检、错误边界映射为失败 envelope、requestId 贯通（只接受 UUID v4 hint，其余服务端生成并回传 `X-Request-Id`）、访问日志按 route template 记录 status/业务码/耗时、敏感字段脱敏。已覆盖 200/404/500；**401/403/409/422/429 与"结果未知重查"待业务 endpoint 接入后补齐**。前端 `httpClient` 与 `ApiClientError` 尚未创建。
 - ⬜ 选转账、创建订单、round snapshot、Admin config publish 四条 endpoint 做 contract/e2e 测试，确认 body/schema/状态码/幂等行为端到端一致。
 - 🟡 Identity settings、用户名/密码、邮箱/手机免验证码绑定与 TOTP setup/confirm/disable endpoint 已进入共享 TypeBox registry；登录响应使用 `SessionResponse | LoginChallengeResponse`，TOTP 登录接受 6 位动态码或 16 位备用码，备用码仅摘要存储且原子单次消费。Browser API 走统一 envelope 与 Bearer JWT；Koa handlers、生产速率限制和 OpenAPI 生成仍待补。
 - 🟡 好友码/精确用户名查找、好友申请/通过、一对一文字私信的共享 Social DTO 与本地 JWT Browser API 已实现并通过双账号幂等恢复测试；生产 gate/域权限/Socket.IO 和游标仍待补。
@@ -345,3 +345,4 @@ endpoint registry 与 TypeBox schema 生成 OpenAPI 3.x 文档；CI 检查生成
 | 2026-10-16 | 在游戏体验 DTO 中加入子厅背景 `assetId`，注明公开静态演示图与生产 AssetClient CTR+HMAC 资源链路之间尚有实现缺口。 |
 | 2026-10-16 | 登记直属邀请/返佣查询端点与免短信手机号绑定/旧号校验 DTO，标明生产服务端未闭环部分。 |
 | 2026-10-18 | 增加邮箱联系方式更新 DTO/API，邮箱/手机统一免验证码换绑并精确校验旧值；同步共享协议说明。 |
+| 2026-10-21 | 建立 `packages/contracts/src/common/` 公共 schema（统一 envelope、错误码注册表与 HTTP status 映射、共享标量），并落地 Koa envelope/error middleware、requestId 贯通、结构化访问日志与 `/health/ready`；施工 Checklist 同步更新进度。 |

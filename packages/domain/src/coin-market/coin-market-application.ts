@@ -1,8 +1,18 @@
-import type { CoinMarketListingCreateRequestDto, CoinMarketListingDto, CoinMarketListingPageDto, CoinMarketPriceQuoteDto, CoinMarketPriceQuoteRequestDto, CoinMarketTradeCreateRequestDto, CoinMarketTradeDto, CoinMarketTradeTextRequestDto } from '@gameing/contracts/coin-market';
+import type {
+  CoinMarketListingCreateRequestDto,
+  CoinMarketListingDto,
+  CoinMarketListingPageDto,
+  CoinMarketPriceQuoteDto,
+  CoinMarketPriceQuoteRequestDto,
+  CoinMarketTradeCreateRequestDto,
+  CoinMarketTradeDto,
+  CoinMarketTradeTextRequestDto,
+} from '@gameing/contracts/coin-market';
 
-export type CoinMarketApplicationResult<T> =
-  | { readonly ok: true; readonly value: T }
-  | { readonly ok: false; readonly code: string };
+/** The five buyer/seller commands available on an in-flight coin market trade. */
+export type CoinMarketTradeCommand = 'paymentProof' | 'appeal' | 'buyerEvidence' | 'sellerEvidence' | 'confirmReceipt';
+
+export type CoinMarketApplicationResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: string };
 
 export interface CoinMarketApplication {
   quotePrice(request: CoinMarketPriceQuoteRequestDto): Promise<CoinMarketApplicationResult<CoinMarketPriceQuoteDto>>;
@@ -12,24 +22,27 @@ export interface CoinMarketApplication {
   publicListings(cursor?: string): Promise<CoinMarketApplicationResult<CoinMarketListingPageDto>>;
   myTrades(): Promise<CoinMarketApplicationResult<CoinMarketTradeDto[]>>;
   createTrade(listingId: string, request: CoinMarketTradeCreateRequestDto): Promise<CoinMarketApplicationResult<CoinMarketTradeDto>>;
-  tradeCommand(action: 'paymentProof' | 'appeal' | 'buyerEvidence' | 'sellerEvidence' | 'confirmReceipt', tradeId: string, request?: CoinMarketTradeTextRequestDto): Promise<CoinMarketApplicationResult<CoinMarketTradeDto>>;
+  tradeCommand(
+    action: CoinMarketTradeCommand,
+    tradeId: string,
+    request?: CoinMarketTradeTextRequestDto,
+  ): Promise<CoinMarketApplicationResult<CoinMarketTradeDto>>;
 }
 
-export function createCoinMarketApplication(
-  ports: {
-    quote: (request: CoinMarketPriceQuoteRequestDto) => Promise<CoinMarketPriceQuoteDto>;
-    myListings: () => Promise<CoinMarketListingDto[]>;
-    createListing: (request: CoinMarketListingCreateRequestDto) => Promise<CoinMarketListingDto>;
-    cancelListing: (listingId: string) => Promise<CoinMarketListingDto>;
-    publicListings: (cursor?: string) => Promise<CoinMarketListingPageDto>;
-    myTrades: () => Promise<CoinMarketTradeDto[]>;
-    createTrade: (listingId: string, request: CoinMarketTradeCreateRequestDto) => Promise<CoinMarketTradeDto>;
-    tradeCommand: (action: 'paymentProof' | 'appeal' | 'buyerEvidence' | 'sellerEvidence' | 'confirmReceipt', tradeId: string, request?: CoinMarketTradeTextRequestDto) => Promise<CoinMarketTradeDto>;
-  },
-): CoinMarketApplication {
+export function createCoinMarketApplication(ports: {
+  quote: (request: CoinMarketPriceQuoteRequestDto) => Promise<CoinMarketPriceQuoteDto>;
+  myListings: () => Promise<CoinMarketListingDto[]>;
+  createListing: (request: CoinMarketListingCreateRequestDto) => Promise<CoinMarketListingDto>;
+  cancelListing: (listingId: string) => Promise<CoinMarketListingDto>;
+  publicListings: (cursor?: string) => Promise<CoinMarketListingPageDto>;
+  myTrades: () => Promise<CoinMarketTradeDto[]>;
+  createTrade: (listingId: string, request: CoinMarketTradeCreateRequestDto) => Promise<CoinMarketTradeDto>;
+  tradeCommand: (action: CoinMarketTradeCommand, tradeId: string, request?: CoinMarketTradeTextRequestDto) => Promise<CoinMarketTradeDto>;
+}): CoinMarketApplication {
   async function safely<T>(operation: () => Promise<T>): Promise<CoinMarketApplicationResult<T>> {
-    try { return { ok: true, value: await operation() }; }
-    catch (error) {
+    try {
+      return { ok: true, value: await operation() };
+    } catch (error) {
       if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') return { ok: false, code: error.code };
       return { ok: false, code: error instanceof Error ? error.message : 'COIN_MARKET_REQUEST_FAILED' };
     }

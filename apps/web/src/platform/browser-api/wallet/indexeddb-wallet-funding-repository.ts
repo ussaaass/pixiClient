@@ -1,9 +1,19 @@
-import { FundingChannelStatus, FundingErrorCode, FundingOrderStatus, FundingPaymentMethod, OrderType, type CreateFundingOrderRequestDto, type FundingChannelDto, type FundingOrderDto, type SimulateFundingPaymentRequestDto } from '@gameing/contracts/wallet-funding';
+import {
+  FundingChannelStatus,
+  FundingErrorCode,
+  FundingOrderStatus,
+  FundingPaymentMethod,
+  OrderType,
+  type CreateFundingOrderRequestDto,
+  type FundingChannelDto,
+  type FundingOrderDto,
+  type SimulateFundingPaymentRequestDto,
+} from '@gameing/contracts/wallet-funding';
 import type { LocalAssetAccount, LocalAssetEntry, LocalAssetOperation, LocalOrder } from '../database';
 import type { BrowserDevelopmentDatabase } from '../database';
 import type { WalletFundingRepository } from '../../../wallet-funding/wallet-funding-application';
 import { LOCAL_FUNDING_CHANNELS } from './local-funding-channels';
-import { calculatePurchaseCoins, DEFAULT_EXCHANGE_RATE_CASH_FEN, DEFAULT_EXCHANGE_RATE_COIN_UNITS } from '../../wallet/wallet-domain';
+import { calculatePurchaseCoins, DEFAULT_EXCHANGE_RATE_CASH_FEN, DEFAULT_EXCHANGE_RATE_COIN_UNITS } from '@gameing/domain/wallet';
 import { LocalAssetType, LocalAssetOperationType } from './local-asset-constants';
 
 const SYSTEM_USER_SETTING = 'wallet:system-user-id';
@@ -12,7 +22,8 @@ const SYSTEM_ROLE_TYPE = 8;
 const MAX_SIGNED_BIGINT = 9_223_372_036_854_775_807n;
 
 function parseExchangeRate(value: unknown): { coins: bigint; fen: bigint } {
-  if (typeof value !== 'string' || !/^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/.test(value)) return { coins: DEFAULT_EXCHANGE_RATE_COIN_UNITS, fen: DEFAULT_EXCHANGE_RATE_CASH_FEN };
+  if (typeof value !== 'string' || !/^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/.test(value))
+    return { coins: DEFAULT_EXCHANGE_RATE_COIN_UNITS, fen: DEFAULT_EXCHANGE_RATE_CASH_FEN };
   const [yuan, coins] = value.split(':');
   return { coins: BigInt(coins!), fen: BigInt(yuan!) * 100n };
 }
@@ -48,15 +59,21 @@ function toDto(order: LocalOrder): FundingOrderDto {
     status: order.status,
     createdAt: order.createdAt,
     paidAt: order.paidAt,
-    ...(order.paymentMethod === FundingPaymentMethod.USDT_TRON && order.usdtAmountMilli && order.usdtRateCnyPerUsdt && order.depositAddress && order.expiresAt ? {
-      usdtInvoice: {
-        amountUsdtMilli: order.usdtAmountMilli,
-        displayAmountUsdt: displayUsdtAmount(order.usdtAmountMilli),
-        rateCnyPerUsdt: order.usdtRateCnyPerUsdt,
-        depositAddress: order.depositAddress,
-        expiresAt: order.expiresAt,
-      },
-    } : {}),
+    ...(order.paymentMethod === FundingPaymentMethod.USDT_TRON &&
+    order.usdtAmountMilli &&
+    order.usdtRateCnyPerUsdt &&
+    order.depositAddress &&
+    order.expiresAt
+      ? {
+          usdtInvoice: {
+            amountUsdtMilli: order.usdtAmountMilli,
+            displayAmountUsdt: displayUsdtAmount(order.usdtAmountMilli),
+            rateCnyPerUsdt: order.usdtRateCnyPerUsdt,
+            depositAddress: order.depositAddress,
+            expiresAt: order.expiresAt,
+          },
+        }
+      : {}),
   };
 }
 
@@ -74,17 +91,21 @@ export class IndexedDbWalletFundingRepository implements WalletFundingRepository
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt) || (BigInt(b.orderId) > BigInt(a.orderId) ? 1 : -1))
       .slice(0, 50);
     const now = new Date();
-    const expired = rows.filter((order) => order.status === FundingOrderStatus.PENDING_PAYMENT && order.expiresAt && Date.parse(order.expiresAt) <= now.getTime());
+    const expired = rows.filter(
+      (order) => order.status === FundingOrderStatus.PENDING_PAYMENT && order.expiresAt && Date.parse(order.expiresAt) <= now.getTime(),
+    );
     if (expired.length) {
       const transaction = this.database.transaction('orders', 'readwrite');
       for (const order of expired) await transaction.store.put({ ...order, status: FundingOrderStatus.EXPIRED });
       await transaction.done;
     }
-    return rows.map((order) => expired.includes(order) ? toDto({ ...order, status: FundingOrderStatus.EXPIRED }) : toDto(order));
+    return rows.map((order) => (expired.includes(order) ? toDto({ ...order, status: FundingOrderStatus.EXPIRED }) : toDto(order)));
   }
 
   async createOrder(userId: string, request: CreateFundingOrderRequestDto): Promise<FundingOrderDto> {
-    const channel = LOCAL_FUNDING_CHANNELS.find((item) => item.channelId === request.channelId && item.status === FundingChannelStatus.ENABLED);
+    const channel = LOCAL_FUNDING_CHANNELS.find(
+      (item) => item.channelId === request.channelId && item.status === FundingChannelStatus.ENABLED,
+    );
     if (!channel) throw new Error(FundingErrorCode.FUNDING_CHANNEL_UNAVAILABLE);
     const transaction = this.database.transaction(['settings', 'orders'], 'readwrite');
     const orders = transaction.objectStore('orders');
@@ -116,23 +137,32 @@ export class IndexedDbWalletFundingRepository implements WalletFundingRepository
       const windowMinutes = parseUsdtWindowMinutes((await settings.get('system_config:usdt.deposit_window_minutes'))?.value);
       // Round the CNY conversion down to one decimal USDT, then reserve a unique
       // increasing thousandth suffix within the configured payment window.
-      const baseTenths = amountCnyFen * 100_000n / usdtRate.micros;
+      const baseTenths = (amountCnyFen * 100_000n) / usdtRate.micros;
       if (baseTenths <= 0n) {
-        transaction.abort(); await transaction.done.catch(() => undefined);
+        transaction.abort();
+        await transaction.done.catch(() => undefined);
         throw new Error(FundingErrorCode.INVALID_ORDER_AMOUNT);
       }
       const allocationKey = `wallet:usdt-invoice:${baseTenths}`;
       const allocation = await settings.get(allocationKey);
-      const expiryMs = Date.parse(allocation?.value && typeof allocation.value === 'object' && 'expiresAt' in allocation.value ? String(allocation.value.expiresAt) : '');
+      const expiryMs = Date.parse(
+        allocation?.value && typeof allocation.value === 'object' && 'expiresAt' in allocation.value
+          ? String(allocation.value.expiresAt)
+          : '',
+      );
       const activeAllocation = Number.isFinite(expiryMs) && expiryMs > Date.parse(createdAt);
-      const suffix = activeAllocation && allocation?.value && typeof allocation.value === 'object' && 'nextSuffix' in allocation.value
-        ? Number(allocation.value.nextSuffix)
-        : 10;
+      const suffix =
+        activeAllocation && allocation?.value && typeof allocation.value === 'object' && 'nextSuffix' in allocation.value
+          ? Number(allocation.value.nextSuffix)
+          : 10;
       if (!Number.isInteger(suffix) || suffix < 10 || suffix > 999) {
-        transaction.abort(); await transaction.done.catch(() => undefined);
+        transaction.abort();
+        await transaction.done.catch(() => undefined);
         throw new Error(FundingErrorCode.USDT_INVOICE_CAPACITY_REACHED);
       }
-      const expiresAt = activeAllocation ? new Date(expiryMs).toISOString() : new Date(Date.parse(createdAt) + windowMinutes * 60_000).toISOString();
+      const expiresAt = activeAllocation
+        ? new Date(expiryMs).toISOString()
+        : new Date(Date.parse(createdAt) + windowMinutes * 60_000).toISOString();
       const amountUsdtMilli = (baseTenths * 100n + BigInt(suffix)).toString();
       await settings.put({ key: allocationKey, value: { nextSuffix: suffix + 1, expiresAt } });
       usdtFields = {
@@ -166,22 +196,28 @@ export class IndexedDbWalletFundingRepository implements WalletFundingRepository
   }
 
   async simulatePayment(userId: string, request: SimulateFundingPaymentRequestDto): Promise<FundingOrderDto> {
-    const transaction = this.database.transaction(['settings', 'orders', 'users', 'asset_accounts', 'asset_operations', 'asset_entries'], 'readwrite');
+    const transaction = this.database.transaction(
+      ['settings', 'orders', 'users', 'asset_accounts', 'asset_operations', 'asset_entries'],
+      'readwrite',
+    );
     const orders = transaction.objectStore('orders');
     const order = await orders.get(request.orderId);
     if (!order || order.userId !== userId || order.orderType !== OrderType.WALLET_COIN_PURCHASE) {
-      transaction.abort(); await transaction.done.catch(() => undefined);
+      transaction.abort();
+      await transaction.done.catch(() => undefined);
       throw new Error(FundingErrorCode.FUNDING_ORDER_NOT_FOUND);
     }
-    const paymentAmountMatches = order.paymentMethod === FundingPaymentMethod.USDT_TRON
-      ? 'paidAmountUsdtMilli' in request && request.paidAmountUsdtMilli === order.usdtAmountMilli
-      : 'paidAmountCnyFen' in request && request.paidAmountCnyFen === order.amountCnyFen;
+    const paymentAmountMatches =
+      order.paymentMethod === FundingPaymentMethod.USDT_TRON
+        ? 'paidAmountUsdtMilli' in request && request.paidAmountUsdtMilli === order.usdtAmountMilli
+        : 'paidAmountCnyFen' in request && request.paidAmountCnyFen === order.amountCnyFen;
     if (order.status === FundingOrderStatus.PAID && order.paidEventId === request.paymentEventId && paymentAmountMatches) {
       await transaction.done;
       return toDto(order);
     }
     if (order.status !== FundingOrderStatus.PENDING_PAYMENT) {
-      transaction.abort(); await transaction.done.catch(() => undefined);
+      transaction.abort();
+      await transaction.done.catch(() => undefined);
       throw new Error(FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE);
     }
     if (order.paymentMethod === FundingPaymentMethod.USDT_TRON && order.expiresAt && Date.parse(order.expiresAt) <= Date.now()) {
@@ -190,13 +226,15 @@ export class IndexedDbWalletFundingRepository implements WalletFundingRepository
       throw new Error(FundingErrorCode.FUNDING_ORDER_EXPIRED);
     }
     if (!paymentAmountMatches) {
-      transaction.abort(); await transaction.done.catch(() => undefined);
+      transaction.abort();
+      await transaction.done.catch(() => undefined);
       throw new Error(FundingErrorCode.FUNDING_ORDER_AMOUNT_MISMATCH);
     }
     const users = transaction.objectStore('users');
     const player = await users.get(userId);
     if (!player || player.roleType === SYSTEM_ROLE_TYPE || player.status !== 'ACTIVE') {
-      transaction.abort(); await transaction.done.catch(() => undefined);
+      transaction.abort();
+      await transaction.done.catch(() => undefined);
       throw new Error(FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE);
     }
     const settings = transaction.objectStore('settings');
@@ -219,27 +257,96 @@ export class IndexedDbWalletFundingRepository implements WalletFundingRepository
     const playerAccountId = `${userId}:${LocalAssetType.COIN}`;
     const systemAccountId = `${systemUserId}:${LocalAssetType.COIN}`;
     const systemCashAccountId = `${systemUserId}:${LocalAssetType.CNY_BALANCE}`;
-    const playerAccount = await accounts.get(playerAccountId) ?? { accountId: playerAccountId, userId, assetType: LocalAssetType.COIN, amount: '0', frozenAmount: '0', version: 1, status: 1 } satisfies LocalAssetAccount;
-    const systemAccount = await accounts.get(systemAccountId) ?? { accountId: systemAccountId, userId: systemUserId, assetType: LocalAssetType.COIN, amount: '0', frozenAmount: '0', version: 1, status: 1 } satisfies LocalAssetAccount;
-    const systemCashAccount = await accounts.get(systemCashAccountId) ?? { accountId: systemCashAccountId, userId: systemUserId, assetType: LocalAssetType.CNY_BALANCE, amount: '0', frozenAmount: '0', version: 1, status: 1 } satisfies LocalAssetAccount;
+    const playerAccount =
+      (await accounts.get(playerAccountId)) ??
+      ({
+        accountId: playerAccountId,
+        userId,
+        assetType: LocalAssetType.COIN,
+        amount: '0',
+        frozenAmount: '0',
+        version: 1,
+        status: 1,
+      } satisfies LocalAssetAccount);
+    const systemAccount =
+      (await accounts.get(systemAccountId)) ??
+      ({
+        accountId: systemAccountId,
+        userId: systemUserId,
+        assetType: LocalAssetType.COIN,
+        amount: '0',
+        frozenAmount: '0',
+        version: 1,
+        status: 1,
+      } satisfies LocalAssetAccount);
+    const systemCashAccount =
+      (await accounts.get(systemCashAccountId)) ??
+      ({
+        accountId: systemCashAccountId,
+        userId: systemUserId,
+        assetType: LocalAssetType.CNY_BALANCE,
+        amount: '0',
+        frozenAmount: '0',
+        version: 1,
+        status: 1,
+      } satisfies LocalAssetAccount);
     const coins = BigInt(order.creditCoins);
     const paidFen = BigInt(order.amountCnyFen);
     const nextPlayer = BigInt(playerAccount.amount) + coins;
     const nextSystemCoin = BigInt(systemAccount.amount) - coins;
     const nextSystemCash = BigInt(systemCashAccount.amount) + paidFen;
     if (nextPlayer > MAX_SIGNED_BIGINT || nextSystemCoin < -MAX_SIGNED_BIGINT || nextSystemCash > MAX_SIGNED_BIGINT) {
-      transaction.abort(); await transaction.done.catch(() => undefined);
+      transaction.abort();
+      await transaction.done.catch(() => undefined);
       throw new Error(FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE);
     }
     const operationId = (await allocateId()).toString();
-    const eventOperation: LocalAssetOperation = { operationId, idempotencyKey: `funding:${order.orderId}`, operationType: LocalAssetOperationType.COIN_PURCHASE, status: 1, createdAt: now, extra: { userId, orderId: order.orderId, orderNo: order.orderNo, paymentEventId: request.paymentEventId, amountCnyFen: paidFen.toString(), creditCoins: coins.toString(), rateCoinUnits: order.rateCoinUnits, rateCashFen: order.rateCashFen, source: 'LOCAL_BROWSER_SERVER' } };
+    const eventOperation: LocalAssetOperation = {
+      operationId,
+      idempotencyKey: `funding:${order.orderId}`,
+      operationType: LocalAssetOperationType.COIN_PURCHASE,
+      status: 1,
+      createdAt: now,
+      extra: {
+        userId,
+        orderId: order.orderId,
+        orderNo: order.orderNo,
+        paymentEventId: request.paymentEventId,
+        amountCnyFen: paidFen.toString(),
+        creditCoins: coins.toString(),
+        rateCoinUnits: order.rateCoinUnits,
+        rateCashFen: order.rateCashFen,
+        source: 'LOCAL_BROWSER_SERVER',
+      },
+    };
     const playerEntryId = (await allocateId()).toString();
     const systemCoinEntryId = (await allocateId()).toString();
     const systemCashEntryId = (await allocateId()).toString();
     const entries: LocalAssetEntry[] = [
-      { entryId: playerEntryId, operationId, accountId: playerAccountId, delta: coins.toString(), balanceAfter: nextPlayer.toString(), createdAt: now },
-      { entryId: systemCoinEntryId, operationId, accountId: systemAccountId, delta: (-coins).toString(), balanceAfter: nextSystemCoin.toString(), createdAt: now },
-      { entryId: systemCashEntryId, operationId, accountId: systemCashAccountId, delta: paidFen.toString(), balanceAfter: nextSystemCash.toString(), createdAt: now },
+      {
+        entryId: playerEntryId,
+        operationId,
+        accountId: playerAccountId,
+        delta: coins.toString(),
+        balanceAfter: nextPlayer.toString(),
+        createdAt: now,
+      },
+      {
+        entryId: systemCoinEntryId,
+        operationId,
+        accountId: systemAccountId,
+        delta: (-coins).toString(),
+        balanceAfter: nextSystemCoin.toString(),
+        createdAt: now,
+      },
+      {
+        entryId: systemCashEntryId,
+        operationId,
+        accountId: systemCashAccountId,
+        delta: paidFen.toString(),
+        balanceAfter: nextSystemCash.toString(),
+        createdAt: now,
+      },
     ];
     await accounts.put({ ...playerAccount, amount: nextPlayer.toString(), version: playerAccount.version + 1 });
     await accounts.put({ ...systemAccount, amount: nextSystemCoin.toString(), version: systemAccount.version + 1 });

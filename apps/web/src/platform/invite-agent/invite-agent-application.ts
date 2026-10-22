@@ -10,7 +10,7 @@ export interface InviteAgentGateway {
   withdrawAgentDomain(): Promise<{ withdrawn: boolean }>;
 }
 
-export interface InviteAgentApplication extends InviteAgentGateway {}
+export type InviteAgentApplication = InviteAgentGateway;
 
 export function createInviteAgentApplication(gateway: InviteAgentGateway): InviteAgentApplication {
   return {

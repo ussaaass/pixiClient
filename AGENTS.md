@@ -3,6 +3,8 @@
 - 每个 Markdown（`.md`）文件末尾必须包含“变更历史”区块；每次修改文件时，在该区块追加日期与简明变更摘要。新建 Markdown 文件也必须以该区块结束。
 - `docs/` 按文档性质归档到编号分类目录；新增文档放入对应分类并更新 `docs/README.md`，不要把专项文档散放在 `docs/` 根目录。
 - 如需运行 Python 脚本、安装 Python 依赖或执行 Python 工具，必须使用项目专用 venv。推荐仓库根目录 `.venv`，通过 `.venv/bin/python` 执行、通过 `.venv/bin/python -m pip` 安装；Windows 使用 `.venv\Scripts\python.exe`。系统 Python 仅用于创建 venv，不安装全局依赖。虚拟环境不提交。
+- 代码结构导航使用 Graphify 知识图谱（`~/.local/bin/graphify`，uv tool 隔离环境，非本项目依赖，因此不适用上一条的 venv 规则）。查询结构关系优先用 `graphify query` / `path` / `explain`，不要靠 grep 猜文件位置。改完代码后跑 `graphify update .` 增量更新图谱；图谱产物 `graphify-out/` 不提交。接入方式与当前图谱规模见 `docs/08_reference/WorkBuddy工具链与知识图谱接入.md`。
+- 本仓库无任何 Python 源码，自动化脚本一律用 Node/TS（`tools/asset-generation` 用 `assetgen` CLI，`tools/audio-placeholders` 用 `generate.mjs`）。
 - 美术创作通过 OpenAI API 完成（用户称 ChatGPT 服务商），主模型采用用户指定的 GPT-6 系列。实际 API 模型 ID 显式配置并记入生成台账，不擅自换成其他系列。
 - 图像输出使用官方支持的图像生成工具及图像模型配置，与 GPT-6 主模型分别记录。不得假设 `gpt6` 是有效 API ID，或将其直接填入 Images API。具体子型号及图像模型在实施时核实账户权限、官方接口能力并锁定。
 - API 密钥只保存在内部素材执行端，不进入 Git、客户端或公开资源清单。
@@ -35,3 +37,4 @@
 | 2026-10-10 | 增加施工前核对 SDD、优先纵向闭环、跨层转换归属及验证/文档回写纪律。 |
 | 2026-10-10 | 增加施工后规范回顾，并规定显著简化但偏离规范的方案须先交用户决定。 |
 | 2026-10-10 | 增加页面修改后的视口宽高及滚动溢出检查纪律。 |
+| 2026-10-22 | 增补 Graphify 知识图谱使用纪律（查询优先于 grep、改后增量更新、产物不提交），并明确本仓库无 Python 源码、自动化一律用 Node/TS。 |

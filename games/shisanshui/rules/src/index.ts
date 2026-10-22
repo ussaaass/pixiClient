@@ -35,11 +35,7 @@ export type ArrangementValidation =
   | { readonly valid: true; readonly value: EvaluatedArrangement }
   | {
       readonly valid: false;
-      readonly reason:
-        | 'INVALID_HELD_CARDS'
-        | 'INVALID_PILE_COUNTS'
-        | 'DUPLICATE_CARDS'
-        | 'CARDS_NOT_IN_HAND';
+      readonly reason: 'INVALID_HELD_CARDS' | 'INVALID_PILE_COUNTS' | 'DUPLICATE_CARDS' | 'CARDS_NOT_IN_HAND';
     };
 
 export interface PlayerArrangement {
@@ -178,9 +174,7 @@ function evaluate(cards: readonly CardId[], allowFiveCardHands: boolean): HandRa
   const ranks = sortedRanks(cards);
   const counts = new Map<number, number>();
   for (const rank of ranks) counts.set(rank, (counts.get(rank) ?? 0) + 1);
-  const groups = [...counts.entries()].sort((left, right) =>
-    right[1] - left[1] || right[0] - left[0],
-  );
+  const groups = [...counts.entries()].sort((left, right) => right[1] - left[1] || right[0] - left[0]);
 
   if (!allowFiveCardHands) {
     if (groups[0]?.[1] === 3) return { category: HAND_CATEGORY.THREE_OF_A_KIND, tieBreak: padded([groups[0][0]]) };
@@ -229,14 +223,19 @@ export function compareRanks(left: HandRank, right: HandRank): -1 | 0 | 1 {
   return 0;
 }
 
-export function validateArrangement(
-  heldCards: readonly CardId[],
-  arrangement: Arrangement,
-): ArrangementValidation {
-  if (heldCards.length !== 13 || heldCards.some((card) => !Number.isInteger(card) || card < 0 || card >= 52) || new Set(heldCards).size !== 13) {
+export function validateArrangement(heldCards: readonly CardId[], arrangement: Arrangement): ArrangementValidation {
+  if (
+    heldCards.length !== 13 ||
+    heldCards.some((card) => !Number.isInteger(card) || card < 0 || card >= 52) ||
+    new Set(heldCards).size !== 13
+  ) {
     return { valid: false, reason: 'INVALID_HELD_CARDS' };
   }
-  if (arrangement.front.length !== PILE_COUNTS.front || arrangement.middle.length !== PILE_COUNTS.middle || arrangement.back.length !== PILE_COUNTS.back) {
+  if (
+    arrangement.front.length !== PILE_COUNTS.front ||
+    arrangement.middle.length !== PILE_COUNTS.middle ||
+    arrangement.back.length !== PILE_COUNTS.back
+  ) {
     return { valid: false, reason: 'INVALID_PILE_COUNTS' };
   }
 
@@ -297,10 +296,7 @@ function cardsForMask(cards: readonly CardId[], mask: number): CardId[] {
   return selected;
 }
 
-function compareArrangementStrength(
-  left: Readonly<Record<PileName, HandRank>>,
-  right: Readonly<Record<PileName, HandRank>>,
-): -1 | 0 | 1 {
+function compareArrangementStrength(left: Readonly<Record<PileName, HandRank>>, right: Readonly<Record<PileName, HandRank>>): -1 | 0 | 1 {
   for (const pile of ['back', 'middle', 'front'] as const) {
     const result = compareRanks(left[pile], right[pile]);
     if (result !== 0) return result;
@@ -314,7 +310,11 @@ function compareArrangementStrength(
  * then front rank, with card IDs as the stable final tie-break.
  */
 export function autoArrange(heldCards: readonly CardId[]): AutoArrangeResult {
-  if (heldCards.length !== 13 || heldCards.some((card) => !Number.isInteger(card) || card < 0 || card >= 52) || new Set(heldCards).size !== 13) {
+  if (
+    heldCards.length !== 13 ||
+    heldCards.some((card) => !Number.isInteger(card) || card < 0 || card >= 52) ||
+    new Set(heldCards).size !== 13
+  ) {
     return { valid: false, reason: 'INVALID_HELD_CARDS' };
   }
 
@@ -358,11 +358,12 @@ export function autoArrange(heldCards: readonly CardId[]): AutoArrangeResult {
 
       const candidateRanks = { front: frontRank, middle: middleRank, back: backRank };
       const strength = bestRanks ? compareArrangementStrength(candidateRanks, bestRanks) : 1;
-      const tieBreak = bestMasks && strength === 0
-        ? compareMaskCardOrder(frontMask, bestMasks.front)
-          || compareMaskCardOrder(middleMask, bestMasks.middle)
-          || compareMaskCardOrder(backMask, bestMasks.back)
-        : 0;
+      const tieBreak =
+        bestMasks && strength === 0
+          ? compareMaskCardOrder(frontMask, bestMasks.front) ||
+            compareMaskCardOrder(middleMask, bestMasks.middle) ||
+            compareMaskCardOrder(backMask, bestMasks.back)
+          : 0;
       if (strength > 0 || (strength === 0 && tieBreak < 0)) {
         bestMasks = { front: frontMask, middle: middleMask, back: backMask };
         bestRanks = candidateRanks;
@@ -384,12 +385,18 @@ export function autoArrange(heldCards: readonly CardId[]): AutoArrangeResult {
 }
 
 function payoutFor(pile: PileName, rank: HandRank, config: ScoringConfig): number {
-  if (pile === 'front' && rank.category === HAND_CATEGORY.THREE_OF_A_KIND && config.features.frontThreeOfAKind) return config.payouts.frontThreeOfAKind;
-  if (pile === 'middle' && rank.category === HAND_CATEGORY.FULL_HOUSE && config.features.middleFullHouse) return config.payouts.middleFullHouse;
-  if (pile === 'middle' && rank.category === HAND_CATEGORY.FOUR_OF_A_KIND && config.features.middleFourOfAKind) return config.payouts.middleFourOfAKind;
-  if (pile === 'middle' && rank.category === HAND_CATEGORY.STRAIGHT_FLUSH && config.features.middleStraightFlush) return config.payouts.middleStraightFlush;
-  if (pile === 'back' && rank.category === HAND_CATEGORY.FOUR_OF_A_KIND && config.features.backFourOfAKind) return config.payouts.backFourOfAKind;
-  if (pile === 'back' && rank.category === HAND_CATEGORY.STRAIGHT_FLUSH && config.features.backStraightFlush) return config.payouts.backStraightFlush;
+  if (pile === 'front' && rank.category === HAND_CATEGORY.THREE_OF_A_KIND && config.features.frontThreeOfAKind)
+    return config.payouts.frontThreeOfAKind;
+  if (pile === 'middle' && rank.category === HAND_CATEGORY.FULL_HOUSE && config.features.middleFullHouse)
+    return config.payouts.middleFullHouse;
+  if (pile === 'middle' && rank.category === HAND_CATEGORY.FOUR_OF_A_KIND && config.features.middleFourOfAKind)
+    return config.payouts.middleFourOfAKind;
+  if (pile === 'middle' && rank.category === HAND_CATEGORY.STRAIGHT_FLUSH && config.features.middleStraightFlush)
+    return config.payouts.middleStraightFlush;
+  if (pile === 'back' && rank.category === HAND_CATEGORY.FOUR_OF_A_KIND && config.features.backFourOfAKind)
+    return config.payouts.backFourOfAKind;
+  if (pile === 'back' && rank.category === HAND_CATEGORY.STRAIGHT_FLUSH && config.features.backStraightFlush)
+    return config.payouts.backStraightFlush;
   return 1;
 }
 
@@ -404,11 +411,8 @@ function comparePlayerPair(
   const piles: PileComparison[] = pileNames.map((pile) => {
     if (leftEval.foul || rightEval.foul) return { pile, result: 0, water: 0 };
     const result = compareRanks(leftEval.ranks[pile], rightEval.ranks[pile]);
-    const water = result === 1
-      ? payoutFor(pile, leftEval.ranks[pile], config)
-      : result === -1
-        ? -payoutFor(pile, rightEval.ranks[pile], config)
-        : 0;
+    const water =
+      result === 1 ? payoutFor(pile, leftEval.ranks[pile], config) : result === -1 ? -payoutFor(pile, rightEval.ranks[pile], config) : 0;
     return { pile, result, water };
   });
 
@@ -438,10 +442,7 @@ function comparePlayerPair(
   };
 }
 
-export function settleRound(
-  players: readonly PlayerArrangement[],
-  config: ScoringConfig = CLASSIC_V1_SCORING,
-): RoundSettlement {
+export function settleRound(players: readonly PlayerArrangement[], config: ScoringConfig = CLASSIC_V1_SCORING): RoundSettlement {
   if (players.length !== 4 || new Set(players.map((player) => player.playerId)).size !== 4) {
     throw new RangeError('A classic-v1 round requires four distinct players');
   }
@@ -470,11 +471,10 @@ export function settleRound(
   }
 
   if (config.features.homeRun && !evaluated.some((entry) => entry.foul)) {
-    const sweeper = players.find((player) => pairs
-      .filter((pair) => pair.leftPlayerId === player.playerId || pair.rightPlayerId === player.playerId)
-      .every((pair) => pair.piles.every((pile) =>
-        pile.result === (pair.leftPlayerId === player.playerId ? 1 : -1),
-      )),
+    const sweeper = players.find((player) =>
+      pairs
+        .filter((pair) => pair.leftPlayerId === player.playerId || pair.rightPlayerId === player.playerId)
+        .every((pair) => pair.piles.every((pile) => pile.result === (pair.leftPlayerId === player.playerId ? 1 : -1))),
     );
     if (sweeper) {
       for (let index = 0; index < pairs.length; index += 1) {
@@ -490,7 +490,11 @@ export function settleRound(
   }
 
   return {
-    players: players.map((player, index) => ({ playerId: player.playerId, foul: evaluated[index]!.foul, water: scores.get(player.playerId)! })),
+    players: players.map((player, index) => ({
+      playerId: player.playerId,
+      foul: evaluated[index]!.foul,
+      water: scores.get(player.playerId)!,
+    })),
     pairs,
   };
 }

@@ -23,12 +23,7 @@ function arrangementFrom(cards: readonly CardId[]): Arrangement {
   };
 }
 
-function* combinations(
-  cards: readonly CardId[],
-  size: number,
-  start = 0,
-  chosen: CardId[] = [],
-): Generator<readonly CardId[]> {
+function* combinations(cards: readonly CardId[], size: number, start = 0, chosen: CardId[] = []): Generator<readonly CardId[]> {
   if (chosen.length === size) {
     yield [...chosen];
     return;
@@ -140,23 +135,43 @@ describe('arrangement and round settlement', () => {
     for (const pair of result.pairs) {
       const left = result.players.find((player) => player.playerId === pair.leftPlayerId)!;
       const right = result.players.find((player) => player.playerId === pair.rightPlayerId)!;
-      expect(left.foul || right.foul ? pair.leftWater === 0 || Math.abs(pair.leftWater) === CLASSIC_V1_SCORING.payouts.foul : true).toBe(true);
+      expect(left.foul || right.foul ? pair.leftWater === 0 || Math.abs(pair.leftWater) === CLASSIC_V1_SCORING.payouts.foul : true).toBe(
+        true,
+      );
     }
   });
 
   it('applies special-pile payouts, slam, and home-run multipliers as configured', () => {
     const winningCards = [
-      card(9, 0), card(9, 1), card(9, 2),
-      card(10, 0), card(11, 0), card(12, 0), card(13, 0), card(14, 0),
-      card(10, 1), card(11, 1), card(12, 1), card(13, 1), card(14, 1),
+      card(9, 0),
+      card(9, 1),
+      card(9, 2),
+      card(10, 0),
+      card(11, 0),
+      card(12, 0),
+      card(13, 0),
+      card(14, 0),
+      card(10, 1),
+      card(11, 1),
+      card(12, 1),
+      card(13, 1),
+      card(14, 1),
     ];
     const winners = new Set(winningCards);
     const remaining = Array.from({ length: 52 }, (_, index) => index).filter((value) => !winners.has(value));
     const opponents: CardId[][] = [[], [], []];
     remaining.forEach((value, index) => opponents[index % opponents.length]!.push(value));
     const players = [
-      { playerId: 'winner', heldCards: winningCards, arrangement: { front: winningCards.slice(0, 3), middle: winningCards.slice(3, 8), back: winningCards.slice(8, 13) } },
-      ...opponents.map((heldCards, index) => ({ playerId: `opponent-${index + 1}`, heldCards, arrangement: findLegalArrangement(heldCards) })),
+      {
+        playerId: 'winner',
+        heldCards: winningCards,
+        arrangement: { front: winningCards.slice(0, 3), middle: winningCards.slice(3, 8), back: winningCards.slice(8, 13) },
+      },
+      ...opponents.map((heldCards, index) => ({
+        playerId: `opponent-${index + 1}`,
+        heldCards,
+        arrangement: findLegalArrangement(heldCards),
+      })),
     ];
 
     const result = settleRound(players, CLASSIC_V1_SCORING);

@@ -1,0 +1,12 @@
+# Graphify 项目配置
+# 格式：每行一个 key=value，作用于 extract / update / git hook / MCP server / /graphify skill。
+
+# 仓库是 TypeScript + Vue monorepo。
+# .vue 由 graphify 内部按 SFC 拆分处理；这里显式声明 .ts 的语言归属，
+# 避免 .ts 扩展名在其他语言规则下被误判。
+language.ts=typescript
+
+# 文档与代码都要进图谱：docs/ 是本项目唯一的权威规则来源，
+# 不索引文档等于丢掉了产品规则这一层语义。
+# 保持 viz 开启，graph.html 是本地审阅图谱的主要入口。
+viz_node_limit=0

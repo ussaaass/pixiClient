@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { calculateExchangeCashFen, calculateTransferFee, createExchangeQuote, createTransferQuote, exchangeQuoteMatches, transferQuoteMatches } from './wallet-domain';
+import {
+  calculateExchangeCashFen,
+  calculateTransferFee,
+  createExchangeQuote,
+  createTransferQuote,
+  exchangeQuoteMatches,
+  transferQuoteMatches,
+} from './wallet-domain';
 
 describe('wallet transfer domain rules', () => {
   it('rounds the 5% sender-paid fee upward to a whole coin', () => {
@@ -9,7 +16,13 @@ describe('wallet transfer domain rules', () => {
   });
 
   it('freezes quoted principal, fee rate and total for explicit confirmation', () => {
-    const quote = createTransferQuote({ recipientUserId: '2', recipientDisplayName: '收款玩家', coins: 101n, feeRateBps: 500, quotedAt: new Date('2026-10-15T00:00:00.000Z') });
+    const quote = createTransferQuote({
+      recipientUserId: '2',
+      recipientDisplayName: '收款玩家',
+      coins: 101n,
+      feeRateBps: 500,
+      quotedAt: new Date('2026-10-15T00:00:00.000Z'),
+    });
     expect(quote).toMatchObject({ coins: '101', feeCoins: '6', totalCoins: '107', feeRateBps: 500 });
     expect(transferQuoteMatches(quote, 500)).toBe(true);
     expect(transferQuoteMatches(quote, 600)).toBe(false);

@@ -1,0 +1,28 @@
+{
+  "name": "@gameing/domain",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./wallet": "./src/wallet/wallet-domain.ts",
+    "./social": "./src/social/social-domain.ts",
+    "./social/access-policy": "./src/social/social-access-policy.ts",
+    "./social/post-badge": "./src/social/social-post-badge.ts",
+    "./support": "./src/support/support-domain.ts",
+    "./rooms": "./src/rooms/room-domain.ts",
+    "./preferences": "./src/preferences/preferences-domain.ts",
+    "./coin-market": "./src/coin-market/coin-market-pricing.ts",
+    "./coin-market/application": "./src/coin-market/coin-market-application.ts"
+  },
+  "dependencies": {
+    "@gameing/contracts": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism"
+  }
+}

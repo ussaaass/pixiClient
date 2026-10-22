@@ -16,5 +16,13 @@
   "dependencies": {
     "@gameing/contracts": "workspace:*",
     "@sinclair/typebox": "0.34.52"
+  },
+  "devDependencies": {
+    "typescript": "6.0.3",
+    "vitest": "5.0.5"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism"
   }
 }

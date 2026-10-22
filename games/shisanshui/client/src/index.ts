@@ -148,13 +148,14 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
     new Graphics().roundRect(x, y, width, height, 14).fill({ color, alpha: 0.86 }).stroke({ color: 0xd6b76f, alpha: 0.42, width: 1 });
 
   const pileResultAgainstUser = (playerId: string, pileName: PileName): -1 | 0 | 1 => {
-    const pair = result?.pairs.find((entry) =>
-      (entry.leftPlayerId === 'you' && entry.rightPlayerId === playerId)
-      || (entry.rightPlayerId === 'you' && entry.leftPlayerId === playerId),
+    const pair = result?.pairs.find(
+      (entry) =>
+        (entry.leftPlayerId === 'you' && entry.rightPlayerId === playerId) ||
+        (entry.rightPlayerId === 'you' && entry.leftPlayerId === playerId),
     );
     const pile = pair?.piles.find((entry) => entry.pile === pileName);
     if (!pair || !pile) return 0;
-    return pair.leftPlayerId === 'you' ? pile.result : -pile.result as -1 | 0 | 1;
+    return pair.leftPlayerId === 'you' ? pile.result : (-pile.result as -1 | 0 | 1);
   };
 
   const pileResultLabel = (playerId: string, pileName: PileName): string => {
@@ -162,21 +163,46 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
     return resultAgainstUser > 0 ? '胜' : resultAgainstUser < 0 ? '负' : '平';
   };
 
-  const addButton = (label: string, x: number, y: number, width: number, onTap: () => void, disabled = false, palette: 'classic' | 'mobile-secondary' | 'mobile-primary' = 'classic'): void => {
+  const addButton = (
+    label: string,
+    x: number,
+    y: number,
+    width: number,
+    onTap: () => void,
+    disabled = false,
+    palette: 'classic' | 'mobile-secondary' | 'mobile-primary' = 'classic',
+  ): void => {
     const button = new Container();
     button.eventMode = disabled ? 'none' : 'static';
     button.cursor = disabled ? 'default' : 'pointer';
-    const fillColor = palette === 'classic'
-      ? (disabled ? 0x36524a : 0xb68b43)
-      : palette === 'mobile-primary' && !disabled ? 0xb49a69 : (disabled ? 0x263a32 : 0x294238);
+    const fillColor =
+      palette === 'classic'
+        ? disabled
+          ? 0x36524a
+          : 0xb68b43
+        : palette === 'mobile-primary' && !disabled
+          ? 0xb49a69
+          : disabled
+            ? 0x263a32
+            : 0x294238;
     const strokeColor = palette === 'classic' ? 0xf2d58b : 0xd2c5a8;
-    const labelColor = palette === 'classic'
-      ? (disabled ? '#a8b5ab' : '#14241d')
-      : (disabled ? '#87958c' : palette === 'mobile-primary' ? '#202d25' : '#e7deca');
+    const labelColor =
+      palette === 'classic'
+        ? disabled
+          ? '#a8b5ab'
+          : '#14241d'
+        : disabled
+          ? '#87958c'
+          : palette === 'mobile-primary'
+            ? '#202d25'
+            : '#e7deca';
     const strokeAlpha = palette === 'classic' ? 0.55 : palette === 'mobile-primary' ? 0.4 : 0.15;
-    button.addChild(new Graphics().roundRect(x, y, width, 42, 11)
-      .fill({ color: fillColor, alpha: 0.96 })
-      .stroke({ color: strokeColor, alpha: strokeAlpha, width: 1 }));
+    button.addChild(
+      new Graphics()
+        .roundRect(x, y, width, 42, 11)
+        .fill({ color: fillColor, alpha: 0.96 })
+        .stroke({ color: strokeColor, alpha: strokeAlpha, width: 1 }),
+    );
     const caption = text(label, 0, 0, 14, labelColor, '700');
     caption.anchor.set(0.5);
     caption.position.set(x + width / 2, y + 21);
@@ -191,9 +217,12 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
     container.position.set(x, y - (isSelected ? 9 : 0));
     container.eventMode = 'static';
     container.cursor = 'pointer';
-    container.addChild(new Graphics().roundRect(0, 0, width, height, 6)
-      .fill(0xfffcf3)
-      .stroke({ color: isSelected ? 0xf5c75a : 0xaaa493, width: isSelected ? 3 : 1 }));
+    container.addChild(
+      new Graphics()
+        .roundRect(0, 0, width, height, 6)
+        .fill(0xfffcf3)
+        .stroke({ color: isSelected ? 0xf5c75a : 0xaaa493, width: isSelected ? 3 : 1 }),
+    );
     container.addChild(text(face.rank, 4, 3, Math.max(12, width * 0.3), face.red ? '#bf3f3c' : '#18231f', '700'));
     container.addChild(text(face.suit, 4, Math.max(19, height * 0.37), Math.max(12, width * 0.3), face.red ? '#bf3f3c' : '#18231f', '700'));
     container.on('pointertap', (event) => {
@@ -317,7 +346,12 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
     blocker.eventMode = 'static';
     blocker.on('pointertap', () => undefined);
     scene.addChild(blocker);
-    scene.addChild(new Graphics().roundRect(x, y, sheetWidth, sheetHeight, 18).fill({ color: 0x183229, alpha: 0.99 }).stroke({ color: 0xc5a36a, alpha: 0.5, width: 1 }));
+    scene.addChild(
+      new Graphics()
+        .roundRect(x, y, sheetWidth, sheetHeight, 18)
+        .fill({ color: 0x183229, alpha: 0.99 })
+        .stroke({ color: 0xc5a36a, alpha: 0.5, width: 1 }),
+    );
     scene.addChild(text('自动游戏', x + 18, y + 17, 19, '#f2eee4', '700'));
     scene.addChild(text('自动理牌并摊牌 · 本地练习分，不计资产', x + 18, y + 45, 10, '#c8cec5'));
     const gap = 8;
@@ -333,15 +367,34 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       const column = index % 2;
       const optionX = x + 18 + column * (optionWidth + gap);
       const optionY = y + 76 + row * 50;
-      addButton(label, optionX, optionY, optionWidth, () => {
-        autoGameSelectedRounds = rounds;
-        render();
-      }, false, autoGameSelectedRounds === rounds ? 'mobile-primary' : 'mobile-secondary');
+      addButton(
+        label,
+        optionX,
+        optionY,
+        optionWidth,
+        () => {
+          autoGameSelectedRounds = rounds;
+          render();
+        },
+        false,
+        autoGameSelectedRounds === rounds ? 'mobile-primary' : 'mobile-secondary',
+      );
     });
     const actionsY = y + sheetHeight - 56;
     const actionGap = 8;
     const actionWidth = (sheetWidth - 36 - actionGap) / 2;
-    addButton('返回手动', x + 18, actionsY, actionWidth, () => { autoGameConfigVisible = false; render(); }, false, 'mobile-secondary');
+    addButton(
+      '返回手动',
+      x + 18,
+      actionsY,
+      actionWidth,
+      () => {
+        autoGameConfigVisible = false;
+        render();
+      },
+      false,
+      'mobile-secondary',
+    );
     addButton('开始自动游戏', x + 18 + actionWidth + actionGap, actionsY, actionWidth, () => startAutoGame(), false, 'mobile-primary');
   }
 
@@ -368,10 +421,14 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       return;
     }
     foulConfirmationArmed = false;
-    players = players.map((player, index) => index === 0 ? {
-      ...player,
-      arrangement: { front: [...arrangement.front], middle: [...arrangement.middle], back: [...arrangement.back] },
-    } : player);
+    players = players.map((player, index) =>
+      index === 0
+        ? {
+            ...player,
+            arrangement: { front: [...arrangement.front], middle: [...arrangement.middle], back: [...arrangement.back] },
+          }
+        : player,
+    );
     result = settleRound(players, CLASSIC_V1_SCORING);
     phase = 'revealed';
     const score = result.players.find((player) => player.playerId === 'you')?.water ?? 0;
@@ -453,19 +510,29 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       })),
       canReveal: hand.length === 0 && piles.front.length === 3 && piles.middle.length === 5 && piles.back.length === 5,
       confirmFoul: foulConfirmationArmed,
-      ...(phase === 'revealed' && result ? { results: players.map((player) => {
-        const playerResult = result!.players.find((entry) => entry.playerId === player.playerId);
-        const label = player.playerId === 'you' ? '你' : opponentLabel(player.playerId);
-        const score = playerResult?.water ?? 0;
-        const outcome = player.playerId === 'you'
-          ? '自己的牌组'
-          : PILES.map(({ name, label: pileLabel }) => `${pileLabel.split(' · ')[0]}${pileResultLabel(player.playerId, name)}`).join('、');
-        return {
-          label,
-          summary: `${label}：${score > 0 ? '+' : ''}${score} 水；${outcome}${playerResult?.foul ? '；相公' : ''}。`,
-          cardsByPile: PILES.map(({ name, label: pileLabel }) => `${pileLabel.split(' · ')[0]}：${player.arrangement[name].map(cardAccessibleName).join('、')}`).join('；'),
-        };
-      }) } : {}),
+      ...(phase === 'revealed' && result
+        ? {
+            results: players.map((player) => {
+              const playerResult = result!.players.find((entry) => entry.playerId === player.playerId);
+              const label = player.playerId === 'you' ? '你' : opponentLabel(player.playerId);
+              const score = playerResult?.water ?? 0;
+              const outcome =
+                player.playerId === 'you'
+                  ? '自己的牌组'
+                  : PILES.map(({ name, label: pileLabel }) => `${pileLabel.split(' · ')[0]}${pileResultLabel(player.playerId, name)}`).join(
+                      '、',
+                    );
+              return {
+                label,
+                summary: `${label}：${score > 0 ? '+' : ''}${score} 水；${outcome}${playerResult?.foul ? '；相公' : ''}。`,
+                cardsByPile: PILES.map(
+                  ({ name, label: pileLabel }) =>
+                    `${pileLabel.split(' · ')[0]}：${player.arrangement[name].map(cardAccessibleName).join('、')}`,
+                ).join('；'),
+              };
+            }),
+          }
+        : {}),
     });
   };
 
@@ -494,7 +561,12 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       const exit = new Container();
       exit.eventMode = 'static';
       exit.cursor = 'pointer';
-      exit.addChild(new Graphics().roundRect(width - mobileSide - 72, 9, 72, 38, 11).fill({ color: 0x19352c, alpha: 0.94 }).stroke({ color: 0xc5a36a, alpha: 0.34, width: 1 }));
+      exit.addChild(
+        new Graphics()
+          .roundRect(width - mobileSide - 72, 9, 72, 38, 11)
+          .fill({ color: 0x19352c, alpha: 0.94 })
+          .stroke({ color: 0xc5a36a, alpha: 0.34, width: 1 }),
+      );
       const exitText = text('离开', 0, 0, 13, '#f4e8c8', '700');
       exitText.anchor.set(0.5);
       exitText.position.set(width - mobileSide - 36, 28);
@@ -508,9 +580,18 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       const opponentWidth = (width - mobileSide * 2 - opponentGap * 2) / 3;
       opponents.forEach((player, index) => {
         const x = mobileSide + index * (opponentWidth + opponentGap);
-        scene.addChild(new Graphics().roundRect(x, opponentY, opponentWidth, 38, 11).fill({ color: 0x132e26, alpha: 0.91 }).stroke({ color: 0xc5a36a, alpha: 0.24, width: 1 }));
-        scene.addChild(new Graphics().circle(x + 16, opponentY + 19, 10).fill({ color: [0x806653, 0x597366, 0x786b79][index] ?? 0x638274 }));
-        scene.addChild(text(`${options.opponentNames?.[index]?.slice(0, 5) ?? `对手${index + 1}`}`, x + 30, opponentY + 6, 10, '#e7deca', '700'));
+        scene.addChild(
+          new Graphics()
+            .roundRect(x, opponentY, opponentWidth, 38, 11)
+            .fill({ color: 0x132e26, alpha: 0.91 })
+            .stroke({ color: 0xc5a36a, alpha: 0.24, width: 1 }),
+        );
+        scene.addChild(
+          new Graphics().circle(x + 16, opponentY + 19, 10).fill({ color: [0x806653, 0x597366, 0x786b79][index] ?? 0x638274 }),
+        );
+        scene.addChild(
+          text(`${options.opponentNames?.[index]?.slice(0, 5) ?? `对手${index + 1}`}`, x + 30, opponentY + 6, 10, '#e7deca', '700'),
+        );
         scene.addChild(text('已摆好 · 13张', x + 30, opponentY + 20, 8, '#b9c5bb'));
         void player;
       });
@@ -527,7 +608,8 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
         const ready = cards.length === count;
         const laneStroke = selected !== undefined && !ready ? 0xf0cc73 : 0xd6b76f;
         const laneStrokeAlpha = selected !== undefined && !ready ? 0.96 : ready ? 0.82 : 0.62;
-        const lane = new Graphics().roundRect(mobileSide, y, boardWidth, laneHeight, 12)
+        const lane = new Graphics()
+          .roundRect(mobileSide, y, boardWidth, laneHeight, 12)
           .fill({ color: 0x142f27, alpha: 0.9 })
           .stroke({ color: laneStroke, alpha: laneStrokeAlpha, width: ready || selected !== undefined ? 1.7 : 1.4 });
         lane.eventMode = 'static';
@@ -541,26 +623,44 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
         const cardGap = 3;
         const groupWidth = count * laneCardWidth + (count - 1) * cardGap;
         const startX = width - mobileSide - 9 - groupWidth;
-        cards.forEach((card, cardIndex) => addCard(card, startX + cardIndex * (laneCardWidth + cardGap), y + (laneHeight - laneCardHeight) / 2, laneCardWidth, laneCardHeight, false, () => {
-          if (phase !== 'arranging') return;
-          if (selected !== undefined) {
-            placeSelectedCard(name);
-            return;
-          }
-          piles[name] = piles[name].filter((value) => value !== card);
-          hand = [...hand, card];
-          selected = card;
-          foulConfirmationArmed = false;
-          statusText = '已取回手牌。再次点选目标墩放回。';
-          audio.play(PracticeSoundEvent.CARD_RETURN);
-          render();
-        }));
+        cards.forEach((card, cardIndex) =>
+          addCard(
+            card,
+            startX + cardIndex * (laneCardWidth + cardGap),
+            y + (laneHeight - laneCardHeight) / 2,
+            laneCardWidth,
+            laneCardHeight,
+            false,
+            () => {
+              if (phase !== 'arranging') return;
+              if (selected !== undefined) {
+                placeSelectedCard(name);
+                return;
+              }
+              piles[name] = piles[name].filter((value) => value !== card);
+              hand = [...hand, card];
+              selected = card;
+              foulConfirmationArmed = false;
+              statusText = '已取回手牌。再次点选目标墩放回。';
+              audio.play(PracticeSoundEvent.CARD_RETURN);
+              render();
+            },
+          ),
+        );
       });
 
       const boardBottom = boardTop + PILES.length * laneHeight + (PILES.length - 1) * laneGap;
       const handLabelY = boardBottom + 13;
       scene.addChild(text(`我的手牌　${hand.length} 张`, mobileSide, handLabelY, 12, '#f2eee4', '700'));
-      scene.addChild(text(selected === undefined ? '点牌选择，再点牌墩放入' : `已选 ${cardAccessibleName(selected)} · 点牌墩放入`, width - mobileSide - 170, handLabelY, 9, '#d9e6da'));
+      scene.addChild(
+        text(
+          selected === undefined ? '点牌选择，再点牌墩放入' : `已选 ${cardAccessibleName(selected)} · 点牌墩放入`,
+          width - mobileSide - 170,
+          handLabelY,
+          9,
+          '#d9e6da',
+        ),
+      );
       const handCardWidth = Math.min(47, Math.max(35, (width - mobileSide * 2 - 24) / 7));
       const handCardHeight = handCardWidth * 1.38;
       const handRows = [hand.slice(0, 7), hand.slice(7)];
@@ -569,25 +669,62 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
         const gap = Math.min(3, (width - mobileSide * 2 - row.length * handCardWidth) / Math.max(1, row.length - 1));
         const rowWidth = row.length * handCardWidth + Math.max(0, row.length - 1) * gap;
         const startX = (width - rowWidth) / 2;
-        row.forEach((card, index) => addCard(card, startX + index * (handCardWidth + gap), handStartY + rowIndex * (handCardHeight + 7), handCardWidth, handCardHeight, selected === card, () => {
-          selected = selected === card ? undefined : card;
-          audio.play(PracticeSoundEvent.CARD_SELECT);
-          statusText = selected === undefined ? '已取消选择。' : `已选中${cardAccessibleName(card)}，点目标牌墩放置。`;
-          render();
-        }));
+        row.forEach((card, index) =>
+          addCard(
+            card,
+            startX + index * (handCardWidth + gap),
+            handStartY + rowIndex * (handCardHeight + 7),
+            handCardWidth,
+            handCardHeight,
+            selected === card,
+            () => {
+              selected = selected === card ? undefined : card;
+              audio.play(PracticeSoundEvent.CARD_SELECT);
+              statusText = selected === undefined ? '已取消选择。' : `已选中${cardAccessibleName(card)}，点目标牌墩放置。`;
+              render();
+            },
+          ),
+        );
       });
 
       const buttonY = height - 57;
       const buttonGap = 6;
       const buttonWidth = (width - mobileSide * 2 - buttonGap * 3) / 4;
       const ready = hand.length === 0 && piles.front.length === 3 && piles.middle.length === 5 && piles.back.length === 5;
-      addButton(autoGameActive ? '停止自动' : '自动游戏', mobileSide, buttonY, buttonWidth, () => {
-        if (autoGameActive) stopAutoGame();
-        else { autoGameConfigVisible = true; render(); }
-      }, false, 'mobile-secondary');
-      addButton('自动摆牌', mobileSide + buttonWidth + buttonGap, buttonY, buttonWidth, performAutoArrangeOrReplay, false, 'mobile-secondary');
+      addButton(
+        autoGameActive ? '停止自动' : '自动游戏',
+        mobileSide,
+        buttonY,
+        buttonWidth,
+        () => {
+          if (autoGameActive) stopAutoGame();
+          else {
+            autoGameConfigVisible = true;
+            render();
+          }
+        },
+        false,
+        'mobile-secondary',
+      );
+      addButton(
+        '自动摆牌',
+        mobileSide + buttonWidth + buttonGap,
+        buttonY,
+        buttonWidth,
+        performAutoArrangeOrReplay,
+        false,
+        'mobile-secondary',
+      );
       addButton('重新发牌', mobileSide + (buttonWidth + buttonGap) * 2, buttonY, buttonWidth, redeal, false, 'mobile-secondary');
-      addButton(foulConfirmationArmed ? '确认相公' : '开牌比牌', mobileSide + (buttonWidth + buttonGap) * 3, buttonY, buttonWidth, revealRound, !ready, 'mobile-primary');
+      addButton(
+        foulConfirmationArmed ? '确认相公' : '开牌比牌',
+        mobileSide + (buttonWidth + buttonGap) * 3,
+        buttonY,
+        buttonWidth,
+        revealRound,
+        !ready,
+        'mobile-primary',
+      );
       scene.addChild(new Graphics().rect(mobileSide, buttonY - 29, width - mobileSide * 2, 1).fill({ color: 0xd2c5a8, alpha: 0.1 }));
       scene.addChild(text(statusText.slice(0, 54), mobileSide, buttonY - 22, 9, '#e5e4db'));
       if (autoGameConfigVisible) renderAutoGameSheet(width, height);
@@ -601,9 +738,9 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       const score = result.players.find((entry) => entry.playerId === player.playerId)?.water ?? 0;
       const label = player.playerId === 'you' ? '你' : opponentLabel(player.playerId);
       scene.addChild(text('本局摊牌', mobileSide, 14, 19, '#f2eee4', '700'));
-      scene.addChild(text(autoGameActive || autoGameCompletedRounds > 0
-        ? statusText
-        : '虚拟水数 · 本地练习结果', mobileSide, 39, 10, '#d5dfd5'));
+      scene.addChild(
+        text(autoGameActive || autoGameCompletedRounds > 0 ? statusText : '虚拟水数 · 本地练习结果', mobileSide, 39, 10, '#d5dfd5'),
+      );
       const tabGap = 5;
       const tabWidth = (width - mobileSide * 2 - tabGap * 3) / 4;
       players.forEach((entry, index) => {
@@ -612,17 +749,51 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
         const tab = new Container();
         tab.eventMode = 'static';
         tab.cursor = 'pointer';
-        tab.addChild(new Graphics().roundRect(x, 65, tabWidth, 40, 10).fill({ color: active ? 0xb49a69 : 0x183229, alpha: 0.96 }).stroke({ color: 0xc5a36a, alpha: active ? 0.5 : 0.22, width: 1 }));
-        const tabText = text(index === 0 ? '你' : opponentLabel(entry.playerId).slice(0, 4), 0, 0, 10, active ? '#202d25' : '#e7deca', '700');
+        tab.addChild(
+          new Graphics()
+            .roundRect(x, 65, tabWidth, 40, 10)
+            .fill({ color: active ? 0xb49a69 : 0x183229, alpha: 0.96 })
+            .stroke({ color: 0xc5a36a, alpha: active ? 0.5 : 0.22, width: 1 }),
+        );
+        const tabText = text(
+          index === 0 ? '你' : opponentLabel(entry.playerId).slice(0, 4),
+          0,
+          0,
+          10,
+          active ? '#202d25' : '#e7deca',
+          '700',
+        );
         tabText.anchor.set(0.5);
         tabText.position.set(x + tabWidth / 2, 85);
         tab.addChild(tabText);
-        tab.on('pointertap', () => { mobileResultPlayer = index; render(); });
+        tab.on('pointertap', () => {
+          mobileResultPlayer = index;
+          render();
+        });
         scene.addChild(tab);
       });
       scene.addChild(roundedPanel(mobileSide, 117, width - mobileSide * 2, 52, 0x142f27));
-      scene.addChild(text(`${label}　${score > 0 ? '+' : ''}${score} 水${result.players.find((entry) => entry.playerId === player.playerId)?.foul ? '　相公' : ''}`, mobileSide + 12, 132, 16, score > 0 ? '#a9e6b2' : score < 0 ? '#f2a095' : '#f3e9d2', '700'));
-      scene.addChild(text(player.playerId === 'you' ? '你的三道牌组' : `对你：头${pileResultLabel(player.playerId, 'front')} · 中${pileResultLabel(player.playerId, 'middle')} · 底${pileResultLabel(player.playerId, 'back')}`, mobileSide + 12, 151, 9, '#cdd8ce'));
+      scene.addChild(
+        text(
+          `${label}　${score > 0 ? '+' : ''}${score} 水${result.players.find((entry) => entry.playerId === player.playerId)?.foul ? '　相公' : ''}`,
+          mobileSide + 12,
+          132,
+          16,
+          score > 0 ? '#a9e6b2' : score < 0 ? '#f2a095' : '#f3e9d2',
+          '700',
+        ),
+      );
+      scene.addChild(
+        text(
+          player.playerId === 'you'
+            ? '你的三道牌组'
+            : `对你：头${pileResultLabel(player.playerId, 'front')} · 中${pileResultLabel(player.playerId, 'middle')} · 底${pileResultLabel(player.playerId, 'back')}`,
+          mobileSide + 12,
+          151,
+          9,
+          '#cdd8ce',
+        ),
+      );
       const laneTop = 185;
       const laneGap = 10;
       const laneHeight = Math.min(104, Math.floor((height - laneTop - 100) / 3));
@@ -632,23 +803,60 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
         const cardGap = 3;
         const cardWidth = Math.min(47, (width - mobileSide * 2 - 34 - cardGap * 4) / 5);
         const cardHeight = cardWidth * 1.38;
-        scene.addChild(new Graphics().roundRect(mobileSide, y, width - mobileSide * 2, laneHeight, 12).fill({ color: 0x142f27, alpha: 0.9 }).stroke({ color: 0xc5a36a, alpha: 0.24, width: 1 }));
+        scene.addChild(
+          new Graphics()
+            .roundRect(mobileSide, y, width - mobileSide * 2, laneHeight, 12)
+            .fill({ color: 0x142f27, alpha: 0.9 })
+            .stroke({ color: 0xc5a36a, alpha: 0.24, width: 1 }),
+        );
         scene.addChild(text(pileLabel.split(' · ')[0]!, mobileSide + 10, y + 8, 11, '#f2eee4', '700'));
         scene.addChild(text(handRankLine(name, cards), mobileSide + 10, y + 27, 9, '#bdc9bd'));
         const cardsWidth = cards.length * cardWidth + (cards.length - 1) * cardGap;
         const cardsX = (width - cardsWidth) / 2;
-        cards.forEach((card, cardIndex) => addCard(card, cardsX + cardIndex * (cardWidth + cardGap), y + laneHeight - cardHeight - 5, cardWidth, cardHeight, false, () => undefined));
+        cards.forEach((card, cardIndex) =>
+          addCard(
+            card,
+            cardsX + cardIndex * (cardWidth + cardGap),
+            y + laneHeight - cardHeight - 5,
+            cardWidth,
+            cardHeight,
+            false,
+            () => undefined,
+          ),
+        );
       });
-      addButton(autoGameActive ? '停止自动游戏' : '再来一局', mobileSide, height - 57, width - mobileSide * 2, autoGameActive ? () => stopAutoGame() : performAutoArrangeOrReplay, false, 'mobile-primary');
+      addButton(
+        autoGameActive ? '停止自动游戏' : '再来一局',
+        mobileSide,
+        height - 57,
+        width - mobileSide * 2,
+        autoGameActive ? () => stopAutoGame() : performAutoArrangeOrReplay,
+        false,
+        'mobile-primary',
+      );
       renderAccessibleControls();
       return;
     }
-    scene.addChild(text(`十三张 · ${options.tierName}${options.roomCode ? ` · 房间 ${options.roomCode}` : ''}`, side, 13, compact ? 16 : 21, '#f4d58c', '700'));
+    scene.addChild(
+      text(
+        `十三张 · ${options.tierName}${options.roomCode ? ` · 房间 ${options.roomCode}` : ''}`,
+        side,
+        13,
+        compact ? 16 : 21,
+        '#f4d58c',
+        '700',
+      ),
+    );
     scene.addChild(text('演示对手 · 虚拟牌局 · 不涉及金币或真实结算', side, 39, compact ? 10 : 12, '#c2d2c7'));
     const exitButton = new Container();
     exitButton.eventMode = 'static';
     exitButton.cursor = 'pointer';
-    exitButton.addChild(new Graphics().roundRect(width - side - 78, 13, 78, 34, 9).fill({ color: 0xffffff, alpha: 0.1 }).stroke({ color: 0xffffff, alpha: 0.18, width: 1 }));
+    exitButton.addChild(
+      new Graphics()
+        .roundRect(width - side - 78, 13, 78, 34, 9)
+        .fill({ color: 0xffffff, alpha: 0.1 })
+        .stroke({ color: 0xffffff, alpha: 0.18, width: 1 }),
+    );
     const exitLabel = text('退出练习', 0, 0, 12);
     exitLabel.anchor.set(0.5);
     exitLabel.position.set(width - side - 39, 30);
@@ -663,15 +871,28 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       const badgeWidth = (width - side * 2 - badgeGap * 2) / 3;
       opponents.forEach((_, index) => {
         const x = side + index * (badgeWidth + badgeGap);
-        scene.addChild(new Graphics().roundRect(x, badgeY, badgeWidth, 24, 8)
-          .fill({ color: 0x082a25, alpha: 0.9 })
-          .stroke({ color: 0xd6b76f, alpha: 0.24, width: 1 }));
-        scene.addChild(text(`${options.opponentNames?.[index]?.slice(0, 8) ?? `对手${index + 1}`} · 已摆好`, x + 6, badgeY + 6, compact ? 9 : 11, '#dfd1ad'));
+        scene.addChild(
+          new Graphics()
+            .roundRect(x, badgeY, badgeWidth, 24, 8)
+            .fill({ color: 0x082a25, alpha: 0.9 })
+            .stroke({ color: 0xd6b76f, alpha: 0.24, width: 1 }),
+        );
+        scene.addChild(
+          text(
+            `${options.opponentNames?.[index]?.slice(0, 8) ?? `对手${index + 1}`} · 已摆好`,
+            x + 6,
+            badgeY + 6,
+            compact ? 9 : 11,
+            '#dfd1ad',
+          ),
+        );
       });
     }
 
     if (phase === 'revealed' && result) {
-      scene.addChild(text(autoGameCompletedRounds > 0 ? statusText : '本局摊牌 · 虚拟水数，不涉及金币', side, 63, compact ? 11 : 14, '#f2eee4', '700'));
+      scene.addChild(
+        text(autoGameCompletedRounds > 0 ? statusText : '本局摊牌 · 虚拟水数，不涉及金币', side, 63, compact ? 11 : 14, '#f2eee4', '700'),
+      );
       const cardGap = 1;
       const pileGap = compact ? 4 : 10;
       const cardW = Math.min(compact ? 27 : 34, (width - side * 2 - 12 - cardGap * 10 - pileGap * 2) / 13);
@@ -697,11 +918,21 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
         const label = player.playerId === 'you' ? '你' : opponentLabel(player.playerId);
         const scoreColor = score > 0 ? '#9ce1ad' : score < 0 ? '#f2a095' : '#d9e1d7';
         scene.addChild(roundedPanel(side, y, width - side * 2, rowHeight - 3, 0x082a25));
-        const outcome = player.playerId === 'you'
-          ? '你的牌组'
-          : `对你：头${pileResultLabel(player.playerId, 'front')} · 中${pileResultLabel(player.playerId, 'middle')} · 底${pileResultLabel(player.playerId, 'back')}`;
+        const outcome =
+          player.playerId === 'you'
+            ? '你的牌组'
+            : `对你：头${pileResultLabel(player.playerId, 'front')} · 中${pileResultLabel(player.playerId, 'middle')} · 底${pileResultLabel(player.playerId, 'back')}`;
         const isFoul = result!.players.find((entry) => entry.playerId === player.playerId)?.foul === true;
-        scene.addChild(text(`${label}　${score > 0 ? '+' : ''}${score} 水　${outcome}${isFoul ? ' · 相公' : ''}`, side + 7, y + 3, compact ? 9 : 11, scoreColor, '700'));
+        scene.addChild(
+          text(
+            `${label}　${score > 0 ? '+' : ''}${score} 水　${outcome}${isFoul ? ' · 相公' : ''}`,
+            side + 7,
+            y + 3,
+            compact ? 9 : 11,
+            scoreColor,
+            '700',
+          ),
+        );
 
         let cardX = cardsX;
         pilesInOrder.forEach((pileName, pileIndex) => {
@@ -718,7 +949,15 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
       });
 
       const replayWidth = Math.min(180, width - side * 2);
-      addButton(autoGameActive ? '停止自动游戏' : '再来一局', (width - replayWidth) / 2, height - 51, replayWidth, autoGameActive ? () => stopAutoGame() : () => performAutoArrangeOrReplay(), false, autoGameActive ? 'mobile-primary' : 'classic');
+      addButton(
+        autoGameActive ? '停止自动游戏' : '再来一局',
+        (width - replayWidth) / 2,
+        height - 51,
+        replayWidth,
+        autoGameActive ? () => stopAutoGame() : () => performAutoArrangeOrReplay(),
+        false,
+        autoGameActive ? 'mobile-primary' : 'classic',
+      );
       renderAccessibleControls();
       return;
     }
@@ -735,10 +974,12 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
 
     PILES.forEach(({ name, label, count }, rowIndex) => {
       const y = boardTop + rowIndex * rowGap;
-      scene.addChild(new Graphics()
-        .roundRect(side, y, rowWidth, cardHeight + (shortWide ? 22 : 29), 14)
-        .fill({ color: 0x0b302b, alpha: 0.86 })
-        .stroke({ color: 0xd6b76f, alpha: 0.72, width: 1.5 }));
+      scene.addChild(
+        new Graphics()
+          .roundRect(side, y, rowWidth, cardHeight + (shortWide ? 22 : 29), 14)
+          .fill({ color: 0x0b302b, alpha: 0.86 })
+          .stroke({ color: 0xd6b76f, alpha: 0.72, width: 1.5 }),
+      );
       scene.addChild(text(label, side + 10, y + 8, compact ? 11 : 13, '#f1d794', '700'));
       scene.addChild(text(handRankLine(name, piles[name]), width - side - 94, y + 9, compact ? 10 : 12, '#dce7dc'));
       const row = piles[name];
@@ -790,22 +1031,55 @@ export async function mountLocalGame(target: HTMLElement, options: LocalGameOpti
     const buttonWidth = Math.min(148, (width - side * 2 - buttonGap * 3) / 4);
     const actionsWidth = buttonWidth * 4 + buttonGap * 3;
     const actionStart = (width - actionsWidth) / 2;
-    addButton(autoGameActive ? '停止自动游戏' : '自动游戏', actionStart, buttonY, buttonWidth, () => {
-      if (autoGameActive) stopAutoGame();
-      else { autoGameConfigVisible = true; render(); }
-    }, false, 'mobile-secondary');
-    addButton(phase === 'revealed' ? '再来一局' : '自动摆牌', actionStart + buttonWidth + buttonGap, buttonY, buttonWidth, performAutoArrangeOrReplay, false);
+    addButton(
+      autoGameActive ? '停止自动游戏' : '自动游戏',
+      actionStart,
+      buttonY,
+      buttonWidth,
+      () => {
+        if (autoGameActive) stopAutoGame();
+        else {
+          autoGameConfigVisible = true;
+          render();
+        }
+      },
+      false,
+      'mobile-secondary',
+    );
+    addButton(
+      phase === 'revealed' ? '再来一局' : '自动摆牌',
+      actionStart + buttonWidth + buttonGap,
+      buttonY,
+      buttonWidth,
+      performAutoArrangeOrReplay,
+      false,
+    );
     addButton('重新发牌', actionStart + (buttonWidth + buttonGap) * 2, buttonY, buttonWidth, redeal, phase === 'revealed');
     const ready = hand.length === 0 && piles.front.length === 3 && piles.middle.length === 5 && piles.back.length === 5;
-    addButton(phase === 'revealed' ? '已完成' : foulConfirmationArmed ? '确认相公开牌' : '开牌比一比', actionStart + (buttonWidth + buttonGap) * 3, buttonY, buttonWidth, revealRound, !ready || phase === 'revealed');
+    addButton(
+      phase === 'revealed' ? '已完成' : foulConfirmationArmed ? '确认相公开牌' : '开牌比一比',
+      actionStart + (buttonWidth + buttonGap) * 3,
+      buttonY,
+      buttonWidth,
+      revealRound,
+      !ready || phase === 'revealed',
+    );
 
-    const feedback = phase === 'revealed'
-      ? result?.players.map((player) => `${player.playerId === 'you' ? '你' : opponentLabel(player.playerId)}: ${player.water > 0 ? '+' : ''}${player.water} 水${player.foul ? '（相公）' : ''}`).join('　') ?? statusText
-      : statusText;
+    const feedback =
+      phase === 'revealed'
+        ? (result?.players
+            .map(
+              (player) =>
+                `${player.playerId === 'you' ? '你' : opponentLabel(player.playerId)}: ${player.water > 0 ? '+' : ''}${player.water} 水${player.foul ? '（相公）' : ''}`,
+            )
+            .join('　') ?? statusText)
+        : statusText;
     scene.addChild(text(feedback, side, height - 82, compact ? 10 : 12, '#e9e1c9'));
     if (autoGameConfigVisible) renderAutoGameSheet(width, height);
     if (selected !== undefined && phase === 'arranging') {
-      scene.addChild(text(`已选：${cardLabel(selected).rank}${cardLabel(selected).suit}`, width - side - 92, handY - 19, 11, '#f4d58c', '700'));
+      scene.addChild(
+        text(`已选：${cardLabel(selected).rank}${cardLabel(selected).suit}`, width - side - 92, handY - 19, 11, '#f4d58c', '700'),
+      );
     }
     renderAccessibleControls();
   };

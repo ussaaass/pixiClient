@@ -11,6 +11,31 @@
     "dev:server": "pnpm --filter @gameing/server dev",
     "typecheck": "pnpm -r --if-present typecheck",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
-    "build": "pnpm -r --if-present build"
+    "build": "pnpm -r --if-present build",
+    "lint": "eslint packages games apps/server --max-warnings 0",
+    "lint:apps": "eslint apps/web apps/admin --max-warnings 200",
+    "lint:fix": "eslint packages games apps/server --fix",
+    "format": "prettier --write packages games",
+    "format:check": "prettier --check packages games",
+    "prepare": "husky || true"
+  },
+  "lint-staged": {
+    "*.{ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css}": [
+      "prettier --write"
+    ]
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.13.0",
+    "eslint-plugin-vue": "10.11.1",
+    "husky": "9.1.7",
+    "lint-staged": "17.6.0",
+    "prettier": "3.9.10",
+    "typescript-eslint": "8.72.0",
+    "vitest": "5.0.5"
   }
 }

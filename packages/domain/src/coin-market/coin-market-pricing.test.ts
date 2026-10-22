@@ -21,8 +21,11 @@ describe('coin market price quotes', () => {
   });
 
   it('rejects invalid integer amounts and zero exchange rates', () => {
-    expect(() => quoteCoinMarketPrice({ coins: '0', priceCentsPer1000Coins: '12000' }, exchangeRate)).toThrowError(new CoinMarketPricingError('INVALID_COIN_AMOUNT'));
-    expect(() => quoteCoinMarketPrice({ coins: '1000', priceCentsPer1000Coins: '12000' }, { rateCoinUnits: 0n, rateCashFen: 100n })).toThrowError(new CoinMarketPricingError('INVALID_EXCHANGE_RATE'));
+    const zeroCoins = () => quoteCoinMarketPrice({ coins: '0', priceCentsPer1000Coins: '12000' }, exchangeRate);
+    expect(zeroCoins).toThrowError(new CoinMarketPricingError('INVALID_COIN_AMOUNT'));
+    const zeroRate = () =>
+      quoteCoinMarketPrice({ coins: '1000', priceCentsPer1000Coins: '12000' }, { rateCoinUnits: 0n, rateCashFen: 100n });
+    expect(zeroRate).toThrowError(new CoinMarketPricingError('INVALID_EXCHANGE_RATE'));
   });
 
   it('parses RMB input as integer fen and reports API errors as application results', async () => {
@@ -30,15 +33,32 @@ describe('coin market price quotes', () => {
     expect(parseCoinMarketRmbToFen('120.5')).toBe('12050');
     expect(parseCoinMarketRmbToFen('1.239')).toBeUndefined();
     const application = createCoinMarketApplication({
-      async quote() { throw new Error('SOCIAL_ACCESS_DISABLED'); },
-      async myListings() { return []; },
-      async createListing() { throw new Error('UNEXPECTED'); },
-      async cancelListing() { throw new Error('UNEXPECTED'); },
-      async publicListings() { return { items: [], nextCursor: null, minimumTradeCoins: '1000' }; },
-      async myTrades() { return []; },
-      async createTrade() { throw new Error('UNEXPECTED'); },
-      async tradeCommand() { throw new Error('UNEXPECTED'); },
+      async quote() {
+        throw new Error('SOCIAL_ACCESS_DISABLED');
+      },
+      async myListings() {
+        return [];
+      },
+      async createListing() {
+        throw new Error('UNEXPECTED');
+      },
+      async cancelListing() {
+        throw new Error('UNEXPECTED');
+      },
+      async publicListings() {
+        return { items: [], nextCursor: null, minimumTradeCoins: '1000' };
+      },
+      async myTrades() {
+        return [];
+      },
+      async createTrade() {
+        throw new Error('UNEXPECTED');
+      },
+      async tradeCommand() {
+        throw new Error('UNEXPECTED');
+      },
     });
-    await expect(application.quotePrice({ coins: '1000', priceCentsPer1000Coins: '12000' })).resolves.toEqual({ ok: false, code: 'SOCIAL_ACCESS_DISABLED' });
+    const quote = application.quotePrice({ coins: '1000', priceCentsPer1000Coins: '12000' });
+    await expect(quote).resolves.toEqual({ ok: false, code: 'SOCIAL_ACCESS_DISABLED' });
   });
 });

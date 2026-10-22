@@ -16,33 +16,48 @@ export const AgentAuditActionCode = {
   ANNOUNCEMENT_RETRACT: 'ANNOUNCEMENT_RETRACT',
   SOCIAL_MODERATION_DECISION: 'SOCIAL_MODERATION_DECISION',
 } as const;
-export const AgentAuditEventDtoSchema = Type.Object({
-  auditId: BigId,
-  agentDomainId: BigId,
-  agentUserId: BigId,
-  actionCode: Type.Union(Object.values(AgentAuditActionCode).map((code) => Type.Literal(code))),
-  resourceType: Type.String({ minLength: 1, maxLength: 64 }),
-  resourceKey: Type.String({ minLength: 1, maxLength: 160 }),
-  purpose: Type.String({ minLength: 1, maxLength: 255 }),
-  requestKey: RequestKey,
-  resultType: Type.Union(Object.values(AgentAuditResultType).map((result) => Type.Literal(result))),
-  snapshot: Type.Record(Type.String(), Type.Union([Type.String({ maxLength: 120 }), Type.Number()])),
-  createdAt: UtcTimestamp,
-}, { additionalProperties: false });
+export const AgentAuditEventDtoSchema = Type.Object(
+  {
+    auditId: BigId,
+    agentDomainId: BigId,
+    agentUserId: BigId,
+    actionCode: Type.Union(Object.values(AgentAuditActionCode).map((code) => Type.Literal(code))),
+    resourceType: Type.String({ minLength: 1, maxLength: 64 }),
+    resourceKey: Type.String({ minLength: 1, maxLength: 160 }),
+    purpose: Type.String({ minLength: 1, maxLength: 255 }),
+    requestKey: RequestKey,
+    resultType: Type.Union(Object.values(AgentAuditResultType).map((result) => Type.Literal(result))),
+    snapshot: Type.Record(Type.String(), Type.Union([Type.String({ maxLength: 120 }), Type.Number()])),
+    createdAt: UtcTimestamp,
+  },
+  { additionalProperties: false },
+);
 
-export const AgentAuditQuerySchema = Type.Object({
-  keyword: Type.Optional(Type.String({ maxLength: 64 })),
-  resultType: Type.Optional(Type.Union(Object.values(AgentAuditResultType).map((result) => Type.Literal(result)))),
-  cursor: Type.Optional(Type.String({ pattern: '^[1-9][0-9]{0,8}$' })),
-  pageSize: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
-}, { additionalProperties: false });
-export const AgentAuditListResponseSchema = Type.Object({
-  items: Type.Array(AgentAuditEventDtoSchema, { maxItems: 50 }),
-  nextCursor: Type.Union([Type.String({ pattern: '^[1-9][0-9]{0,8}$' }), Type.Null()]),
-  total: Type.Integer({ minimum: 0 }),
-}, { additionalProperties: false });
+export const AgentAuditQuerySchema = Type.Object(
+  {
+    keyword: Type.Optional(Type.String({ maxLength: 64 })),
+    resultType: Type.Optional(Type.Union(Object.values(AgentAuditResultType).map((result) => Type.Literal(result)))),
+    cursor: Type.Optional(Type.String({ pattern: '^[1-9][0-9]{0,8}$' })),
+    pageSize: Type.Optional(Type.Integer({ minimum: 1, maximum: 50 })),
+  },
+  { additionalProperties: false },
+);
+export const AgentAuditListResponseSchema = Type.Object(
+  {
+    items: Type.Array(AgentAuditEventDtoSchema, { maxItems: 50 }),
+    nextCursor: Type.Union([Type.String({ pattern: '^[1-9][0-9]{0,8}$' }), Type.Null()]),
+    total: Type.Integer({ minimum: 0 }),
+  },
+  { additionalProperties: false },
+);
 export const AgentAuditEndpoint = {
-  list: { method: 'GET', path: '/api/v1/agent/audit-events', query: AgentAuditQuerySchema, response: AgentAuditListResponseSchema, successStatus: 200 },
+  list: {
+    method: 'GET',
+    path: '/api/v1/agent/audit-events',
+    query: AgentAuditQuerySchema,
+    response: AgentAuditListResponseSchema,
+    successStatus: 200,
+  },
 } as const;
 
 export type AgentAuditEventDto = Static<typeof AgentAuditEventDtoSchema>;

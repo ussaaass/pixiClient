@@ -10,7 +10,7 @@ export const PracticeSoundEvent = {
   INVALID_ACTION: 'INVALID_ACTION',
 } as const;
 
-export type PracticeSoundEvent = typeof PracticeSoundEvent[keyof typeof PracticeSoundEvent];
+export type PracticeSoundEvent = (typeof PracticeSoundEvent)[keyof typeof PracticeSoundEvent];
 
 export interface PracticeAudioPort {
   play(event: PracticeSoundEvent): void;
@@ -53,7 +53,10 @@ const EVENT_TONES: Readonly<Record<PracticeSoundEvent, readonly Tone[]>> = {
   [PracticeSoundEvent.INVALID_ACTION]: [{ frequency: 196, durationSeconds: 0.11, waveform: 'square' }],
 };
 
-export function createPracticeAudio(enabled: boolean, createContext: () => AudioContext = () => new window.AudioContext({ latencyHint: 'interactive' })): PracticeAudioPort {
+export function createPracticeAudio(
+  enabled: boolean,
+  createContext: () => AudioContext = () => new window.AudioContext({ latencyHint: 'interactive' }),
+): PracticeAudioPort {
   let context: AudioContext | undefined;
   let unavailable = false;
 
@@ -75,10 +78,14 @@ export function createPracticeAudio(enabled: boolean, createContext: () => Audio
       gain.connect(context.destination);
       oscillator.start(startAt);
       oscillator.stop(startAt + duration + 0.015);
-      oscillator.addEventListener('ended', () => {
-        oscillator.disconnect();
-        gain.disconnect();
-      }, { once: true });
+      oscillator.addEventListener(
+        'ended',
+        () => {
+          oscillator.disconnect();
+          gain.disconnect();
+        },
+        { once: true },
+      );
     } catch {
       unavailable = true;
       void context?.close().catch(() => undefined);

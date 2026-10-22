@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { countUnseenSocialPosts, latestSocialPostCursor, readSocialPostCursor, saveSocialPostCursor, type SocialPostBadgeRecord, type SocialPostBadgeStorage } from './social-post-badge';
+import {
+  countUnseenSocialPosts,
+  latestSocialPostCursor,
+  readSocialPostCursor,
+  saveSocialPostCursor,
+  type SocialPostBadgeRecord,
+  type SocialPostBadgeStorage,
+} from './social-post-badge';
 
 const now = Date.parse('2026-10-17T12:00:00.000Z');
 const records: SocialPostBadgeRecord[] = [
@@ -11,7 +18,12 @@ const records: SocialPostBadgeRecord[] = [
 
 function memoryStorage(): SocialPostBadgeStorage {
   const values = new Map<string, string>();
-  return { getItem: (key) => values.get(key) ?? null, setItem: (key, value) => { values.set(key, value); } };
+  return {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => {
+      values.set(key, value);
+    },
+  };
 }
 
 describe('social post badge cursor', () => {

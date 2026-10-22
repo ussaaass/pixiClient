@@ -1,6 +1,6 @@
 # 数据库设计规范与 Sequelize 方案
 
-本文为最新数据库约束，覆盖旧文档中的 create_at/update_at、Kysely 与部分表/引用字段草案。用户指定的 ORM“sequenlize”按正式库名 Sequelize 实施。当前仅设计，未生成迁移或初始化依赖。
+本文为最新数据库约束，覆盖旧文档中的 create_at/update_at、Kysely 与部分表/引用字段草案。用户指定的 ORM“sequenlize”按正式库名 Sequelize 实施。迁移框架与首批表已按本文落码（见 §8），但依赖尚未安装、迁移尚未在真实 MySQL 执行，验收口径以 §5 的门禁为准。
 
 ## 1. 全表硬约束
 
@@ -146,6 +146,28 @@ UserModel.init({
 完整、当前的实体字段及功能映射以 [数据库设计 SDD](./数据库设计SDD.md) 为准；本节只展示代表性命名。旧版复数表、独立转账参与方及平台客损表不能直接生成迁移。资产 schema 以 SDD 的统一 asset_account 设计为准。
 
 
+## 8. 实施状态（2026-10-22）
+
+已落码位置：`apps/server/src/infrastructure/database/`。
+
+| 文件 | 职责 |
+| --- | --- |
+| `config.ts` | 从 `MYSQL_*` 读取连接参数；`timezone='+00:00'`、`supportBigNumbers` + `bigNumberStrings`、关闭 Sequelize 自由文本 SQL 日志 |
+| `sequelize.ts` | 延迟创建的单例；`closeSequelize()` 供进程退出与测试收尾；启动路径禁止 `sync()` |
+| `migration-history-storage.ts` | Umzug 自定义存储，UP/DOWN 都向 `migration_history` 追加事实行；`executed()` 取每个 name 的最新成功记录 |
+| `migrator.ts` | 显式迁移注册表（顺序即依赖），不用 glob 动态发现，保证签名可被类型检查 |
+| `migrations/0001~0006` | `migration_history`、`user`、`asset_account`、`asset_operation`、`asset_hold`、`asset_entry`，raw DDL 含 CHECK、生成列与全字段注释 |
+| `src/cli/migrate.ts` | `pnpm --filter @gameing/server migrate [up\|down\|status]` |
+| `src/migrations.test.ts` | 真实 MySQL 集成测试：可升可降 + 公共字段 + 非空注释；`MIGRATION_TEST=1` 才运行 |
+
+**尚未闭环**（在跑通前不得视为完成）：
+
+- `sequelize` / `mysql2` / `umzug` 三个依赖未安装，`pnpm-lock.yaml` 未更新，因此 `typecheck` 与 `test` 当前必然失败。
+- 迁移未在真实 MySQL 执行，`information_schema` 断言未产生实际结果。
+- Model 层与仓储未写：按"先打通纵向闭环"的约束，模型随 P1 钱包用例一起落地，不先铺空模型。
+- `user.asset_id` 外键待文件资产域 `asset` 表迁移补建。
+- `migration_history` 的 RUNNING/FAILED 行需要 Umzug `migrating` 事件钩子，当前只记 SUCCEEDED。
+
 ## 变更历史
 
 | 日期 | 变更 |
@@ -155,3 +177,4 @@ UserModel.init({
 | 2026-10-10 | 明确同表多角色引用的 `<role>_<table>_id` 命名规则。 |
 | 2026-10-10 | 固化 Model/表逐项评审清单，并统一主键与 DATETIME(3) 硬约束。 |
 | 2026-10-10 | 规定所有业务常量/枚举不使用 0，并定义查询筛选 DTO 的 0 哨兵语义。 |
+| 2026-10-22 | 新增 §8 实施状态：记录 Sequelize 连接、Umzug + `migration_history` 存储、6 个首批迁移、迁移 CLI 与集成测试的落码位置，并明确依赖未安装、迁移未执行、Model 未写的未闭环项。 |

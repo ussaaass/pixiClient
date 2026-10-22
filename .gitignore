@@ -18,3 +18,16 @@ tools/asset-generation/.env.*
 # Unreviewed generated files and local task scratch
 assets/candidates/
 assets/provenance/jobs/
+
+# Local agent workspace state (memory logs are per-machine, not shared source)
+.workbuddy-ai/
+
+# Python 虚拟环境（AGENTS.md 约定：使用项目根目录 .venv，且不提交）
+.venv/
+
+# Graphify 知识图谱产物（本地生成，可随时重建）
+graphify-out/
+.graphify/
+
+# macOS noise
+.DS_Store

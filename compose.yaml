@@ -40,6 +40,24 @@ services:
       timeout: 3s
       retries: 20
 
+  # Docker 创建具名卷时属主是 root，而下面的服务以 node(uid 1000) 运行。
+  # 一旦 lockfile 变化需要真正更新 node_modules，非 root 就会因权限不足而失败。
+  # 本服务以 root 一次性把各 node_modules 卷与 pnpm store 交给 node，再退出。
+  # 只依赖官方 node 基础镜像（自带 node 用户与 chown），不需要 pnpm，因此无需构建自定义镜像。
+  prepare-volumes:
+    profiles: ["dev", "full"]
+    image: node:24.21.0-bookworm-slim
+    init: true
+    user: root
+    working_dir: /workspace
+    command: ["/bin/sh", "-lc", "chown -R node:node /vol/dev /vol/server /vol/web /vol/admin /vol/store"]
+    volumes:
+      - dev_node_modules:/vol/dev
+      - server_node_modules:/vol/server
+      - web_node_modules:/vol/web
+      - admin_node_modules:/vol/admin
+      - pnpm_store:/vol/store
+
   dev:
     profiles: ["dev"]
     build:
@@ -63,6 +81,8 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     depends_on:
+      prepare-volumes:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -94,6 +114,8 @@ services:
       REDIS_PORT: "6379"
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     depends_on:
+      prepare-volumes:
+        condition: service_completed_successfully
       mysql:
         condition: service_healthy
       redis:
@@ -123,6 +145,8 @@ services:
     environment:
       VITE_API_BASE_URL: /api/v1
     depends_on:
+      prepare-volumes:
+        condition: service_completed_successfully
       server:
         condition: service_healthy
     healthcheck:
@@ -149,11 +173,53 @@ services:
       - pnpm_store:/pnpm/store
     environment:
       VITE_ADMIN_API_BASE_URL: /admin-api/v1
+    depends_on:
+      prepare-volumes:
+        condition: service_completed_successfully
+      server:
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5174').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 5s
       timeout: 3s
       retries: 12
+      start_period: 10s
+
+  # ---------- 生产 profile ----------
+  # 与上面的 `full`（开发态）互斥：生产镜像不含 TS 源码与 workspace 链接，
+  # 服务端跑的是打包后的自包含 ESM 产物。启动方式：
+  #   docker compose --profile prod up -d --wait
+  api-prod:
+    profiles: ["prod"]
+    build:
+      context: .
+      dockerfile: Dockerfile
+    init: true
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:${API_PROD_HOST_PORT:-10300}:3000"
+    environment:
+      NODE_ENV: production
+      PORT: "3000"
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      MYSQL_HOST: mysql
+      MYSQL_PORT: "3306"
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
+      MYSQL_USER: ${MYSQL_USER:-gameing}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      interval: 10s
+      timeout: 3s
+      retries: 6
       start_period: 10s
 
 volumes:

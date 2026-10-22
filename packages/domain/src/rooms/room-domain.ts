@@ -1,12 +1,7 @@
 import type { GameRoomSnapshotDto, RoomMemberSnapshotDto } from '@gameing/contracts/game-room';
 
 export type RoomFailureCode =
-  | 'ROOM_CLOSED'
-  | 'ROOM_FULL'
-  | 'PLAYER_ALREADY_SEATED'
-  | 'PLAYER_NOT_FOUND'
-  | 'ROOM_NOT_READY'
-  | 'ROOM_OWNER_REQUIRED';
+  'ROOM_CLOSED' | 'ROOM_FULL' | 'PLAYER_ALREADY_SEATED' | 'PLAYER_NOT_FOUND' | 'ROOM_NOT_READY' | 'ROOM_OWNER_REQUIRED';
 
 export type RoomResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: RoomFailureCode };
 
@@ -42,7 +37,7 @@ export function setCurrentPlayerReady(room: GameRoomSnapshotDto, isReady: boolea
   if (room.status !== 'WAITING') return failure('ROOM_CLOSED');
   const playerIndex = room.members.findIndex((member) => member.isCurrentPlayer);
   if (playerIndex < 0) return failure('PLAYER_NOT_FOUND');
-  const members = room.members.map((member, index) => index === playerIndex ? { ...member, isReady } : member);
+  const members = room.members.map((member, index) => (index === playerIndex ? { ...member, isReady } : member));
   return { ok: true, value: updatedRoom(room, members) };
 }
 
@@ -57,7 +52,13 @@ export function closeRoom(room: GameRoomSnapshotDto): RoomResult<GameRoomSnapsho
   const currentPlayer = room.members.find((member) => member.isCurrentPlayer);
   if (!currentPlayer) return failure('PLAYER_NOT_FOUND');
   if (currentPlayer.seat === room.ownerSeat) return { ok: true, value: updatedRoom(room, room.members, 'CLOSED') };
-  return { ok: true, value: updatedRoom(room, room.members.filter((member) => !member.isCurrentPlayer)) };
+  return {
+    ok: true,
+    value: updatedRoom(
+      room,
+      room.members.filter((member) => !member.isCurrentPlayer),
+    ),
+  };
 }
 
 export function canStartRoom(room: GameRoomSnapshotDto): boolean {

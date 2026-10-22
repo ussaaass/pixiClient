@@ -21,7 +21,7 @@ import {
   type SocialPublicProfilePostsResponseDto,
   type SocialAuthorReportRequestDto,
 } from '@gameing/contracts/social';
-import { createPost, createReply, type SocialFailureCode as DomainSocialFailureCode } from './social-domain';
+import { createPost, createReply, type SocialFailureCode as DomainSocialFailureCode } from '@gameing/domain/social';
 
 export interface SocialRepositoryPort {
   currentActor(): Promise<{ userId: string; displayName: string } | null>;
@@ -45,7 +45,8 @@ export interface SocialRepositoryPort {
 }
 
 export type SocialFailureCode = DomainSocialFailureCode | 'AUTHENTICATION_REQUIRED' | 'PROFILE_NOT_FOUND';
-export type SocialApplicationResult<T> = { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: SocialFailureCode };
+export type SocialApplicationResult<T> =
+  { readonly ok: true; readonly value: T } | { readonly ok: false; readonly code: SocialFailureCode };
 
 export interface SocialApplication {
   listTopics(): Promise<SocialApplicationResult<SocialTopicDto[]>>;
@@ -71,31 +72,27 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
   return {
     async listTopics() {
       const topics = await repository.listTopics();
-      return topics.every((topic) => Value.Check(SocialTopicDtoSchema, topic))
-        ? { ok: true, value: topics }
-        : failure('INVALID_REQUEST');
+      return topics.every((topic) => Value.Check(SocialTopicDtoSchema, topic)) ? { ok: true, value: topics } : failure('INVALID_REQUEST');
     },
 
     async listPosts(topicKey) {
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
       const topic = await repository.findTopic(topicKey);
       if (!topic || topic.status !== 'ACTIVE') return failure('TOPIC_NOT_FOUND');
       const posts = await repository.listPosts(topicKey);
-      return posts.every((post) => Value.Check(SocialPostDtoSchema, post))
-        ? { ok: true, value: posts }
-        : failure('INVALID_REQUEST');
+      return posts.every((post) => Value.Check(SocialPostDtoSchema, post)) ? { ok: true, value: posts } : failure('INVALID_REQUEST');
     },
 
     async getPost(postId) {
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
       const post = await repository.findPost(postId);
       if (!post || post.status !== 'PUBLISHED') return failure('POST_NOT_FOUND');
       return Value.Check(SocialPostDtoSchema, post) ? { ok: true, value: post } : failure('INVALID_REQUEST');
     },
 
     async listReplies(postId) {
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
-      if (!await repository.findPost(postId)) return failure('POST_NOT_FOUND');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.findPost(postId))) return failure('POST_NOT_FOUND');
       const replies = await repository.listReplies(postId);
       return replies.every((reply) => Value.Check(SocialPostReplyDtoSchema, reply))
         ? { ok: true, value: replies }
@@ -106,7 +103,13 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
       if (!Value.Check(CreateSocialPostRequestSchema, request)) return failure('INVALID_REQUEST');
       const actor = await repository.currentActor();
       if (!actor) return failure('AUTHENTICATION_REQUIRED');
-      const result = createPost(await repository.findTopic(request.topicKey), request, await repository.createId(), repository.now(), actor.displayName);
+      const result = createPost(
+        await repository.findTopic(request.topicKey),
+        request,
+        await repository.createId(),
+        repository.now(),
+        actor.displayName,
+      );
       if (!result.ok) return result;
       if (!Value.Check(SocialPostDtoSchema, result.value)) return failure('INVALID_REQUEST');
       await repository.savePost(result.value);
@@ -119,7 +122,14 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
       const actor = await repository.currentActor();
       if (!actor) return failure('AUTHENTICATION_REQUIRED');
       const parent = request.parentReplyId ? await repository.findReply(request.parentReplyId) : null;
-      const result = createReply(await repository.findPost(postId), parent, request, await repository.createId(), repository.now(), actor.displayName);
+      const result = createReply(
+        await repository.findPost(postId),
+        parent,
+        request,
+        await repository.createId(),
+        repository.now(),
+        actor.displayName,
+      );
       if (!result.ok) return result;
       if (!Value.Check(SocialPostReplyDtoSchema, result.value)) return failure('INVALID_REQUEST');
       await repository.saveReply(result.value);
@@ -139,15 +149,20 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
       if (!Value.Check(SocialContentActionRequestSchema, request)) return failure('INVALID_REQUEST');
       const actor = await repository.currentActor();
       if (!actor) return failure('AUTHENTICATION_REQUIRED');
-      const content = request.resourceType === 'POST' ? await repository.findPost(request.resourceId) : await repository.findReply(request.resourceId);
+      const content =
+        request.resourceType === 'POST' ? await repository.findPost(request.resourceId) : await repository.findReply(request.resourceId);
       if (!content) return failure(request.resourceType === 'POST' ? 'POST_NOT_FOUND' : 'REPLY_NOT_FOUND');
-      if (request.action === 'FOLLOW_AUTHOR' && (request.resourceType === 'POST' ? (content as SocialPostDto).isOwnPost : (content as SocialPostReplyDto).isOwnReply)) return failure('INVALID_REQUEST');
+      if (
+        request.action === 'FOLLOW_AUTHOR' &&
+        (request.resourceType === 'POST' ? (content as SocialPostDto).isOwnPost : (content as SocialPostReplyDto).isOwnReply)
+      )
+        return failure('INVALID_REQUEST');
       if (request.action === 'REPORT' && !request.reasonCode) return failure('INVALID_REQUEST');
       return { ok: true, value: await repository.applyContentAction(actor.userId, request) };
     },
 
     async getPublicProfile(publicProfileKey) {
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
       if (!/^[A-Z0-9]{8,16}$/.test(publicProfileKey)) return failure('INVALID_REQUEST');
       const profile = await repository.getPublicProfile(publicProfileKey);
       return profile && Value.Check(SocialPublicProfileDtoSchema, profile) ? { ok: true, value: profile } : failure('PROFILE_NOT_FOUND');
@@ -163,7 +178,7 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
     },
 
     async listPublicProfilePosts(publicProfileKey) {
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
       if (!/^[A-Z0-9]{8,16}$/.test(publicProfileKey)) return failure('INVALID_REQUEST');
       const page = await repository.listPublicProfilePosts(publicProfileKey);
       return Value.Check(SocialPublicProfilePostsResponseSchema, page) ? { ok: true, value: page } : failure('INVALID_REQUEST');
@@ -171,7 +186,7 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
 
     async setBlockAuthor(publicProfileKey, blocked) {
       if (!Value.Check(SocialAuthorBlockRequestSchema, { publicProfileKey, blocked })) return failure('INVALID_REQUEST');
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
       const profile = await repository.getPublicProfile(publicProfileKey);
       if (!profile || profile.isSelf) return failure('PROFILE_NOT_FOUND');
       return { ok: true, value: await repository.setBlockAuthor(publicProfileKey, blocked) };
@@ -179,7 +194,7 @@ export function createSocialApplication(repository: SocialRepositoryPort): Socia
 
     async reportAuthor(request) {
       if (!Value.Check(SocialAuthorReportRequestSchema, request)) return failure('INVALID_REQUEST');
-      if (!await repository.currentActor()) return failure('AUTHENTICATION_REQUIRED');
+      if (!(await repository.currentActor())) return failure('AUTHENTICATION_REQUIRED');
       const profile = await repository.getPublicProfile(request.publicProfileKey);
       if (!profile || profile.isSelf) return failure('PROFILE_NOT_FOUND');
       await repository.reportAuthor(request);

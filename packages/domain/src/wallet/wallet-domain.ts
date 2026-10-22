@@ -1,4 +1,9 @@
-import { WalletErrorCode, type WalletExchangeQuoteDto, type WalletTransferQuoteDto, type WithdrawalQuoteDto } from '@gameing/contracts/wallet';
+import {
+  WalletErrorCode,
+  type WalletExchangeQuoteDto,
+  type WalletTransferQuoteDto,
+  type WithdrawalQuoteDto,
+} from '@gameing/contracts/wallet';
 import { FundingErrorCode } from '@gameing/contracts/wallet-funding';
 
 export const DEFAULT_COIN_TRANSFER_FEE_BPS = 500;
@@ -73,9 +78,11 @@ export function createExchangeQuote(input: {
 }
 
 export function exchangeQuoteMatches(quote: WalletExchangeQuoteDto, rateCoinUnits: bigint, rateCashFen: bigint): boolean {
-  return quote.rateCoinUnits === rateCoinUnits.toString()
-    && quote.rateCashFen === rateCashFen.toString()
-    && quote.cnyFen === calculateExchangeCashFen(BigInt(quote.coins), rateCoinUnits, rateCashFen).toString();
+  return (
+    quote.rateCoinUnits === rateCoinUnits.toString() &&
+    quote.rateCashFen === rateCashFen.toString() &&
+    quote.cnyFen === calculateExchangeCashFen(BigInt(quote.coins), rateCoinUnits, rateCashFen).toString()
+  );
 }
 
 export function calculateWithdrawalFee(netCnyFen: bigint, feeRateBps: number): bigint {
@@ -93,7 +100,8 @@ export function createWithdrawalQuote(input: {
   ttlSeconds?: number;
 }): WithdrawalQuoteDto {
   if (input.minimumNetCnyFen <= 0n || input.netCnyFen <= 0n) throw new Error(WalletErrorCode.WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID);
-  if (input.netCnyFen < input.minimumNetCnyFen || input.netCnyFen % input.minimumNetCnyFen !== 0n) throw new Error(WalletErrorCode.WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID);
+  if (input.netCnyFen < input.minimumNetCnyFen || input.netCnyFen % input.minimumNetCnyFen !== 0n)
+    throw new Error(WalletErrorCode.WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID);
   const feeCnyFen = calculateWithdrawalFee(input.netCnyFen, input.feeRateBps);
   return {
     payoutAccountId: input.payoutAccountId,
@@ -113,10 +121,12 @@ export function createWithdrawalQuote(input: {
 export function withdrawalQuoteMatches(quote: WithdrawalQuoteDto, feeRateBps: number, minimumNetCnyFen: bigint): boolean {
   const net = BigInt(quote.netCnyFen);
   const fee = calculateWithdrawalFee(net, feeRateBps);
-  return quote.feeRateBps === feeRateBps
-    && quote.minimumNetCnyFen === minimumNetCnyFen.toString()
-    && net >= minimumNetCnyFen
-    && net % minimumNetCnyFen === 0n
-    && quote.feeCnyFen === fee.toString()
-    && quote.debitCnyFen === (net + fee).toString();
+  return (
+    quote.feeRateBps === feeRateBps &&
+    quote.minimumNetCnyFen === minimumNetCnyFen.toString() &&
+    net >= minimumNetCnyFen &&
+    net % minimumNetCnyFen === 0n &&
+    quote.feeCnyFen === fee.toString() &&
+    quote.debitCnyFen === (net + fee).toString()
+  );
 }

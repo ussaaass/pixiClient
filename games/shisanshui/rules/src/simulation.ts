@@ -1,9 +1,4 @@
-import {
-  CLASSIC_V1_SCORING,
-  settleRound,
-  type PlayerArrangement,
-  type ScoringConfig,
-} from './index.js';
+import { CLASSIC_V1_SCORING, settleRound, type PlayerArrangement, type ScoringConfig } from './index.js';
 
 export const SHISANSHUI_MATH_MODEL_VERSION = 'classic_v1_rank_partition_1';
 export const SHISANSHUI_SIMULATION_STRATEGY = 'rank_sorted_partition_v1';
@@ -56,16 +51,17 @@ function seededRandom(seed: string): () => number {
 function wilson95(successes: number, total: number): readonly [number, number] {
   const z = 1.959963984540054;
   const p = successes / total;
-  const denominator = 1 + z * z / total;
-  const center = (p + z * z / (2 * total)) / denominator;
-  const radius = z * Math.sqrt((p * (1 - p) + z * z / (4 * total)) / total) / denominator;
+  const denominator = 1 + (z * z) / total;
+  const center = (p + (z * z) / (2 * total)) / denominator;
+  const radius = (z * Math.sqrt((p * (1 - p) + (z * z) / (4 * total)) / total)) / denominator;
   return [Math.max(0, center - radius), Math.min(1, center + radius)];
 }
 
 function arrangeByRank(heldCards: readonly number[]): PlayerArrangement {
-  const ordered = [...heldCards].sort((left, right) => left % 13 - right % 13 || left - right);
+  const ordered = [...heldCards].sort((left, right) => (left % 13) - (right % 13) || left - right);
   return {
-    playerId: 'seat-0', heldCards,
+    playerId: 'seat-0',
+    heldCards,
     arrangement: { front: ordered.slice(0, 3), middle: ordered.slice(3, 8), back: ordered.slice(8, 13) },
   };
 }
@@ -85,7 +81,11 @@ export async function simulateShisanshui(input: {
   const random = seededRandom(input.seed);
   const scoring = input.scoring ?? CLASSIC_V1_SCORING;
   const scores: number[] = [];
-  let wins = 0; let ties = 0; let fouls = 0; let slams = 0; let homeRuns = 0;
+  let wins = 0;
+  let ties = 0;
+  let fouls = 0;
+  let slams = 0;
+  let homeRuns = 0;
 
   for (let run = 0; run < input.runs; run += 1) {
     const deck = Array.from({ length: 52 }, (_, card) => card);
@@ -105,9 +105,10 @@ export async function simulateShisanshui(input: {
     if (settled.players[0]!.foul) fouls += 1;
     const targetPairs = settled.pairs.filter((pair) => pair.leftPlayerId === 'seat-0' || pair.rightPlayerId === 'seat-0');
     if (targetPairs.some((pair) => pair.piles.every((pile) => pile.result === (pair.leftPlayerId === 'seat-0' ? 1 : -1)))) slams += 1;
-    const targetSweptTheTable = targetPairs.length === 3
-      && !settled.players[0]!.foul
-      && targetPairs.every((pair) => pair.piles.every((pile) => pile.result === (pair.leftPlayerId === 'seat-0' ? 1 : -1)));
+    const targetSweptTheTable =
+      targetPairs.length === 3 &&
+      !settled.players[0]!.foul &&
+      targetPairs.every((pair) => pair.piles.every((pile) => pile.result === (pair.leftPlayerId === 'seat-0' ? 1 : -1)));
     if (targetSweptTheTable) homeRuns += 1;
     if ((run + 1) % 100 === 0) {
       input.onProgress?.(run + 1, input.runs);
@@ -126,19 +127,36 @@ export async function simulateShisanshui(input: {
   const slamRate = slams / input.runs;
   const homeRunRate = homeRuns / input.runs;
   const standardDeviation = Math.sqrt(variance);
-  const meanMargin = 1.959963984540054 * standardDeviation / Math.sqrt(input.runs);
+  const meanMargin = (1.959963984540054 * standardDeviation) / Math.sqrt(input.runs);
   return {
-    runs: input.runs, seed: input.seed, strategyKey: SHISANSHUI_SIMULATION_STRATEGY,
-    modelVersion: SHISANSHUI_MATH_MODEL_VERSION, rulesVersion: 'classic_v1', theoreticalRtp: null,
-    winRate, tieRate, zeroNetRate, foulRate, slamRate, homeRunRate,
-    meanNetScore: mean, variance, standardDeviation, winRate95Ci: wilson95(wins, input.runs),
+    runs: input.runs,
+    seed: input.seed,
+    strategyKey: SHISANSHUI_SIMULATION_STRATEGY,
+    modelVersion: SHISANSHUI_MATH_MODEL_VERSION,
+    rulesVersion: 'classic_v1',
+    theoreticalRtp: null,
+    winRate,
+    tieRate,
+    zeroNetRate,
+    foulRate,
+    slamRate,
+    homeRunRate,
+    meanNetScore: mean,
+    variance,
+    standardDeviation,
+    winRate95Ci: wilson95(wins, input.runs),
     rate95Ci: {
-      win: wilson95(wins, input.runs), tie: wilson95(ties, input.runs),
-      foul: wilson95(fouls, input.runs), zeroNet: wilson95(scores.filter((score) => score === 0).length, input.runs),
-      slam: wilson95(slams, input.runs), homeRun: wilson95(homeRuns, input.runs),
+      win: wilson95(wins, input.runs),
+      tie: wilson95(ties, input.runs),
+      foul: wilson95(fouls, input.runs),
+      zeroNet: wilson95(scores.filter((score) => score === 0).length, input.runs),
+      slam: wilson95(slams, input.runs),
+      homeRun: wilson95(homeRuns, input.runs),
     },
     meanNetScore95Ci: [mean - meanMargin, mean + meanMargin],
-    distribution: [...buckets].sort(([left], [right]) => left - right).map(([netScore, count]) => ({ netScore, count, share: count / input.runs })),
+    distribution: [...buckets]
+      .sort(([left], [right]) => left - right)
+      .map(([netScore, count]) => ({ netScore, count, share: count / input.runs })),
     warnings: [
       '这是固定排序策略对阵三个同策略样本的演示，不代表生产机器人或真实玩家策略分布。',
       '十三张为玩家对战模型，RTP 不适用；净分以水计，不含金币档位、手续费或账户记账。',

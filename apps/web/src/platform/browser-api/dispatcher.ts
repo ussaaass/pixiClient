@@ -1,8 +1,21 @@
 import { Value } from '@sinclair/typebox/value';
-import { IdentityEndpoint, ApiSuccessSchema, ApiFailureSchema, IdentityErrorCode, type ApiFailureDto, type ApiSuccessDto, type SessionResponseDto } from '@gameing/contracts/identity';
+import {
+  IdentityEndpoint,
+  ApiSuccessSchema,
+  ApiFailureSchema,
+  IdentityErrorCode,
+  type ApiFailureDto,
+  type ApiSuccessDto,
+  type SessionResponseDto,
+} from '@gameing/contracts/identity';
 import { openBrowserDevelopmentDatabase, type BrowserDevelopmentDatabase, type LocalCredential, type LocalUser } from './database';
 import { derivePasswordHash, randomToken, sha256 } from './crypto';
-import { IdentityUseCaseError, LocalIdentityApplication, localCookieName, type LocalIdentityCookieState } from './identity/local-identity-application';
+import {
+  IdentityUseCaseError,
+  LocalIdentityApplication,
+  localCookieName,
+  type LocalIdentityCookieState,
+} from './identity/local-identity-application';
 import { IndexedDbLocalIdentityRepository } from './identity/indexeddb-local-identity-repository';
 import { verifyLocalAccessToken } from './local-jwt';
 import { localContactChallengeInbox } from './identity/local-contact-challenge-inbox';
@@ -19,19 +32,43 @@ import { InviteAgentEndpoint, AgentDomainStatus, type AgentDomainDto, type Invit
 import type { LocalAgentDomain } from './database';
 import { ReferralAttributionApplication } from '../../referral/referral-attribution-application';
 import { IndexedDbReferralAttributionRepository } from './referral/indexeddb-referral-attribution-repository';
-import { SocialAccessPolicy } from '../social/social-access-policy';
+import { SocialAccessPolicy } from '@gameing/domain/social/access-policy';
 import { RewardType } from '@gameing/contracts/referral';
 import { WalletFundingDevelopmentEndpoint, WalletFundingEndpoint, FundingErrorCode } from '@gameing/contracts/wallet-funding';
 import { WalletFundingUseCases } from '../../wallet-funding/wallet-funding-application';
 import { IndexedDbWalletFundingRepository } from './wallet/indexeddb-wallet-funding-repository';
 import { GameCatalogEndpoint } from '@gameing/contracts/game-catalog';
-import { GameExperienceEndpoint, GameExperienceDtoSchema, GameExperienceListResponseSchema, GamePreflightResponseSchema } from '@gameing/contracts/game-experience';
+import {
+  GameExperienceEndpoint,
+  GameExperienceDtoSchema,
+  GameExperienceListResponseSchema,
+  GamePreflightResponseSchema,
+} from '@gameing/contracts/game-experience';
 import { LOBBY_GAME_EXPERIENCE_REFERENCE, LOBBY_GAME_REFERENCE } from '@gameing/contracts/lobby-game-reference';
 import { CoinMarketEndpoint, CoinMarketErrorCode, type CoinMarketPriceQuoteRequestDto } from '@gameing/contracts/coin-market';
-import { CoinMarketPricingError, quoteCoinMarketPrice } from '../coin-market/coin-market-pricing';
+import { CoinMarketPricingError, quoteCoinMarketPrice } from '@gameing/domain/coin-market';
 import { IndexedDbCoinMarketRepository } from './coin-market/indexeddb-coin-market-repository';
 
-type IdentityBody = { identifier?: string; password?: string; currentPassword?: string; newPassword?: string; username?: string; email?: string; currentEmail?: string; phone?: string; currentPhone?: string; fingerprintVersion?: string; deviceCode?: string; deviceSummary?: { platform: string; browser: string }; credentialId?: string; recoverySecret?: string; totp?: string; setupId?: string; challengeId?: string; code?: string };
+type IdentityBody = {
+  identifier?: string;
+  password?: string;
+  currentPassword?: string;
+  newPassword?: string;
+  username?: string;
+  email?: string;
+  currentEmail?: string;
+  phone?: string;
+  currentPhone?: string;
+  fingerprintVersion?: string;
+  deviceCode?: string;
+  deviceSummary?: { platform: string; browser: string };
+  credentialId?: string;
+  recoverySecret?: string;
+  totp?: string;
+  setupId?: string;
+  challengeId?: string;
+  code?: string;
+};
 function json(status: number, body: unknown, cookies?: LocalIdentityCookieState): Response {
   const headers = new Headers({ 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store' });
   if (cookies) headers.set('x-local-cookie-state', JSON.stringify(cookies));
@@ -44,7 +81,13 @@ function failure(status: number, code: string, message: string, requestId: strin
   return json(status, data, cookies);
 }
 
-function success<T>(status: number, data: T, requestId: string, schema: Parameters<typeof ApiSuccessSchema>[0], cookies?: LocalIdentityCookieState): Response {
+function success<T>(
+  status: number,
+  data: T,
+  requestId: string,
+  schema: Parameters<typeof ApiSuccessSchema>[0],
+  cookies?: LocalIdentityCookieState,
+): Response {
   const envelope: ApiSuccessDto<T> = { requestId, code: IdentityErrorCode.OK, message: 'OK', data, serverNow: new Date().toISOString() };
   if (!Value.Check(ApiSuccessSchema(schema), envelope)) throw new Error('INVALID_SUCCESS_ENVELOPE');
   return json(status, envelope, cookies);
@@ -65,7 +108,11 @@ async function parseBody(request: Request): Promise<unknown> {
   const text = await request.text();
   if (!text.trim()) return undefined;
   if (text.length > 16_384) throw new Error('PAYLOAD_TOO_LARGE');
-  try { return JSON.parse(text) as unknown; } catch { throw new Error('INVALID_JSON'); }
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    throw new Error('INVALID_JSON');
+  }
 }
 
 function cookie(request: Request, name: 'device' | 'refresh'): string | undefined {
@@ -85,9 +132,17 @@ async function requireActor(request: Request, database: BrowserDevelopmentDataba
   if (!claims) throw new IdentityUseCaseError(401, IdentityErrorCode.ACCESS_TOKEN_INVALID, 'A valid access token is required.');
   const repository = new IndexedDbLocalIdentityRepository(database);
   const sessions = await repository.listSessions(claims.sub);
-  const activeSession = sessions.find((item) => item.sessionId === claims.sid && item.deviceId === claims.did && item.state === 'ACTIVE' && item.expiresAt > new Date().toISOString() && item.authVersion === claims.sessionVersion);
+  const activeSession = sessions.find(
+    (item) =>
+      item.sessionId === claims.sid &&
+      item.deviceId === claims.did &&
+      item.state === 'ACTIVE' &&
+      item.expiresAt > new Date().toISOString() &&
+      item.authVersion === claims.sessionVersion,
+  );
   const user = await repository.findUser(claims.sub);
-  if (!activeSession || !user || user.status !== 'ACTIVE' || user.authVersion !== claims.sessionVersion) throw new IdentityUseCaseError(401, IdentityErrorCode.SESSION_REVOKED, 'The session is no longer active.');
+  if (!activeSession || !user || user.status !== 'ACTIVE' || user.authVersion !== claims.sessionVersion)
+    throw new IdentityUseCaseError(401, IdentityErrorCode.SESSION_REVOKED, 'The session is no longer active.');
   await new ReferralAttributionApplication(new IndexedDbReferralAttributionRepository(database)).bindCurrentCandidate(claims.sub);
   return { userId: claims.sub, sessionId: claims.sid };
 }
@@ -98,7 +153,8 @@ async function socialAccessEnabled(database: BrowserDevelopmentDatabase, userId:
 
 async function requireSocialActor(request: Request, database: BrowserDevelopmentDatabase): Promise<{ userId: string; sessionId: string }> {
   const actor = await requireActor(request, database);
-  if (!await socialAccessEnabled(database, actor.userId)) throw new IdentityUseCaseError(403, 'SOCIAL_ACCESS_DISABLED', 'This social feature is unavailable.');
+  if (!(await socialAccessEnabled(database, actor.userId)))
+    throw new IdentityUseCaseError(403, 'SOCIAL_ACCESS_DISABLED', 'This social feature is unavailable.');
   return actor;
 }
 
@@ -107,18 +163,57 @@ async function assertWithdrawalIdentityEligibility(database: BrowserDevelopmentD
     database.getAllFromIndex('credentials', 'by-user-kind', [userId, 'IDENTIFIER']),
     database.getAllFromIndex('credentials', 'by-user-kind', [userId, 'PASSWORD']),
   ]);
-  const hasVerifiedContact = identifiers.some((item) => item.state === 'ACTIVE' && (item.identifierType === 'EMAIL' || item.identifierType === 'PHONE'));
-  const hasUsernameAndPassword = identifiers.some((item) => item.state === 'ACTIVE' && item.identifierType === 'USERNAME') && passwords.some((item) => item.state === 'ACTIVE');
-  if (!hasVerifiedContact && !hasUsernameAndPassword) throw new IdentityUseCaseError(403, 'WITHDRAWAL_IDENTITY_REQUIRED', '绑定并验证邮箱或手机，或设置用户名和密码后才能申请提现。');
+  const hasVerifiedContact = identifiers.some(
+    (item) => item.state === 'ACTIVE' && (item.identifierType === 'EMAIL' || item.identifierType === 'PHONE'),
+  );
+  const hasUsernameAndPassword =
+    identifiers.some((item) => item.state === 'ACTIVE' && item.identifierType === 'USERNAME') &&
+    passwords.some((item) => item.state === 'ACTIVE');
+  if (!hasVerifiedContact && !hasUsernameAndPassword)
+    throw new IdentityUseCaseError(403, 'WITHDRAWAL_IDENTITY_REQUIRED', '绑定并验证邮箱或手机，或设置用户名和密码后才能申请提现。');
 }
 
 export class BrowserApiServer {
   async handle(request: Request): Promise<Response> {
     const requestId = request.headers.get('x-request-id')?.slice(0, 64) || crypto.randomUUID();
     const url = new URL(request.url);
-    const routes = [...Object.values(IdentityEndpoint), WalletEndpoint.summary, WalletEndpoint.activity, WalletEndpoint.transferQuote, WalletEndpoint.transfer, WalletEndpoint.exchangeQuote, WalletEndpoint.exchange, WalletEndpoint.payoutAccounts, WalletEndpoint.createPayoutAccount, WalletEndpoint.withdrawalQuote, WalletEndpoint.withdrawals, WalletEndpoint.createWithdrawal, ...Object.values(WalletFundingEndpoint), WalletFundingDevelopmentEndpoint.simulatePayment, SupportEndpoint.listConversations, SupportEndpoint.createConversation, SocialEndpoint.access, SocialEndpoint.profile, SocialEndpoint.lookup, SocialEndpoint.friends, SocialEndpoint.request, SocialEndpoint.conversations, SocialEndpoint.conversation, CoinMarketEndpoint.priceQuote, CoinMarketEndpoint.listings, CoinMarketEndpoint.myListings, CoinMarketEndpoint.createListing, CoinMarketEndpoint.myTrades, ...Object.values(InviteAgentEndpoint), GameCatalogEndpoint.list, GameExperienceEndpoint.list];
+    const routes = [
+      ...Object.values(IdentityEndpoint),
+      WalletEndpoint.summary,
+      WalletEndpoint.activity,
+      WalletEndpoint.transferQuote,
+      WalletEndpoint.transfer,
+      WalletEndpoint.exchangeQuote,
+      WalletEndpoint.exchange,
+      WalletEndpoint.payoutAccounts,
+      WalletEndpoint.createPayoutAccount,
+      WalletEndpoint.withdrawalQuote,
+      WalletEndpoint.withdrawals,
+      WalletEndpoint.createWithdrawal,
+      ...Object.values(WalletFundingEndpoint),
+      WalletFundingDevelopmentEndpoint.simulatePayment,
+      SupportEndpoint.listConversations,
+      SupportEndpoint.createConversation,
+      SocialEndpoint.access,
+      SocialEndpoint.profile,
+      SocialEndpoint.lookup,
+      SocialEndpoint.friends,
+      SocialEndpoint.request,
+      SocialEndpoint.conversations,
+      SocialEndpoint.conversation,
+      CoinMarketEndpoint.priceQuote,
+      CoinMarketEndpoint.listings,
+      CoinMarketEndpoint.myListings,
+      CoinMarketEndpoint.createListing,
+      CoinMarketEndpoint.myTrades,
+      ...Object.values(InviteAgentEndpoint),
+      GameCatalogEndpoint.list,
+      GameExperienceEndpoint.list,
+    ];
     const gameExperienceMatch = /^\/api\/v1\/games\/([a-z][a-z0-9-]{1,63})\/experience$/.exec(url.pathname);
-    const gamePreflightMatch = /^\/api\/v1\/games\/([a-z][a-z0-9-]{1,63})\/difficulties\/([a-z][a-z0-9_-]{1,47})\/preflight$/.exec(url.pathname);
+    const gamePreflightMatch = /^\/api\/v1\/games\/([a-z][a-z0-9-]{1,63})\/difficulties\/([a-z][a-z0-9_-]{1,47})\/preflight$/.exec(
+      url.pathname,
+    );
     const contactConfirmMatch = /^\/api\/v1\/me\/identity\/contact-challenges\/([A-Za-z0-9-]{1,128})\/confirm$/.exec(url.pathname);
     const recoveryActivateMatch = /^\/api\/v1\/me\/security\/recovery-credentials\/([1-9][0-9]{0,19})\/activate$/.exec(url.pathname);
     const supportMessagesMatch = /^\/api\/v1\/me\/support\/conversations\/([1-9][0-9]{0,19})\/messages$/.exec(url.pathname);
@@ -130,42 +225,89 @@ export class BrowserApiServer {
     const payoutAccountDeleteMatch = /^\/api\/v1\/me\/wallet\/payout-accounts\/([1-9][0-9]{0,19})$/.exec(url.pathname);
     const withdrawalCancelMatch = /^\/api\/v1\/me\/wallet\/withdrawals\/([1-9][0-9]{0,19})\/cancel$/.exec(url.pathname);
     const coinMarketListingMatch = /^\/api\/v1\/coin-market\/listings\/([1-9][0-9]{0,19})$/.exec(url.pathname);
-    const coinMarketTradeMatch = /^\/api\/v1\/me\/coin-market\/trades\/([1-9][0-9]{0,19})\/(payment-proof|appeals|buyer-evidence|seller-evidence|confirm-receipt)$/.exec(url.pathname);
+    const coinMarketTradeMatch =
+      /^\/api\/v1\/me\/coin-market\/trades\/([1-9][0-9]{0,19})\/(payment-proof|appeals|buyer-evidence|seller-evidence|confirm-receipt)$/.exec(
+        url.pathname,
+      );
     const coinMarketCreateTradeMatch = /^\/api\/v1\/coin-market\/listings\/([1-9][0-9]{0,19})\/trades$/.exec(url.pathname);
-    const endpoint = routes.find((item) => item.path === url.pathname && item.method === request.method)
-      ?? (contactConfirmMatch && request.method === IdentityEndpoint.confirmContactChallenge.method ? IdentityEndpoint.confirmContactChallenge : undefined);
+    const endpoint =
+      routes.find((item) => item.path === url.pathname && item.method === request.method) ??
+      (contactConfirmMatch && request.method === IdentityEndpoint.confirmContactChallenge.method
+        ? IdentityEndpoint.confirmContactChallenge
+        : undefined);
     const dynamicEndpoint = supportMessagesMatch
-      ? request.method === 'GET' ? SupportEndpoint.listMessages : request.method === 'POST' ? SupportEndpoint.sendMessage : undefined
-      : supportCloseMatch && request.method === 'POST' ? SupportEndpoint.closeConversation : undefined;
-    const walletDynamicEndpoint = payoutAccountDeleteMatch && request.method === 'DELETE' ? WalletEndpoint.deletePayoutAccount
-      : withdrawalCancelMatch && request.method === 'POST' ? WalletEndpoint.cancelWithdrawal : undefined;
-    const socialDynamicEndpoint = socialAcceptMatch && request.method === 'POST' ? SocialEndpoint.accept
-      : socialRejectMatch && request.method === 'POST' ? SocialEndpoint.reject
-        : socialRemoveMatch && request.method === 'POST' ? SocialEndpoint.removeFriend
-      : socialMessagesMatch ? request.method === 'GET' ? SocialEndpoint.messages : request.method === 'POST' ? SocialEndpoint.sendMessage : undefined
+      ? request.method === 'GET'
+        ? SupportEndpoint.listMessages
+        : request.method === 'POST'
+          ? SupportEndpoint.sendMessage
+          : undefined
+      : supportCloseMatch && request.method === 'POST'
+        ? SupportEndpoint.closeConversation
         : undefined;
-    const matchedEndpoint = endpoint
-      ?? (recoveryActivateMatch && request.method === IdentityEndpoint.recoveryCredentialActivate.method ? IdentityEndpoint.recoveryCredentialActivate : undefined)
-      ?? dynamicEndpoint ?? socialDynamicEndpoint ?? walletDynamicEndpoint
-      ?? (coinMarketListingMatch && request.method === 'PATCH' ? CoinMarketEndpoint.updateListing : undefined)
-      ?? (coinMarketCreateTradeMatch && request.method === 'POST' ? CoinMarketEndpoint.createTrade : undefined)
-      ?? (coinMarketTradeMatch && request.method === 'POST' ? ({ 'payment-proof': CoinMarketEndpoint.paymentProof, appeals: CoinMarketEndpoint.appeal, 'buyer-evidence': CoinMarketEndpoint.buyerEvidence, 'seller-evidence': CoinMarketEndpoint.sellerEvidence, 'confirm-receipt': CoinMarketEndpoint.confirmReceipt } as const)[coinMarketTradeMatch[2] as 'payment-proof' | 'appeals' | 'buyer-evidence' | 'seller-evidence' | 'confirm-receipt'] : undefined)
-      ?? (gameExperienceMatch && request.method === 'GET' ? GameExperienceEndpoint.detail : undefined)
-      ?? (gamePreflightMatch && request.method === 'GET' ? GameExperienceEndpoint.preflight : undefined);
+    const walletDynamicEndpoint =
+      payoutAccountDeleteMatch && request.method === 'DELETE'
+        ? WalletEndpoint.deletePayoutAccount
+        : withdrawalCancelMatch && request.method === 'POST'
+          ? WalletEndpoint.cancelWithdrawal
+          : undefined;
+    const socialDynamicEndpoint =
+      socialAcceptMatch && request.method === 'POST'
+        ? SocialEndpoint.accept
+        : socialRejectMatch && request.method === 'POST'
+          ? SocialEndpoint.reject
+          : socialRemoveMatch && request.method === 'POST'
+            ? SocialEndpoint.removeFriend
+            : socialMessagesMatch
+              ? request.method === 'GET'
+                ? SocialEndpoint.messages
+                : request.method === 'POST'
+                  ? SocialEndpoint.sendMessage
+                  : undefined
+              : undefined;
+    const matchedEndpoint =
+      endpoint ??
+      (recoveryActivateMatch && request.method === IdentityEndpoint.recoveryCredentialActivate.method
+        ? IdentityEndpoint.recoveryCredentialActivate
+        : undefined) ??
+      dynamicEndpoint ??
+      socialDynamicEndpoint ??
+      walletDynamicEndpoint ??
+      (coinMarketListingMatch && request.method === 'PATCH' ? CoinMarketEndpoint.updateListing : undefined) ??
+      (coinMarketCreateTradeMatch && request.method === 'POST' ? CoinMarketEndpoint.createTrade : undefined) ??
+      (coinMarketTradeMatch && request.method === 'POST'
+        ? (
+            {
+              'payment-proof': CoinMarketEndpoint.paymentProof,
+              appeals: CoinMarketEndpoint.appeal,
+              'buyer-evidence': CoinMarketEndpoint.buyerEvidence,
+              'seller-evidence': CoinMarketEndpoint.sellerEvidence,
+              'confirm-receipt': CoinMarketEndpoint.confirmReceipt,
+            } as const
+          )[coinMarketTradeMatch[2] as 'payment-proof' | 'appeals' | 'buyer-evidence' | 'seller-evidence' | 'confirm-receipt']
+        : undefined) ??
+      (gameExperienceMatch && request.method === 'GET' ? GameExperienceEndpoint.detail : undefined) ??
+      (gamePreflightMatch && request.method === 'GET' ? GameExperienceEndpoint.preflight : undefined);
     if (!matchedEndpoint) return failure(404, 'NOT_FOUND', 'The requested endpoint was not found.', requestId);
-    const walletActivityCursor = url.pathname === WalletEndpoint.activity.path ? url.searchParams.get('cursor') ?? undefined : undefined;
-    if (url.pathname === WalletEndpoint.activity.path && ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (walletActivityCursor !== undefined && !Value.Check(WalletActivityCursorSchema, walletActivityCursor)))) {
+    const walletActivityCursor = url.pathname === WalletEndpoint.activity.path ? (url.searchParams.get('cursor') ?? undefined) : undefined;
+    if (
+      url.pathname === WalletEndpoint.activity.path &&
+      ([...url.searchParams.keys()].some((key) => key !== 'cursor') ||
+        url.searchParams.getAll('cursor').length > 1 ||
+        (walletActivityCursor !== undefined && !Value.Check(WalletActivityCursorSchema, walletActivityCursor)))
+    ) {
       return failure(400, 'VALIDATION_FAILED', 'The wallet activity cursor is invalid.', requestId);
     }
 
     let body: unknown;
-    try { body = await parseBody(request); }
-    catch (error) {
+    try {
+      body = await parseBody(request);
+    } catch (error) {
       const code = error instanceof Error ? error.message : 'INVALID_JSON';
       const status = code === 'UNSUPPORTED_MEDIA_TYPE' ? 415 : code === 'PAYLOAD_TOO_LARGE' ? 413 : 400;
       return failure(status, code, 'Request body is invalid.', requestId);
     }
-    if ('request' in matchedEndpoint && !Value.Check(matchedEndpoint.request, body)) return failure(400, 'VALIDATION_FAILED', 'Request does not match the shared schema.', requestId);
+    if ('request' in matchedEndpoint && !Value.Check(matchedEndpoint.request, body))
+      return failure(400, 'VALIDATION_FAILED', 'Request does not match the shared schema.', requestId);
 
     try {
       if (url.pathname === GameCatalogEndpoint.list.path && request.method === 'GET') {
@@ -183,7 +325,16 @@ export class BrowserApiServer {
         const item = LOBBY_GAME_EXPERIENCE_REFERENCE.find((entry) => entry.game.gameKey === gamePreflightMatch[1]);
         const hall = item?.difficultyHalls.find((entry) => entry.difficultyKey === gamePreflightMatch[2] && entry.enabled);
         if (!item || !hall) return failure(404, 'GAME_DIFFICULTY_NOT_FOUND', 'The selected difficulty hall was not found.', requestId);
-        const preflight = { gameKey: item.game.gameKey, difficultyKey: hall.difficultyKey, availability: item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable ? 'READY' as const : 'MODULE_UNAVAILABLE' as const, source: 'LOCAL_DEMO' as const, message: item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable ? '本地练习可用；不扣金币、不进行真实结算。' : '该游戏模块尚未接入，当前不会扣除资产或创建游戏局。' };
+        const preflight = {
+          gameKey: item.game.gameKey,
+          difficultyKey: hall.difficultyKey,
+          availability: item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable ? ('READY' as const) : ('MODULE_UNAVAILABLE' as const),
+          source: 'LOCAL_DEMO' as const,
+          message:
+            item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable
+              ? '本地练习可用；不扣金币、不进行真实结算。'
+              : '该游戏模块尚未接入，当前不会扣除资产或创建游戏局。',
+        };
         return success(200, preflight, requestId, GamePreflightResponseSchema);
       }
       const database = await openBrowserDevelopmentDatabase();
@@ -195,9 +346,14 @@ export class BrowserApiServer {
       }
       if (url.pathname === IdentityEndpoint.deviceRegister.path) {
         const input = body as IdentityBody;
-        const existingCredential = await new IndexedDbLocalIdentityRepository(database).findCredentialBySecretHash(await sha256(input.deviceCode!));
+        const existingCredential = await new IndexedDbLocalIdentityRepository(database).findCredentialBySecretHash(
+          await sha256(input.deviceCode!),
+        );
         const result = await identity.registerDevice({ deviceCode: input.deviceCode! });
-        if (!existingCredential) await new ReferralAttributionApplication(new IndexedDbReferralAttributionRepository(database)).bindCurrentCandidate(result.data.user.userId);
+        if (!existingCredential)
+          await new ReferralAttributionApplication(new IndexedDbReferralAttributionRepository(database)).bindCurrentCandidate(
+            result.data.user.userId,
+          );
         await new WalletUseCases(new IndexedDbWalletRepository(database)).grantWelcomeGiftForRegisteredUser(result.data.user.userId);
         return success(matchedEndpoint.successStatus, result.data, requestId, matchedEndpoint.response, result.cookies);
       }
@@ -210,19 +366,45 @@ export class BrowserApiServer {
 
       if (url.pathname === WalletFundingEndpoint.channels.path && request.method === 'GET') {
         await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).listChannels(), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).listChannels(),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletFundingEndpoint.orders.path && request.method === 'GET') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).listOrders(actor.userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).listOrders(actor.userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletFundingEndpoint.createOrder.path && request.method === 'POST') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).createOrder(actor.userId, body as import('@gameing/contracts/wallet-funding').CreateFundingOrderRequestDto), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).createOrder(
+            actor.userId,
+            body as import('@gameing/contracts/wallet-funding').CreateFundingOrderRequestDto,
+          ),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletFundingDevelopmentEndpoint.simulatePayment.path && request.method === 'POST') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).simulatePayment(actor.userId, body as import('@gameing/contracts/wallet-funding').SimulateFundingPaymentRequestDto), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletFundingUseCases(new IndexedDbWalletFundingRepository(database)).simulatePayment(
+            actor.userId,
+            body as import('@gameing/contracts/wallet-funding').SimulateFundingPaymentRequestDto,
+          ),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === WalletEndpoint.activity.path) {
@@ -232,80 +414,164 @@ export class BrowserApiServer {
       }
       if (url.pathname === WalletEndpoint.transferQuote.path) {
         const actor = await requireActor(request, database);
-        const quote = await new WalletUseCases(new IndexedDbWalletRepository(database)).quoteTransfer(actor.userId, body as import('@gameing/contracts/wallet').WalletTransferQuoteRequestDto);
+        const quote = await new WalletUseCases(new IndexedDbWalletRepository(database)).quoteTransfer(
+          actor.userId,
+          body as import('@gameing/contracts/wallet').WalletTransferQuoteRequestDto,
+        );
         return success(matchedEndpoint.successStatus, quote, requestId, matchedEndpoint.response);
       }
       if (url.pathname === WalletEndpoint.transfer.path) {
         const actor = await requireActor(request, database);
-        const result = await new WalletUseCases(new IndexedDbWalletRepository(database)).transferCoins(actor.userId, body as import('@gameing/contracts/wallet').WalletTransferRequestDto);
+        const result = await new WalletUseCases(new IndexedDbWalletRepository(database)).transferCoins(
+          actor.userId,
+          body as import('@gameing/contracts/wallet').WalletTransferRequestDto,
+        );
         return success(matchedEndpoint.successStatus, result, requestId, matchedEndpoint.response);
       }
       if (url.pathname === WalletEndpoint.exchangeQuote.path) {
         const actor = await requireActor(request, database);
-        const quote = await new WalletUseCases(new IndexedDbWalletRepository(database)).quoteExchange(actor.userId, body as import('@gameing/contracts/wallet').WalletExchangeQuoteRequestDto);
+        const quote = await new WalletUseCases(new IndexedDbWalletRepository(database)).quoteExchange(
+          actor.userId,
+          body as import('@gameing/contracts/wallet').WalletExchangeQuoteRequestDto,
+        );
         return success(matchedEndpoint.successStatus, quote, requestId, matchedEndpoint.response);
       }
       if (url.pathname === WalletEndpoint.exchange.path) {
         const actor = await requireActor(request, database);
-        const result = await new WalletUseCases(new IndexedDbWalletRepository(database)).exchangeCoins(actor.userId, body as import('@gameing/contracts/wallet').WalletExchangeRequestDto);
+        const result = await new WalletUseCases(new IndexedDbWalletRepository(database)).exchangeCoins(
+          actor.userId,
+          body as import('@gameing/contracts/wallet').WalletExchangeRequestDto,
+        );
         return success(matchedEndpoint.successStatus, result, requestId, matchedEndpoint.response);
       }
 
       if (url.pathname === WalletEndpoint.payoutAccounts.path && request.method === 'GET') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).listPayoutAccounts(actor.userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).listPayoutAccounts(actor.userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletEndpoint.payoutAccounts.path && request.method === 'POST') {
         const actor = await requireActor(request, database);
         const input = body as import('@gameing/contracts/wallet').CreatePayoutAccountRequestDto;
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).createPayoutAccount(actor.userId, input), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).createPayoutAccount(actor.userId, input),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (payoutAccountDeleteMatch && request.method === 'DELETE') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).deletePayoutAccount(actor.userId, payoutAccountDeleteMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).deletePayoutAccount(actor.userId, payoutAccountDeleteMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletEndpoint.withdrawalQuote.path && request.method === 'POST') {
         const actor = await requireActor(request, database);
         await assertWithdrawalIdentityEligibility(database, actor.userId);
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).quoteWithdrawal(actor.userId, body as import('@gameing/contracts/wallet').WithdrawalQuoteRequestDto), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).quoteWithdrawal(
+            actor.userId,
+            body as import('@gameing/contracts/wallet').WithdrawalQuoteRequestDto,
+          ),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletEndpoint.withdrawals.path && request.method === 'GET') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).listWithdrawals(actor.userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).listWithdrawals(actor.userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === WalletEndpoint.withdrawals.path && request.method === 'POST') {
         const actor = await requireActor(request, database);
         await assertWithdrawalIdentityEligibility(database, actor.userId);
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).createWithdrawal(actor.userId, body as import('@gameing/contracts/wallet').CreateWithdrawalRequestDto), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).createWithdrawal(
+            actor.userId,
+            body as import('@gameing/contracts/wallet').CreateWithdrawalRequestDto,
+          ),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (withdrawalCancelMatch && request.method === 'POST') {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await new WalletUseCases(new IndexedDbWalletRepository(database)).cancelWithdrawal(actor.userId, withdrawalCancelMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new WalletUseCases(new IndexedDbWalletRepository(database)).cancelWithdrawal(actor.userId, withdrawalCancelMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === InviteAgentEndpoint.invitees.path) {
         const actor = await requireActor(request, database);
         const cursor = url.searchParams.get('cursor');
-        if ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (cursor !== null && !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))) return failure(400, 'VALIDATION_FAILED', 'The referral cursor is invalid.', requestId);
+        if (
+          [...url.searchParams.keys()].some((key) => key !== 'cursor') ||
+          url.searchParams.getAll('cursor').length > 1 ||
+          (cursor !== null && !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))
+        )
+          return failure(400, 'VALIDATION_FAILED', 'The referral cursor is invalid.', requestId);
         const bindings = await database.getAllFromIndex('referral_bindings', 'by-parent-1', actor.userId);
-        const ordered = bindings.sort((left, right) => right.createdAt.localeCompare(left.createdAt) || right.userId.localeCompare(left.userId));
+        const ordered = bindings.sort(
+          (left, right) => right.createdAt.localeCompare(left.createdAt) || right.userId.localeCompare(left.userId),
+        );
         const afterCursor = cursor ? ordered.filter((item) => `${item.createdAt}~${item.userId}` < cursor) : ordered;
         const page = afterCursor.slice(0, 21);
-        const items = await Promise.all(page.slice(0, 20).map(async (binding) => {
-          const invitee = await database.get('users', binding.userId);
-          const firstCharacter = Array.from(invitee?.displayName.trim().normalize('NFC') ?? '')[0];
-          return { userLabel: firstCharacter ? `${firstCharacter}**` : '受邀用户', boundAt: binding.createdAt, rewardCnyFen: '0' };
-        }));
+        const items = await Promise.all(
+          page.slice(0, 20).map(async (binding) => {
+            const invitee = await database.get('users', binding.userId);
+            const firstCharacter = Array.from(invitee?.displayName.trim().normalize('NFC') ?? '')[0];
+            return { userLabel: firstCharacter ? `${firstCharacter}**` : '受邀用户', boundAt: binding.createdAt, rewardCnyFen: '0' };
+          }),
+        );
         const last = page.length > 20 ? page[19] : undefined;
         const nextCursor = last ? `${last.createdAt}~${last.userId}` : null;
-        return success(matchedEndpoint.successStatus, { items, totalCount: String(bindings.length), nextCursor }, requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          { items, totalCount: String(bindings.length), nextCursor },
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === InviteAgentEndpoint.rewards.path) {
         const actor = await requireActor(request, database);
         const user = await database.get('users', actor.userId);
         const cursor = url.searchParams.get('cursor');
-        if ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (cursor !== null && !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))) return failure(400, 'VALIDATION_FAILED', 'The reward cursor is invalid.', requestId);
-        return success(matchedEndpoint.successStatus, { items: [], rewardType: user?.rewardType ?? RewardType.RECHARGE_REBATE, totalRewardCnyFen: '0', frozenRewardCnyFen: '0', availableRewardCnyFen: '0', nextCursor: null }, requestId, matchedEndpoint.response);
+        if (
+          [...url.searchParams.keys()].some((key) => key !== 'cursor') ||
+          url.searchParams.getAll('cursor').length > 1 ||
+          (cursor !== null && !/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))
+        )
+          return failure(400, 'VALIDATION_FAILED', 'The reward cursor is invalid.', requestId);
+        return success(
+          matchedEndpoint.successStatus,
+          {
+            items: [],
+            rewardType: user?.rewardType ?? RewardType.RECHARGE_REBATE,
+            totalRewardCnyFen: '0',
+            frozenRewardCnyFen: '0',
+            availableRewardCnyFen: '0',
+            nextCursor: null,
+          },
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === InviteAgentEndpoint.inviteLink.path || url.pathname === InviteAgentEndpoint.issueInviteLink.path) {
         const actor = await requireActor(request, database);
@@ -322,9 +588,10 @@ export class BrowserApiServer {
           expiresAt = expiration.toISOString();
           await database.put('users', { ...user, inviteCode, inviteCodeExpiresAt: expiresAt });
         }
-        const link: InviteLinkDto | null = inviteCode && expiresAt && expiresAt > new Date().toISOString()
-          ? { inviteCode, url: `${url.origin}/?inviteCode=${encodeURIComponent(inviteCode)}`, expiresAt }
-          : null;
+        const link: InviteLinkDto | null =
+          inviteCode && expiresAt && expiresAt > new Date().toISOString()
+            ? { inviteCode, url: `${url.origin}/?inviteCode=${encodeURIComponent(inviteCode)}`, expiresAt }
+            : null;
         return success(matchedEndpoint.successStatus, link, requestId, matchedEndpoint.response);
       }
 
@@ -336,16 +603,24 @@ export class BrowserApiServer {
       if (url.pathname === InviteAgentEndpoint.applyAgentDomain.path && request.method === 'POST') {
         const actor = await requireActor(request, database);
         const previous = await database.get('agent_domains', actor.userId);
-        if (previous && previous.status !== AgentDomainStatus.WITHDRAWN) return failure(409, 'AGENT_APPLICATION_EXISTS', '已有代理申请或代理域记录。', requestId);
+        if (previous && previous.status !== AgentDomainStatus.WITHDRAWN)
+          return failure(409, 'AGENT_APPLICATION_EXISTS', '已有代理申请或代理域记录。', requestId);
         const appliedAt = new Date().toISOString();
-        const domain: LocalAgentDomain = { userId: actor.userId, status: AgentDomainStatus.PENDING_REVIEW, appliedAt, capabilities: [], updatedAt: appliedAt };
+        const domain: LocalAgentDomain = {
+          userId: actor.userId,
+          status: AgentDomainStatus.PENDING_REVIEW,
+          appliedAt,
+          capabilities: [],
+          updatedAt: appliedAt,
+        };
         await database.put('agent_domains', domain);
         return success(matchedEndpoint.successStatus, toAgentDomainDto(domain), requestId, matchedEndpoint.response);
       }
       if (url.pathname === InviteAgentEndpoint.withdrawAgentDomain.path && request.method === 'DELETE') {
         const actor = await requireActor(request, database);
         const domain = await database.get('agent_domains', actor.userId);
-        if (!domain || domain.status !== AgentDomainStatus.PENDING_REVIEW) return failure(409, 'AGENT_APPLICATION_NOT_WITHDRAWABLE', '当前状态不能撤回申请。', requestId);
+        if (!domain || domain.status !== AgentDomainStatus.PENDING_REVIEW)
+          return failure(409, 'AGENT_APPLICATION_NOT_WITHDRAWABLE', '当前状态不能撤回申请。', requestId);
         await database.put('agent_domains', { ...domain, status: AgentDomainStatus.WITHDRAWN, updatedAt: new Date().toISOString() });
         return success(matchedEndpoint.successStatus, { withdrawn: true }, requestId, matchedEndpoint.response);
       }
@@ -354,7 +629,12 @@ export class BrowserApiServer {
       const social = new SocialFriendsUseCases(new IndexedDbSocialRepository(database));
       if (url.pathname === SocialEndpoint.access.path) {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, { enabled: await socialAccessEnabled(database, actor.userId) }, requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          { enabled: await socialAccessEnabled(database, actor.userId) },
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === CoinMarketEndpoint.priceQuote.path && request.method === 'POST') {
         await requireSocialActor(request, database);
@@ -362,9 +642,15 @@ export class BrowserApiServer {
           database.get('settings', 'system_config:cny_to_coin_ratio'),
           database.get('settings', 'system_config:coin_market.minimum_listing_coins'),
         ]);
-        const [yuanValue, coinValue] = typeof ratio?.value === 'string' && /^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/.test(ratio.value) ? ratio.value.split(':') : ['1', '10'];
-        const minimum = typeof minimumConfig?.value === 'string' && /^[1-9][0-9]{0,18}$/.test(minimumConfig.value) ? minimumConfig.value : '1000';
-        const data = quoteCoinMarketPrice(body as CoinMarketPriceQuoteRequestDto, { rateCoinUnits: BigInt(coinValue!), rateCashFen: BigInt(yuanValue!) * 100n }, minimum);
+        const [yuanValue, coinValue] =
+          typeof ratio?.value === 'string' && /^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/.test(ratio.value) ? ratio.value.split(':') : ['1', '10'];
+        const minimum =
+          typeof minimumConfig?.value === 'string' && /^[1-9][0-9]{0,18}$/.test(minimumConfig.value) ? minimumConfig.value : '1000';
+        const data = quoteCoinMarketPrice(
+          body as CoinMarketPriceQuoteRequestDto,
+          { rateCoinUnits: BigInt(coinValue!), rateCashFen: BigInt(yuanValue!) * 100n },
+          minimum,
+        );
         return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
       }
       if (url.pathname === CoinMarketEndpoint.myListings.path && request.method === 'GET') {
@@ -375,36 +661,83 @@ export class BrowserApiServer {
       if (url.pathname === CoinMarketEndpoint.listings.path && request.method === 'GET') {
         const actor = await requireSocialActor(request, database);
         const cursor = url.searchParams.get('cursor') ?? undefined;
-        if ([...url.searchParams.keys()].some((key) => key !== 'cursor') || url.searchParams.getAll('cursor').length > 1 || (cursor !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))) return failure(400, 'VALIDATION_FAILED', 'The market cursor is invalid.', requestId);
-        return success(matchedEndpoint.successStatus, await new IndexedDbCoinMarketRepository(database).listPublic(cursor), requestId, matchedEndpoint.response);
+        if (
+          [...url.searchParams.keys()].some((key) => key !== 'cursor') ||
+          url.searchParams.getAll('cursor').length > 1 ||
+          (cursor !== undefined && !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z~[1-9][0-9]{0,19}$/.test(cursor))
+        )
+          return failure(400, 'VALIDATION_FAILED', 'The market cursor is invalid.', requestId);
+        return success(
+          matchedEndpoint.successStatus,
+          await new IndexedDbCoinMarketRepository(database).listPublic(cursor),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === CoinMarketEndpoint.createListing.path && request.method === 'POST') {
         const actor = await requireSocialActor(request, database);
-        const data = await new IndexedDbCoinMarketRepository(database).create(actor.userId, body as import('@gameing/contracts/coin-market').CoinMarketListingCreateRequestDto);
+        const data = await new IndexedDbCoinMarketRepository(database).create(
+          actor.userId,
+          body as import('@gameing/contracts/coin-market').CoinMarketListingCreateRequestDto,
+        );
         return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
       }
       if (coinMarketListingMatch && request.method === 'PATCH') {
         const actor = await requireSocialActor(request, database);
-        if ((body as { action?: string } | undefined)?.action !== 'CANCEL') return failure(400, 'VALIDATION_FAILED', 'Unsupported listing action.', requestId);
+        if ((body as { action?: string } | undefined)?.action !== 'CANCEL')
+          return failure(400, 'VALIDATION_FAILED', 'Unsupported listing action.', requestId);
         const data = await new IndexedDbCoinMarketRepository(database).cancel(actor.userId, coinMarketListingMatch[1]!);
         return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
       }
       if (url.pathname === CoinMarketEndpoint.myTrades.path && request.method === 'GET') {
         const actor = await requireSocialActor(request, database);
-        return success(matchedEndpoint.successStatus, await new IndexedDbCoinMarketRepository(database).listTrades(actor.userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await new IndexedDbCoinMarketRepository(database).listTrades(actor.userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (coinMarketCreateTradeMatch && request.method === 'POST') {
         const actor = await requireSocialActor(request, database);
-        const data = await new IndexedDbCoinMarketRepository(database).createTrade(actor.userId, coinMarketCreateTradeMatch[1]!, body as import('@gameing/contracts/coin-market').CoinMarketTradeCreateRequestDto);
+        const data = await new IndexedDbCoinMarketRepository(database).createTrade(
+          actor.userId,
+          coinMarketCreateTradeMatch[1]!,
+          body as import('@gameing/contracts/coin-market').CoinMarketTradeCreateRequestDto,
+        );
         return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
       }
       if (coinMarketTradeMatch && request.method === 'POST') {
-        const actor = await requireSocialActor(request, database); const repository = new IndexedDbCoinMarketRepository(database); const tradeId = coinMarketTradeMatch[1]!; const action = coinMarketTradeMatch[2]!;
-        const data = action === 'payment-proof' ? await repository.submitPaymentProof(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
-          : action === 'appeals' ? await repository.appeal(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
-            : action === 'buyer-evidence' ? await repository.submitBuyerEvidence(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
-              : action === 'seller-evidence' ? await repository.submitSellerEvidence(actor.userId, tradeId, body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto)
-                : await repository.confirmReceipt(actor.userId, tradeId);
+        const actor = await requireSocialActor(request, database);
+        const repository = new IndexedDbCoinMarketRepository(database);
+        const tradeId = coinMarketTradeMatch[1]!;
+        const action = coinMarketTradeMatch[2]!;
+        const data =
+          action === 'payment-proof'
+            ? await repository.submitPaymentProof(
+                actor.userId,
+                tradeId,
+                body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto,
+              )
+            : action === 'appeals'
+              ? await repository.appeal(
+                  actor.userId,
+                  tradeId,
+                  body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto,
+                )
+              : action === 'buyer-evidence'
+                ? await repository.submitBuyerEvidence(
+                    actor.userId,
+                    tradeId,
+                    body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto,
+                  )
+                : action === 'seller-evidence'
+                  ? await repository.submitSellerEvidence(
+                      actor.userId,
+                      tradeId,
+                      body as import('@gameing/contracts/coin-market').CoinMarketTradeTextRequestDto,
+                    )
+                  : await repository.confirmReceipt(actor.userId, tradeId);
         return success(matchedEndpoint.successStatus, data, requestId, matchedEndpoint.response);
       }
       if (url.pathname === SocialEndpoint.profile.path) {
@@ -422,33 +755,73 @@ export class BrowserApiServer {
       }
       if (url.pathname === SocialEndpoint.request.path) {
         const actor = await requireSocialActor(request, database);
-        return success(matchedEndpoint.successStatus, await social.requestFriend(actor.userId, (body as { userId: string }).userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await social.requestFriend(actor.userId, (body as { userId: string }).userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (socialAcceptMatch && request.method === 'POST') {
         const actor = await requireSocialActor(request, database);
-        return success(matchedEndpoint.successStatus, await social.acceptFriend(actor.userId, socialAcceptMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await social.acceptFriend(actor.userId, socialAcceptMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (socialRejectMatch && request.method === 'POST') {
         const actor = await requireSocialActor(request, database);
-        return success(matchedEndpoint.successStatus, await social.rejectFriend(actor.userId, socialRejectMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await social.rejectFriend(actor.userId, socialRejectMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (socialRemoveMatch && request.method === 'POST') {
         const actor = await requireSocialActor(request, database);
-        return success(matchedEndpoint.successStatus, await social.removeFriend(actor.userId, socialRemoveMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await social.removeFriend(actor.userId, socialRemoveMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === SocialEndpoint.conversation.path) {
         const actor = await requireSocialActor(request, database);
-        if (request.method === 'GET') return success(matchedEndpoint.successStatus, await social.listConversations(actor.userId), requestId, matchedEndpoint.response);
-        return success(matchedEndpoint.successStatus, await social.openConversation(actor.userId, (body as { userId: string }).userId), requestId, matchedEndpoint.response);
+        if (request.method === 'GET')
+          return success(matchedEndpoint.successStatus, await social.listConversations(actor.userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await social.openConversation(actor.userId, (body as { userId: string }).userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (socialMessagesMatch && request.method === 'GET') {
         const actor = await requireSocialActor(request, database);
-        return success(matchedEndpoint.successStatus, await social.listMessages(actor.userId, socialMessagesMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await social.listMessages(actor.userId, socialMessagesMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (socialMessagesMatch && request.method === 'POST') {
         const actor = await requireSocialActor(request, database);
-        const input = body as { clientMessageId: string; body: string; attachments?: import('@gameing/contracts/social').SocialMessageAttachmentDto[] };
-        return success(matchedEndpoint.successStatus, await social.sendMessage(actor.userId, socialMessagesMatch[1]!, input.clientMessageId, input.body, input.attachments), requestId, matchedEndpoint.response);
+        const input = body as {
+          clientMessageId: string;
+          body: string;
+          attachments?: import('@gameing/contracts/social').SocialMessageAttachmentDto[];
+        };
+        return success(
+          matchedEndpoint.successStatus,
+          await social.sendMessage(actor.userId, socialMessagesMatch[1]!, input.clientMessageId, input.body, input.attachments),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
       if (url.pathname === SupportEndpoint.listConversations.path && request.method === 'GET') {
         const actor = await requireActor(request, database);
@@ -459,22 +832,48 @@ export class BrowserApiServer {
 
       if (url.pathname === SupportEndpoint.createConversation.path) {
         const actor = await requireActor(request, database);
-        const result = await support.createConversation(actor.userId, body as import('@gameing/contracts/support').CreateSupportConversationRequestDto);
-        if (!result.ok) throw new IdentityUseCaseError(result.code === 'INVALID_REQUEST' ? 400 : result.code === 'IDEMPOTENCY_KEY_REUSED' ? 409 : 500, result.code, 'The support request could not be created.');
+        const result = await support.createConversation(
+          actor.userId,
+          body as import('@gameing/contracts/support').CreateSupportConversationRequestDto,
+        );
+        if (!result.ok)
+          throw new IdentityUseCaseError(
+            result.code === 'INVALID_REQUEST' ? 400 : result.code === 'IDEMPOTENCY_KEY_REUSED' ? 409 : 500,
+            result.code,
+            'The support request could not be created.',
+          );
         return success(matchedEndpoint.successStatus, result.value, requestId, matchedEndpoint.response);
       }
 
       if (supportMessagesMatch && request.method === 'GET') {
         const actor = await requireActor(request, database);
         const result = await support.listMessages(actor.userId, supportMessagesMatch[1]!);
-        if (!result.ok) throw new IdentityUseCaseError(result.code === 'CONVERSATION_NOT_FOUND' ? 404 : 500, result.code, 'The support conversation is unavailable.');
+        if (!result.ok)
+          throw new IdentityUseCaseError(
+            result.code === 'CONVERSATION_NOT_FOUND' ? 404 : 500,
+            result.code,
+            'The support conversation is unavailable.',
+          );
         return success(matchedEndpoint.successStatus, result.value, requestId, matchedEndpoint.response);
       }
 
       if (supportMessagesMatch && request.method === 'POST') {
         const actor = await requireActor(request, database);
-        const result = await support.sendMessage(actor.userId, supportMessagesMatch[1]!, body as import('@gameing/contracts/support').SendSupportMessageRequestDto);
-        if (!result.ok) throw new IdentityUseCaseError(result.code === 'CONVERSATION_NOT_FOUND' ? 404 : result.code === 'CONVERSATION_CLOSED' || result.code === 'IDEMPOTENCY_KEY_REUSED' ? 409 : 400, result.code, 'The support message could not be sent.');
+        const result = await support.sendMessage(
+          actor.userId,
+          supportMessagesMatch[1]!,
+          body as import('@gameing/contracts/support').SendSupportMessageRequestDto,
+        );
+        if (!result.ok)
+          throw new IdentityUseCaseError(
+            result.code === 'CONVERSATION_NOT_FOUND'
+              ? 404
+              : result.code === 'CONVERSATION_CLOSED' || result.code === 'IDEMPOTENCY_KEY_REUSED'
+                ? 409
+                : 400,
+            result.code,
+            'The support message could not be sent.',
+          );
         return success(matchedEndpoint.successStatus, result.value, requestId, matchedEndpoint.response);
       }
 
@@ -497,13 +896,25 @@ export class BrowserApiServer {
 
       if (url.pathname === IdentityEndpoint.passwordLogin.path) {
         const input = body as IdentityBody;
-        const result = await identity.loginWithPassword({ identifier: input.identifier!, password: input.password!, ...(input.challengeId ? { challengeId: input.challengeId } : {}), ...(input.totp ? { totp: input.totp } : {}) }, cookie(request, 'device'));
+        const result = await identity.loginWithPassword(
+          {
+            identifier: input.identifier!,
+            password: input.password!,
+            ...(input.challengeId ? { challengeId: input.challengeId } : {}),
+            ...(input.totp ? { totp: input.totp } : {}),
+          },
+          cookie(request, 'device'),
+        );
         return success(matchedEndpoint.successStatus, result.data, requestId, matchedEndpoint.response, result.cookies);
       }
 
       if (url.pathname === IdentityEndpoint.recovery.path) {
         const input = body as IdentityBody;
-        const result = await identity.recoverAccount({ credentialId: input.credentialId!, recoverySecret: input.recoverySecret!, ...(input.totp ? { totp: input.totp } : {}) });
+        const result = await identity.recoverAccount({
+          credentialId: input.credentialId!,
+          recoverySecret: input.recoverySecret!,
+          ...(input.totp ? { totp: input.totp } : {}),
+        });
         return success(matchedEndpoint.successStatus, result.data, requestId, matchedEndpoint.response, result.cookies);
       }
 
@@ -519,114 +930,262 @@ export class BrowserApiServer {
 
       if (url.pathname === IdentityEndpoint.identitySettings.path) {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await identity.getIdentitySettings(actor.userId), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.getIdentitySettings(actor.userId),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.setUsername.path) {
         const actor = await requireActor(request, database);
         const input = body as IdentityBody;
-        return success(matchedEndpoint.successStatus, await identity.setUsername(actor.userId, { username: input.username!, password: input.password!, ...(input.totp ? { totp: input.totp } : {}) }), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.setUsername(actor.userId, {
+            username: input.username!,
+            password: input.password!,
+            ...(input.totp ? { totp: input.totp } : {}),
+          }),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.changePassword.path) {
         const actor = await requireActor(request, database);
         const input = body as IdentityBody;
-        return success(matchedEndpoint.successStatus, await identity.changePassword(actor.userId, actor.sessionId, { ...(input.currentPassword ? { currentPassword: input.currentPassword } : {}), newPassword: input.newPassword!, ...(input.totp ? { totp: input.totp } : {}) }), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.changePassword(actor.userId, actor.sessionId, {
+            ...(input.currentPassword ? { currentPassword: input.currentPassword } : {}),
+            newPassword: input.newPassword!,
+            ...(input.totp ? { totp: input.totp } : {}),
+          }),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.totpSetup.path) {
         const actor = await requireActor(request, database);
         const input = body as IdentityBody;
-        return success(matchedEndpoint.successStatus, await identity.startTotpSetup(actor.userId, { password: input.password!, ...(input.totp ? { totp: input.totp } : {}) }), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.startTotpSetup(actor.userId, { password: input.password!, ...(input.totp ? { totp: input.totp } : {}) }),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.totpConfirm.path) {
         const actor = await requireActor(request, database);
         const input = body as IdentityBody;
-        return success(matchedEndpoint.successStatus, await identity.confirmTotpSetup(actor.userId, input.setupId!, input.code!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.confirmTotpSetup(actor.userId, input.setupId!, input.code!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.totpDisable.path) {
         const actor = await requireActor(request, database);
         const input = body as IdentityBody;
-        return success(matchedEndpoint.successStatus, await identity.disableTotp(actor.userId, { password: input.password!, code: input.code! }), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.disableTotp(actor.userId, { password: input.password!, code: input.code! }),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.totpRecoveryCodesRotate.path) {
         const actor = await requireActor(request, database);
         const input = body as { code: string };
-        return success(matchedEndpoint.successStatus, await identity.rotateTotpRecoveryCodes(actor.userId, input.code), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.rotateTotpRecoveryCodes(actor.userId, input.code),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.recoveryCredentialPrepare.path) {
         const actor = await requireActor(request, database);
         const input = body as { password: string; recoverySecret: string; totp?: string };
-        return success(matchedEndpoint.successStatus, await identity.prepareRecoveryCredential(actor.userId, input), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.prepareRecoveryCredential(actor.userId, input),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (recoveryActivateMatch && request.method === IdentityEndpoint.recoveryCredentialActivate.method) {
         const actor = await requireActor(request, database);
-        return success(matchedEndpoint.successStatus, await identity.activateRecoveryCredential(actor.userId, recoveryActivateMatch[1]!), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.activateRecoveryCredential(actor.userId, recoveryActivateMatch[1]!),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.createContactChallenge.path) {
         const actor = await requireActor(request, database);
         const input = body as { contactType: 'EMAIL' | 'PHONE'; contactValue: string; password: string; totp?: string };
-        return success(matchedEndpoint.successStatus, await identity.createContactChallenge(actor.userId, input), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.createContactChallenge(actor.userId, input),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.setPhoneContact.path && request.method === IdentityEndpoint.setPhoneContact.method) {
         const actor = await requireActor(request, database);
         const input = body as { phone: string; currentPhone?: string; password?: string; totp?: string };
-        return success(matchedEndpoint.successStatus, await identity.setPhoneContact(actor.userId, input), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.setPhoneContact(actor.userId, input),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (url.pathname === IdentityEndpoint.setEmailContact.path && request.method === IdentityEndpoint.setEmailContact.method) {
         const actor = await requireActor(request, database);
         const input = body as { email: string; currentEmail?: string; password?: string; totp?: string };
-        return success(matchedEndpoint.successStatus, await identity.setEmailContact(actor.userId, input), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.setEmailContact(actor.userId, input),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       if (contactConfirmMatch && request.method === IdentityEndpoint.confirmContactChallenge.method) {
         const actor = await requireActor(request, database);
         const input = body as { code: string };
-        return success(matchedEndpoint.successStatus, await identity.confirmContactChallenge(actor.userId, contactConfirmMatch[1]!, input.code), requestId, matchedEndpoint.response);
+        return success(
+          matchedEndpoint.successStatus,
+          await identity.confirmContactChallenge(actor.userId, contactConfirmMatch[1]!, input.code),
+          requestId,
+          matchedEndpoint.response,
+        );
       }
 
       return failure(404, 'NOT_FOUND', 'The requested endpoint was not found.', requestId);
     } catch (error) {
-      if (error instanceof IdentityUseCaseError) return failure(error.status, error.code, error.message, requestId, error.code === 'REFRESH_INVALID' ? { refresh: null } : undefined);
+      if (error instanceof IdentityUseCaseError)
+        return failure(
+          error.status,
+          error.code,
+          error.message,
+          requestId,
+          error.code === 'REFRESH_INVALID' ? { refresh: null } : undefined,
+        );
       if (error instanceof CoinMarketPricingError) {
         const status = error.code === 'INVALID_EXCHANGE_RATE' ? 503 : 400;
         return failure(status, error.code, 'The requested coin market price cannot be calculated.', requestId);
       }
-      if (error instanceof Error && Object.values(CoinMarketErrorCode).includes(error.message as typeof CoinMarketErrorCode[keyof typeof CoinMarketErrorCode])) {
-        const code = error.message as typeof CoinMarketErrorCode[keyof typeof CoinMarketErrorCode];
-        const status = code === CoinMarketErrorCode.LISTING_NOT_FOUND || code === CoinMarketErrorCode.TRADE_NOT_FOUND ? 404
-          : code === CoinMarketErrorCode.TURNOVER_INCOMPLETE || code === CoinMarketErrorCode.INSUFFICIENT_AVAILABLE_BALANCE || code === CoinMarketErrorCode.IDEMPOTENCY_KEY_REUSED || code === CoinMarketErrorCode.LISTING_NOT_CANCELLABLE || code === CoinMarketErrorCode.TRADE_STATE_INVALID || code === CoinMarketErrorCode.TRADE_DEADLINE_PASSED || code === CoinMarketErrorCode.TRADE_BELOW_MINIMUM ? 409
-            : code === CoinMarketErrorCode.LISTING_HOLD_INCONSISTENT || code === CoinMarketErrorCode.PAYMENT_HANDLER_UNAVAILABLE ? 503 : code === CoinMarketErrorCode.TRADE_NOT_ALLOWED ? 403 : 400;
-        const message = code === CoinMarketErrorCode.TURNOVER_INCOMPLETE ? 'Complete the required game turnover before listing coins.'
-          : code === CoinMarketErrorCode.INSUFFICIENT_AVAILABLE_BALANCE ? 'There are not enough available coins.'
-            : code === CoinMarketErrorCode.LISTING_BELOW_MINIMUM ? 'The listing is below the configured minimum.'
-          : code === CoinMarketErrorCode.LISTING_NOT_FOUND || code === CoinMarketErrorCode.TRADE_NOT_FOUND ? 'The listing or trade was not found.'
-                : code === CoinMarketErrorCode.LISTING_NOT_CANCELLABLE ? 'The listing cannot be cancelled in its current state.'
-                  : 'The coin market request conflicts with current state.';
+      if (
+        error instanceof Error &&
+        Object.values(CoinMarketErrorCode).includes(error.message as (typeof CoinMarketErrorCode)[keyof typeof CoinMarketErrorCode])
+      ) {
+        const code = error.message as (typeof CoinMarketErrorCode)[keyof typeof CoinMarketErrorCode];
+        const status =
+          code === CoinMarketErrorCode.LISTING_NOT_FOUND || code === CoinMarketErrorCode.TRADE_NOT_FOUND
+            ? 404
+            : code === CoinMarketErrorCode.TURNOVER_INCOMPLETE ||
+                code === CoinMarketErrorCode.INSUFFICIENT_AVAILABLE_BALANCE ||
+                code === CoinMarketErrorCode.IDEMPOTENCY_KEY_REUSED ||
+                code === CoinMarketErrorCode.LISTING_NOT_CANCELLABLE ||
+                code === CoinMarketErrorCode.TRADE_STATE_INVALID ||
+                code === CoinMarketErrorCode.TRADE_DEADLINE_PASSED ||
+                code === CoinMarketErrorCode.TRADE_BELOW_MINIMUM
+              ? 409
+              : code === CoinMarketErrorCode.LISTING_HOLD_INCONSISTENT || code === CoinMarketErrorCode.PAYMENT_HANDLER_UNAVAILABLE
+                ? 503
+                : code === CoinMarketErrorCode.TRADE_NOT_ALLOWED
+                  ? 403
+                  : 400;
+        const message =
+          code === CoinMarketErrorCode.TURNOVER_INCOMPLETE
+            ? 'Complete the required game turnover before listing coins.'
+            : code === CoinMarketErrorCode.INSUFFICIENT_AVAILABLE_BALANCE
+              ? 'There are not enough available coins.'
+              : code === CoinMarketErrorCode.LISTING_BELOW_MINIMUM
+                ? 'The listing is below the configured minimum.'
+                : code === CoinMarketErrorCode.LISTING_NOT_FOUND || code === CoinMarketErrorCode.TRADE_NOT_FOUND
+                  ? 'The listing or trade was not found.'
+                  : code === CoinMarketErrorCode.LISTING_NOT_CANCELLABLE
+                    ? 'The listing cannot be cancelled in its current state.'
+                    : 'The coin market request conflicts with current state.';
         return failure(status, code, message, requestId);
       }
-      if (error instanceof Error && Object.values(FundingErrorCode).includes(error.message as typeof FundingErrorCode[keyof typeof FundingErrorCode])) {
+      if (
+        error instanceof Error &&
+        Object.values(FundingErrorCode).includes(error.message as (typeof FundingErrorCode)[keyof typeof FundingErrorCode])
+      ) {
         const notFound = error.message === FundingErrorCode.FUNDING_ORDER_NOT_FOUND;
-        const conflict = error.message === FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE || error.message === FundingErrorCode.FUNDING_ORDER_EXPIRED || error.message === FundingErrorCode.FUNDING_ORDER_AMOUNT_MISMATCH || error.message === FundingErrorCode.FUNDING_IDEMPOTENCY_KEY_REUSED || error.message === FundingErrorCode.USDT_INVOICE_CAPACITY_REACHED;
+        const conflict =
+          error.message === FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE ||
+          error.message === FundingErrorCode.FUNDING_ORDER_EXPIRED ||
+          error.message === FundingErrorCode.FUNDING_ORDER_AMOUNT_MISMATCH ||
+          error.message === FundingErrorCode.FUNDING_IDEMPOTENCY_KEY_REUSED ||
+          error.message === FundingErrorCode.USDT_INVOICE_CAPACITY_REACHED;
         return failure(notFound ? 404 : conflict ? 409 : 400, error.message, fundingErrorMessage(error.message), requestId);
       }
-      if (error instanceof Error && Object.values(WalletErrorCode).includes(error.message as typeof WalletErrorCode[keyof typeof WalletErrorCode])) {
-        const status = error.message === WalletErrorCode.RECIPIENT_NOT_FOUND || error.message === WalletErrorCode.PAYOUT_ACCOUNT_NOT_FOUND || error.message === WalletErrorCode.WITHDRAWAL_NOT_FOUND ? 404
-          : error.message === WalletErrorCode.INSUFFICIENT_AVAILABLE_BALANCE || error.message === WalletErrorCode.INSUFFICIENT_EXCHANGE_BALANCE || error.message === WalletErrorCode.TURNOVER_INCOMPLETE || error.message === WalletErrorCode.TRANSFER_QUOTE_EXPIRED || error.message === WalletErrorCode.TRANSFER_QUOTE_CHANGED || error.message === WalletErrorCode.EXCHANGE_QUOTE_EXPIRED || error.message === WalletErrorCode.EXCHANGE_QUOTE_CHANGED || error.message === WalletErrorCode.EXCHANGE_NOT_AVAILABLE || error.message === WalletErrorCode.IDEMPOTENCY_KEY_REUSED || error.message === WalletErrorCode.SELF_TRANSFER || error.message === WalletErrorCode.PAYOUT_ACCOUNT_IN_USE || error.message === WalletErrorCode.WITHDRAWAL_QUOTE_EXPIRED || error.message === WalletErrorCode.WITHDRAWAL_QUOTE_CHANGED || error.message === WalletErrorCode.WITHDRAWAL_NOT_CANCELLABLE ? 409
-            : error.message === WalletErrorCode.WALLET_STORAGE_UNAVAILABLE || error.message === WalletErrorCode.WITHDRAWAL_CONFIG_INVALID ? 503 : 400;
+      if (
+        error instanceof Error &&
+        Object.values(WalletErrorCode).includes(error.message as (typeof WalletErrorCode)[keyof typeof WalletErrorCode])
+      ) {
+        const status =
+          error.message === WalletErrorCode.RECIPIENT_NOT_FOUND ||
+          error.message === WalletErrorCode.PAYOUT_ACCOUNT_NOT_FOUND ||
+          error.message === WalletErrorCode.WITHDRAWAL_NOT_FOUND
+            ? 404
+            : error.message === WalletErrorCode.INSUFFICIENT_AVAILABLE_BALANCE ||
+                error.message === WalletErrorCode.INSUFFICIENT_EXCHANGE_BALANCE ||
+                error.message === WalletErrorCode.TURNOVER_INCOMPLETE ||
+                error.message === WalletErrorCode.TRANSFER_QUOTE_EXPIRED ||
+                error.message === WalletErrorCode.TRANSFER_QUOTE_CHANGED ||
+                error.message === WalletErrorCode.EXCHANGE_QUOTE_EXPIRED ||
+                error.message === WalletErrorCode.EXCHANGE_QUOTE_CHANGED ||
+                error.message === WalletErrorCode.EXCHANGE_NOT_AVAILABLE ||
+                error.message === WalletErrorCode.IDEMPOTENCY_KEY_REUSED ||
+                error.message === WalletErrorCode.SELF_TRANSFER ||
+                error.message === WalletErrorCode.PAYOUT_ACCOUNT_IN_USE ||
+                error.message === WalletErrorCode.WITHDRAWAL_QUOTE_EXPIRED ||
+                error.message === WalletErrorCode.WITHDRAWAL_QUOTE_CHANGED ||
+                error.message === WalletErrorCode.WITHDRAWAL_NOT_CANCELLABLE
+              ? 409
+              : error.message === WalletErrorCode.WALLET_STORAGE_UNAVAILABLE || error.message === WalletErrorCode.WITHDRAWAL_CONFIG_INVALID
+                ? 503
+                : 400;
         return failure(status, error.message, walletErrorMessage(error.message), requestId);
       }
-      if (error instanceof Error && ['SELF_FRIEND_REQUEST', 'SOCIAL_MESSAGE_INVALID', 'SOCIAL_ATTACHMENT_INVALID'].includes(error.message)) return failure(400, error.message, 'The social request is invalid.', requestId);
-      if (error instanceof Error && ['SOCIAL_USER_NOT_FOUND', 'FRIEND_REQUEST_NOT_FOUND', 'SOCIAL_CONVERSATION_NOT_FOUND'].includes(error.message)) return failure(404, error.message, 'The social item is unavailable.', requestId);
-      if (error instanceof Error && ['SOCIAL_FRIENDSHIP_REQUIRED', 'SOCIAL_FRIENDSHIP_REMOVED', 'SOCIAL_FIRST_CONTACT_WAITING_FOR_REPLY', 'SOCIAL_ATTACHMENT_FRIENDS_ONLY', 'IDEMPOTENCY_KEY_REUSED'].includes(error.message)) return failure(409, error.message, 'The social action conflicts with the current state.', requestId);
+      if (error instanceof Error && ['SELF_FRIEND_REQUEST', 'SOCIAL_MESSAGE_INVALID', 'SOCIAL_ATTACHMENT_INVALID'].includes(error.message))
+        return failure(400, error.message, 'The social request is invalid.', requestId);
+      if (
+        error instanceof Error &&
+        ['SOCIAL_USER_NOT_FOUND', 'FRIEND_REQUEST_NOT_FOUND', 'SOCIAL_CONVERSATION_NOT_FOUND'].includes(error.message)
+      )
+        return failure(404, error.message, 'The social item is unavailable.', requestId);
+      if (
+        error instanceof Error &&
+        [
+          'SOCIAL_FRIENDSHIP_REQUIRED',
+          'SOCIAL_FRIENDSHIP_REMOVED',
+          'SOCIAL_FIRST_CONTACT_WAITING_FOR_REPLY',
+          'SOCIAL_ATTACHMENT_FRIENDS_ONLY',
+          'IDEMPOTENCY_KEY_REUSED',
+        ].includes(error.message)
+      )
+        return failure(409, error.message, 'The social action conflicts with the current state.', requestId);
       console.error('Browser API request failed', { requestId, code: error instanceof Error ? error.message : 'INTERNAL_ERROR' });
       return failure(500, 'INTERNAL_ERROR', 'The local development service could not complete the request.', requestId);
     }
@@ -635,43 +1194,75 @@ export class BrowserApiServer {
 
 function fundingErrorMessage(code: string): string {
   switch (code) {
-    case FundingErrorCode.INVALID_ORDER_AMOUNT: return '金额不能按当前兑换比例换算为整数金币，请调整金额。';
-    case FundingErrorCode.FUNDING_CHANNEL_UNAVAILABLE: return '此支付方式暂不可用，请选择其他方式。';
-    case FundingErrorCode.FUNDING_ORDER_NOT_FOUND: return '充值订单不存在或不属于当前账号。';
-    case FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE: return '订单已结束或无法继续支付，请刷新订单列表。';
-    case FundingErrorCode.FUNDING_ORDER_EXPIRED: return 'USDT 订单已超时，请新建订单并按新金额转账。';
-    case FundingErrorCode.FUNDING_ORDER_AMOUNT_MISMATCH: return '支付金额与订单金额不一致，金币未入账。';
-    case FundingErrorCode.FUNDING_IDEMPOTENCY_KEY_REUSED: return '请求标识已用于不同订单，请重新提交。';
-    case FundingErrorCode.USDT_INVOICE_CAPACITY_REACHED: return '当前金额的订单暂时已满，请稍后重试或调整充值金额。';
-    default: return '充值操作暂时失败，请重试。';
+    case FundingErrorCode.INVALID_ORDER_AMOUNT:
+      return '金额不能按当前兑换比例换算为整数金币，请调整金额。';
+    case FundingErrorCode.FUNDING_CHANNEL_UNAVAILABLE:
+      return '此支付方式暂不可用，请选择其他方式。';
+    case FundingErrorCode.FUNDING_ORDER_NOT_FOUND:
+      return '充值订单不存在或不属于当前账号。';
+    case FundingErrorCode.FUNDING_ORDER_NOT_PAYABLE:
+      return '订单已结束或无法继续支付，请刷新订单列表。';
+    case FundingErrorCode.FUNDING_ORDER_EXPIRED:
+      return 'USDT 订单已超时，请新建订单并按新金额转账。';
+    case FundingErrorCode.FUNDING_ORDER_AMOUNT_MISMATCH:
+      return '支付金额与订单金额不一致，金币未入账。';
+    case FundingErrorCode.FUNDING_IDEMPOTENCY_KEY_REUSED:
+      return '请求标识已用于不同订单，请重新提交。';
+    case FundingErrorCode.USDT_INVOICE_CAPACITY_REACHED:
+      return '当前金额的订单暂时已满，请稍后重试或调整充值金额。';
+    default:
+      return '充值操作暂时失败，请重试。';
   }
 }
 
 function walletErrorMessage(code: string): string {
   switch (code) {
-    case WalletErrorCode.RECIPIENT_NOT_FOUND: return '收款账号不存在或不可用。';
-    case WalletErrorCode.SELF_TRANSFER: return '不能向自己的账号转账。';
-    case WalletErrorCode.INVALID_TRANSFER_AMOUNT: return '请输入有效的金币数量。';
-    case WalletErrorCode.TURNOVER_INCOMPLETE: return '完成赠币流水后才能转出金币。';
-    case WalletErrorCode.INSUFFICIENT_AVAILABLE_BALANCE: return '可用金币不足以支付本金和手续费。';
-    case WalletErrorCode.TRANSFER_QUOTE_EXPIRED: return '转账预览已过期，请重新确认金额。';
-    case WalletErrorCode.TRANSFER_QUOTE_CHANGED: return '手续费规则或收款信息已变化，请重新确认。';
-    case WalletErrorCode.IDEMPOTENCY_KEY_REUSED: return '该请求标识已用于不同的转账内容。';
-    case WalletErrorCode.EXCHANGE_NOT_AVAILABLE: return '当前账户或系统余额暂不支持金币兑换。';
-    case WalletErrorCode.EXCHANGE_QUOTE_EXPIRED: return '兑换预览已过期，请重新确认金额。';
-    case WalletErrorCode.EXCHANGE_QUOTE_CHANGED: return '兑换比例已变化，请重新预览。';
-    case WalletErrorCode.INVALID_EXCHANGE_AMOUNT: return '请输入有效的金币兑换数量。';
-    case WalletErrorCode.INSUFFICIENT_EXCHANGE_BALANCE: return '可用金币不足以完成兑换。';
-    case WalletErrorCode.INVALID_PAYOUT_ACCOUNT: return '收款方式信息无效；本机演练只接受虚构标识。';
-    case WalletErrorCode.PAYOUT_ACCOUNT_NOT_FOUND: return '收款方式不存在或不可用。';
-    case WalletErrorCode.PAYOUT_ACCOUNT_IN_USE: return '该收款方式仍关联未完成申请，暂时不能删除。';
-    case WalletErrorCode.WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID: return '提现净到账额必须达到最低金额，且为最低金额的整数倍。';
-    case WalletErrorCode.WITHDRAWAL_CONFIG_INVALID: return '当前提现金额配置无法精确换算到人民币分，请联系运营处理。';
-    case WalletErrorCode.WITHDRAWAL_QUOTE_EXPIRED: return '提现报价已过期，请重新计算。';
-    case WalletErrorCode.WITHDRAWAL_QUOTE_CHANGED: return '提现费率、最低金额或收款方式已变化，请重新计算。';
-    case WalletErrorCode.WITHDRAWAL_NOT_FOUND: return '提现申请不存在。';
-    case WalletErrorCode.WITHDRAWAL_NOT_CANCELLABLE: return '申请已进入审核或出款阶段，不能在此取消。';
-    default: return '钱包服务暂时不可用，请稍后重试。';
+    case WalletErrorCode.RECIPIENT_NOT_FOUND:
+      return '收款账号不存在或不可用。';
+    case WalletErrorCode.SELF_TRANSFER:
+      return '不能向自己的账号转账。';
+    case WalletErrorCode.INVALID_TRANSFER_AMOUNT:
+      return '请输入有效的金币数量。';
+    case WalletErrorCode.TURNOVER_INCOMPLETE:
+      return '完成赠币流水后才能转出金币。';
+    case WalletErrorCode.INSUFFICIENT_AVAILABLE_BALANCE:
+      return '可用金币不足以支付本金和手续费。';
+    case WalletErrorCode.TRANSFER_QUOTE_EXPIRED:
+      return '转账预览已过期，请重新确认金额。';
+    case WalletErrorCode.TRANSFER_QUOTE_CHANGED:
+      return '手续费规则或收款信息已变化，请重新确认。';
+    case WalletErrorCode.IDEMPOTENCY_KEY_REUSED:
+      return '该请求标识已用于不同的转账内容。';
+    case WalletErrorCode.EXCHANGE_NOT_AVAILABLE:
+      return '当前账户或系统余额暂不支持金币兑换。';
+    case WalletErrorCode.EXCHANGE_QUOTE_EXPIRED:
+      return '兑换预览已过期，请重新确认金额。';
+    case WalletErrorCode.EXCHANGE_QUOTE_CHANGED:
+      return '兑换比例已变化，请重新预览。';
+    case WalletErrorCode.INVALID_EXCHANGE_AMOUNT:
+      return '请输入有效的金币兑换数量。';
+    case WalletErrorCode.INSUFFICIENT_EXCHANGE_BALANCE:
+      return '可用金币不足以完成兑换。';
+    case WalletErrorCode.INVALID_PAYOUT_ACCOUNT:
+      return '收款方式信息无效；本机演练只接受虚构标识。';
+    case WalletErrorCode.PAYOUT_ACCOUNT_NOT_FOUND:
+      return '收款方式不存在或不可用。';
+    case WalletErrorCode.PAYOUT_ACCOUNT_IN_USE:
+      return '该收款方式仍关联未完成申请，暂时不能删除。';
+    case WalletErrorCode.WITHDRAWAL_MINIMUM_OR_MULTIPLE_INVALID:
+      return '提现净到账额必须达到最低金额，且为最低金额的整数倍。';
+    case WalletErrorCode.WITHDRAWAL_CONFIG_INVALID:
+      return '当前提现金额配置无法精确换算到人民币分，请联系运营处理。';
+    case WalletErrorCode.WITHDRAWAL_QUOTE_EXPIRED:
+      return '提现报价已过期，请重新计算。';
+    case WalletErrorCode.WITHDRAWAL_QUOTE_CHANGED:
+      return '提现费率、最低金额或收款方式已变化，请重新计算。';
+    case WalletErrorCode.WITHDRAWAL_NOT_FOUND:
+      return '提现申请不存在。';
+    case WalletErrorCode.WITHDRAWAL_NOT_CANCELLABLE:
+      return '申请已进入审核或出款阶段，不能在此取消。';
+    default:
+      return '钱包服务暂时不可用，请稍后重试。';
   }
 }
 
@@ -679,7 +1270,9 @@ function toAgentDomainDto(domain: LocalAgentDomain): AgentDomainDto {
   return { userId: domain.userId, status: domain.status, appliedAt: domain.appliedAt, capabilities: domain.capabilities };
 }
 
-export async function createBrowserApiFetch(server = new BrowserApiServer()): Promise<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>> {
+export async function createBrowserApiFetch(
+  server = new BrowserApiServer(),
+): Promise<(input: RequestInfo | URL, init?: RequestInit) => Promise<Response>> {
   const { LocalCookieJar } = await import('./local-cookie-jar');
   const jar = new LocalCookieJar();
   return async (input, init) => {
@@ -694,7 +1287,15 @@ export async function createBrowserApiFetch(server = new BrowserApiServer()): Pr
   };
 }
 
-export async function createDevelopmentTestAccount(): Promise<{ userId: string; displayName: string; identifier: string; password: string; recoveryQrPayload: string; recoveryQrPassword: string; recoveryExpiresAt: string }> {
+export async function createDevelopmentTestAccount(): Promise<{
+  userId: string;
+  displayName: string;
+  identifier: string;
+  password: string;
+  recoveryQrPayload: string;
+  recoveryQrPassword: string;
+  recoveryExpiresAt: string;
+}> {
   const identifier = `test-${randomToken(9)}`;
   const password = randomToken(24);
   const database = await openBrowserDevelopmentDatabase();
@@ -703,22 +1304,66 @@ export async function createDevelopmentTestAccount(): Promise<{ userId: string; 
   const secretHash = await derivePasswordHash(password, salt);
   const userId = await nextId(database);
   const deviceId = await nextId(database);
-  const user: LocalUser = { userId, displayName: `测试用户${userId.slice(-4)}`, createdAt: new Date().toISOString(), roleType: 1, rewardType: RewardType.RECHARGE_REBATE, status: 'ACTIVE', authVersion: 1 };
-  const usernameCredential: LocalCredential = { credentialId: await nextId(database), userId, kind: 'IDENTIFIER', identifierType: 'USERNAME', lookupKey, displayValue: identifier, state: 'ACTIVE' };
-  const passwordCredential: LocalCredential = { credentialId: await nextId(database), userId, kind: 'PASSWORD', secretHash, salt: btoa(String.fromCharCode(...salt)), state: 'ACTIVE' };
+  const user: LocalUser = {
+    userId,
+    displayName: `测试用户${userId.slice(-4)}`,
+    createdAt: new Date().toISOString(),
+    roleType: 1,
+    rewardType: RewardType.RECHARGE_REBATE,
+    status: 'ACTIVE',
+    authVersion: 1,
+  };
+  const usernameCredential: LocalCredential = {
+    credentialId: await nextId(database),
+    userId,
+    kind: 'IDENTIFIER',
+    identifierType: 'USERNAME',
+    lookupKey,
+    displayValue: identifier,
+    state: 'ACTIVE',
+  };
+  const passwordCredential: LocalCredential = {
+    credentialId: await nextId(database),
+    userId,
+    kind: 'PASSWORD',
+    secretHash,
+    salt: btoa(String.fromCharCode(...salt)),
+    state: 'ACTIVE',
+  };
   const deviceCode = randomToken();
-  const deviceCredential: LocalCredential = { credentialId: await nextId(database), userId, deviceId, kind: 'DEVICE', secretHash: await sha256(deviceCode), lookupKey: await sha256(deviceCode), state: 'ACTIVE' };
+  const deviceCredential: LocalCredential = {
+    credentialId: await nextId(database),
+    userId,
+    deviceId,
+    kind: 'DEVICE',
+    secretHash: await sha256(deviceCode),
+    lookupKey: await sha256(deviceCode),
+    state: 'ACTIVE',
+  };
   const write = database.transaction(['users', 'credentials'], 'readwrite');
   await write.objectStore('users').put(user);
   await write.objectStore('credentials').put(passwordCredential);
   await write.objectStore('credentials').put(usernameCredential);
   await write.objectStore('credentials').put(deviceCredential);
   await write.done;
-  const recovery = await new LocalIdentityApplication(new IndexedDbLocalIdentityRepository(database)).createDevelopmentRecoveryFixture(userId);
-  return { userId, displayName: user.displayName, identifier, password, recoveryQrPayload: recovery.qrPayload, recoveryQrPassword: recovery.qrPassword, recoveryExpiresAt: recovery.expiresAt };
+  const recovery = await new LocalIdentityApplication(new IndexedDbLocalIdentityRepository(database)).createDevelopmentRecoveryFixture(
+    userId,
+  );
+  return {
+    userId,
+    displayName: user.displayName,
+    identifier,
+    password,
+    recoveryQrPayload: recovery.qrPayload,
+    recoveryQrPassword: recovery.qrPassword,
+    recoveryExpiresAt: recovery.expiresAt,
+  };
 }
 
-export async function ensureLocalDeviceRegistration(fetchPort: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>, deviceCode: string): Promise<SessionResponseDto> {
+export async function ensureLocalDeviceRegistration(
+  fetchPort: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+  deviceCode: string,
+): Promise<SessionResponseDto> {
   const requestId = crypto.randomUUID();
   const database = await openBrowserDevelopmentDatabase();
   const pendingKey = 'pending-device-registration';
@@ -726,19 +1371,27 @@ export async function ensureLocalDeviceRegistration(fetchPort: (input: RequestIn
   const pendingSetting = await read.store.get(pendingKey);
   await read.done;
   const pending = pendingSetting?.value as { deviceCode?: string; idempotencyKey?: string; body?: object } | undefined;
-  const body = pending?.body ?? { fingerprintVersion: '1', deviceCode: pending?.deviceCode ?? deviceCode, deviceSummary: { platform: navigator.platform.slice(0, 32) || 'browser', browser: 'browser' } };
+  const body = pending?.body ?? {
+    fingerprintVersion: '1',
+    deviceCode: pending?.deviceCode ?? deviceCode,
+    deviceSummary: { platform: navigator.platform.slice(0, 32) || 'browser', browser: 'browser' },
+  };
   const idempotencyKey = pending?.idempotencyKey ?? randomToken(18);
   if (!pending?.body) {
     const write = database.transaction('settings', 'readwrite');
     await write.store.put({ key: pendingKey, value: { deviceCode: (body as { deviceCode: string }).deviceCode, idempotencyKey, body } });
     await write.done;
   }
-  const response = await fetchPort(IdentityEndpoint.deviceRegister.path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Request-Id': requestId, 'Idempotency-Key': idempotencyKey }, body: JSON.stringify(body), credentials: 'include' });
-  const envelope = await response.json() as { data?: SessionResponseDto };
+  const response = await fetchPort(IdentityEndpoint.deviceRegister.path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-Request-Id': requestId, 'Idempotency-Key': idempotencyKey },
+    body: JSON.stringify(body),
+    credentials: 'include',
+  });
+  const envelope = (await response.json()) as { data?: SessionResponseDto };
   if (!response.ok || !envelope.data) throw new Error('DEVICE_REGISTRATION_FAILED');
   const clear = database.transaction('settings', 'readwrite');
   await clear.store.delete(pendingKey);
   await clear.done;
   return envelope.data;
 }
-
