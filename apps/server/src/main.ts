@@ -3,9 +3,10 @@ import { probeMysql } from './infrastructure/database/mysql-probe.js';
 import { probeRedis } from './infrastructure/redis/redis-probe.js';
 import { createLogger } from './infrastructure/logging/logger.js';
 import { getSequelize } from './infrastructure/database/sequelize.js';
-import { getRedis } from '@gameing/backend/infrastructure/redis';
+import { getRedis, closeRedis } from '@gameing/backend/infrastructure/redis';
 import { addModels } from '@gameing/backend/infrastructure/database/models';
 import { createIdentityModule } from '@gameing/backend/modules/identity/public';
+import { createSocketAuthServer } from './socket/socket-auth.js';
 
 /**
  * 服务进程入口。
@@ -86,6 +87,18 @@ const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });
 });
 
+// --- Socket.IO 握手鉴权基座（SDD §6.1 /platform 命名空间） ---
+// identity 模块装配成功时才挂载（MySQL/Redis 缺失时降级：Socket 不挂）。
+let socketAuth: ReturnType<typeof createSocketAuthServer> | undefined;
+if (identityModuleOpt) {
+  socketAuth = createSocketAuthServer(server, {
+    module: identityModuleOpt,
+    logger,
+    namespace: '/platform',
+  });
+  logger.info('Socket.IO /platform 命名空间已挂载', { port });
+}
+
 async function shutdown(signal: string): Promise<void> {
   logger.info('收到关闭信号，开始优雅关闭', { signal });
   server.close(async (error) => {
@@ -94,9 +107,14 @@ async function shutdown(signal: string): Promise<void> {
       process.exit(1);
       return;
     }
+    // 关闭 Socket.IO（先断开所有连接）
+    try {
+      socketAuth?.io.close();
+    } catch {
+      /* socket 未初始化则跳过 */
+    }
     // 关闭 Redis + Sequelize（身份会话 + 数据库连接池）
     try {
-      const { closeRedis } = await import('@gameing/backend/infrastructure/redis');
       await closeRedis();
     } catch {
       /* Redis 未初始化则跳过 */
