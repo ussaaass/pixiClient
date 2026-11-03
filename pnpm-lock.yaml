@@ -381,6 +381,9 @@ importers:
       '@gameing/contracts':
         specifier: workspace:*
         version: link:../contracts
+      '@gameing/domain':
+        specifier: workspace:*
+        version: link:../domain
       argon2:
         specifier: ^0.43.0
         version: 0.43.1

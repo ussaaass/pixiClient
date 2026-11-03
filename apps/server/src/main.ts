@@ -6,7 +6,9 @@ import { getSequelize } from './infrastructure/database/sequelize.js';
 import { getRedis, closeRedis } from '@gameing/backend/infrastructure/redis';
 import { addModels } from '@gameing/backend/infrastructure/database/models';
 import { createIdentityModule } from '@gameing/backend/modules/identity/public';
+import { createWalletModule } from '@gameing/backend/modules/wallet/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
+import type { Sequelize } from 'sequelize';
 
 /**
  * 服务进程入口。
@@ -54,12 +56,13 @@ const port = readPort();
 // Sequelize 实例 + addModels（注册全部 63 张表的 Model 定义，含 identity 四表 + outbox）
 // 在装配前完成；Redis 连接 lazyConnect=true（首用才握手），纯读路由阶段不影响。
 let identityModule;
+let sequelizeInstance: Sequelize | undefined;
 try {
-  const sequelize = getSequelize();
-  addModels(sequelize);
+  sequelizeInstance = getSequelize();
+  addModels(sequelizeInstance);
   const redis = getRedis();
   identityModule = await createIdentityModule({
-    sequelize,
+    sequelize: sequelizeInstance,
     redis,
     config: {
       issuer: 'gameing-hall-api',
@@ -77,11 +80,38 @@ try {
   identityModule = undefined;
 }
 
+// --- wallet 模块装配（资金用例；需 identity 模块就绪） ---
+// systemUserId 通过 env var 注入（SYSTEM 行 user.id，首版由 bootstrap 脚本解析，
+// 未设置时 wallet 路由不挂载，不影响 identity 路由可用）。
+let walletModule;
+if (identityModule && sequelizeInstance) {
+  try {
+    const systemUserId = process.env.SYSTEM_USER_ID ?? '';
+    if (!systemUserId) {
+      logger.warn('SYSTEM_USER_ID env 未设置，wallet 路由不挂载（资金端点不可用）');
+    } else {
+      walletModule = createWalletModule({
+        sequelize: sequelizeInstance,
+        config: { systemUserId },
+      });
+      logger.info('wallet 模块装配完成', { systemUserId });
+    }
+  } catch (error) {
+    logger.warn('wallet 模块装配失败（wallet 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    walletModule = undefined;
+  }
+}
+
 const identityModuleOpt = identityModule ?? undefined;
+const walletModuleOpt = walletModule ?? undefined;
+const sequelizeOpt = sequelizeInstance ?? undefined;
 const app = createApp({
   logger,
   readinessChecks,
   ...(identityModuleOpt ? { identityModule: identityModuleOpt } : {}),
+  ...(walletModuleOpt && sequelizeOpt ? { walletModule: walletModuleOpt, sequelize: sequelizeOpt } : {}),
 });
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });

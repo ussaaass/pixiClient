@@ -325,3 +325,11 @@ export type WithdrawalQuoteRequestDto = Static<typeof WithdrawalQuoteRequestSche
 export type WithdrawalQuoteDto = Static<typeof WithdrawalQuoteSchema>;
 export type CreateWithdrawalRequestDto = Static<typeof CreateWithdrawalRequestSchema>;
 export type WithdrawalDto = Static<typeof WithdrawalSchema>;
+
+// 重导出 typebox 工具（backend NodeNext 下不直接依赖 @sinclair/typebox，
+// 用例层统一经本入口取 `Static`（type）与 `Value`（运行时校验）；与
+// identity.ts 同款桥接先例，仅新增 export，不改任何 schema/DTO，
+// 契约单一来源纪律保持）。
+export type { Static } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
+export { Value };
