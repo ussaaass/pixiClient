@@ -18,6 +18,7 @@
 ## 2. 未完成（不要引用为已有能力）
 
 - 服务端：identity（JWT 签发/撤销/设备会话）、wallet 写用例与事务、支付订单/渠道回调、返佣发放、房间与牌局权威、Socket.IO、Redis 接入、outbox、worker app、OpenAPI 生成、备份恢复演练。
+  - **施工蓝图已立（2026-11-03）**：`docs/02_architecture/后端实施SDD.md`——63 表 model 注册与 0007~0018 迁移批次、`packages/backend` 模块/用例/端口布局、玩家 + Admin HTTP 端点清单、Socket.IO 三命名空间与 outbox 投递管线、Admin（Vue3.5+Element Plus）双轨切换映射、9 步实施顺序。代码未开写。
 - 前端生产态：生产构建只注入 `gameExperienceApi`，钱包/社交/客服/邀请在 REMOTE 下缺失（P0-P1 差距项）。
 - Admin：无登录鉴权、无领域 API（19 个工作区全是本地演示数据）。
 - 规划未建：`packages/game-sdk`/`game-host`/`resource-runtime`/`platform-client`、`apps/worker`/`mobile`/`desktop`、`tests/`（e2e/负载/弱网）。
@@ -51,3 +52,4 @@
 | 2026-11-02 | §1 增加"用例层下沉第一批（12 文件）已完成"条目；§3 把"用例层未下沉"债改为"第二批剩余 + lockfile 待更新"。 |
 | 2026-11-02 | §3 lockfile 债标记为"已更新（容器内 pnpm install）"；8 门逐包顺序跑全绿；修 `apps/server/scripts/build.mjs` 加 Sequelize dialect external。 |
 | 2026-11-03 | 第二批双轨切换标记为"暂缓"（用户确认前后端不同步开发，启动条件为后台代码开写）。 |
+| 2026-11-03 | §2 登记《后端实施 SDD》为服务端施工蓝图（63 表实体起步 → 模块 → HTTP/Socket.IO → Admin 双轨切换 → 9 步实施顺序）；代码未开写。 |
