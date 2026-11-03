@@ -5,7 +5,8 @@
   "type": "module",
   "exports": {
     "./infrastructure/database": "./src/infrastructure/database/index.ts",
-    "./infrastructure/database/migrations": "./src/infrastructure/database/migrator.ts"
+    "./infrastructure/database/migrations": "./src/infrastructure/database/migrator.ts",
+    "./infrastructure/database/models": "./src/infrastructure/database/models/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",

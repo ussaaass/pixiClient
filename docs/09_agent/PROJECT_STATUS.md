@@ -19,7 +19,9 @@
 
 - 服务端：identity（JWT 签发/撤销/设备会话）、wallet 写用例与事务、支付订单/渠道回调、返佣发放、房间与牌局权威、Socket.IO、Redis 接入、outbox、worker app、OpenAPI 生成、备份恢复演练。
   - **施工蓝图已立（2026-11-03）**：`docs/02_architecture/后端实施SDD.md`——63 表 model 注册与 0007~0018 迁移批次、`packages/backend` 模块/用例/端口布局、玩家 + Admin HTTP 端点清单、Socket.IO 三命名空间与 outbox 投递管线、Admin（Vue3.5+Element Plus）双轨切换映射、9 步实施顺序。
-  - **实体与迁移已落地（2026-11-03）**：`packages/backend` 包脚手架 + 0007~0018 共 12 批次 57 张表（数据库设计 SDD §5 逐表对照、附录 A.13 校验）；`apps/server` 的 0001~0006 迁移基础设施迁入 backend，server 仅保留 Sequelize 实例 + 探针；server 迁移 CLI 与 `MIGRATION_TEST` 委托 backend 全链 0001~0018，63 张表 up→down→up 验证通过。model 注册（11 个 model 文件）、模块用例、HTTP/Socket 路由尚未开写（见 9 步实施顺序第 2 步起）。
+  - **实体与迁移已落地（2026-11-03）**：`packages/backend` 包脚手架 + 0007~0018 共 12 批次 57 张表（数据库设计 SDD §5 逐表对照、附录 A.13 校验）；`apps/server` 的 0001~0006 迁移基础设施迁入 backend，server 仅保留 Sequelize 实例 + 探针；server 迁移 CLI 与 `MIGRATION_TEST` 委托 backend 全链 0001~0018，63 张表 up→down→up 验证通过。
+  - **Model 注册层已落地（2026-11-03）**：`packages/backend/src/infrastructure/database/models/` 13 文件注册全部 63 张表（11 领域文件 + coin-market + index.ts 中央注册器 + _shared.ts 公共支撑）；A.12 装配约定全部落实（中央 `addModels` + `associateAll` 跨文件 FK、不可变表 append-only hooks、outbox/coin-market `paranoid: false` 例外、生成列不进 attributes、保留字反引号、BINARY 近似映射）。container lint/format:check/typecheck 全绿。
+  - 下一步（§9 第 1 步）：identity 模块——auth 6 端点 + Redis 会话 + refresh 轮换 + TOTP/联系方式 + Socket 握手鉴权基座；model 文件注册完成但用例/端口/适配器层尚未开写。已知差异：contracts `CoinMarketTradeStatus` 9 值 vs DDL 11 值，双轨切换前须对齐。
 - 前端生产态：生产构建只注入 `gameExperienceApi`，钱包/社交/客服/邀请在 REMOTE 下缺失（P0-P1 差距项）。
 - Admin：无登录鉴权、无领域 API（19 个工作区全是本地演示数据）。
 - 规划未建：`packages/game-sdk`/`game-host`/`resource-runtime`/`platform-client`、`apps/worker`/`mobile`/`desktop`、`tests/`（e2e/负载/弱网）。

@@ -12,3 +12,4 @@ export { buildSequelizeOptions, readDatabaseConfig, readDatabaseConfigPermissive
 export { MigrationActionType, MigrationStatus } from './migration-constants.js';
 export { MigrationHistoryStorage } from './migration-history-storage.js';
 export { probeMysql } from './mysql-probe.js';
+export { addModels, allModels, type AllModels } from './models/index.js';
