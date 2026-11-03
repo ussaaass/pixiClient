@@ -242,6 +242,9 @@ importers:
 
   apps/server:
     dependencies:
+      '@gameing/backend':
+        specifier: workspace:*
+        version: link:../../packages/backend
       '@gameing/contracts':
         specifier: workspace:*
         version: link:../../packages/contracts
@@ -260,9 +263,6 @@ importers:
       sequelize:
         specifier: 6.37.8
         version: 6.37.8(mysql2@3.24.6(@types/node@24.19.1))(supports-color@8.1.1)
-      umzug:
-        specifier: 3.8.3
-        version: 3.8.3(@types/node@24.19.1)
     devDependencies:
       '@types/koa':
         specifier: 3.0.3
@@ -372,6 +372,31 @@ importers:
       vitest:
         specifier: 5.0.5
         version: 5.0.5(@types/node@24.19.1)(happy-dom@20.14.6)(vite@8.3.4(@types/node@24.19.1)(esbuild@0.28.2)(tsx@4.23.15)(yaml@2.9.1))
+
+  packages/backend:
+    dependencies:
+      '@gameing/contracts':
+        specifier: workspace:*
+        version: link:../contracts
+      mysql2:
+        specifier: 3.24.6
+        version: 3.24.6(@types/node@24.19.1)
+      sequelize:
+        specifier: 6.37.8
+        version: 6.37.8(mysql2@3.24.6(@types/node@24.19.1))(supports-color@8.1.1)
+      umzug:
+        specifier: 3.8.3
+        version: 3.8.3(@types/node@24.19.1)
+    devDependencies:
+      '@types/node':
+        specifier: 24.19.1
+        version: 24.19.1
+      tsx:
+        specifier: 4.23.15
+        version: 4.23.15
+      typescript:
+        specifier: 6.0.3
+        version: 6.0.3
 
   packages/contracts:
     dependencies:

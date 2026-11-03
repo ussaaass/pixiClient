@@ -34,7 +34,7 @@ P0 地基已收口（2026-10-23）：CI 六道门禁本地逐关实测全绿；�
 - [代码工程质量走查与重构建议](./02_architecture/代码工程质量走查与重构建议.md)：工程化、整洁、结构化、可读性与可理解性五维审计结论与四批重构建议。
 - [产品化改造方案：从原型到产品级](./02_architecture/从原型到产品级的实施路线.md)：产品级判定口径、差距矩阵、待决策架构决策与 P0~P4 阶段路线。
 - [P0 地基接手复核报告](./02_architecture/P0地基接手复核报告.md)：接手后六道门禁的实跑结果、两个真实缺陷的根因、P0 状态表校正与执行环境坑。
-- [后端实施 SDD](./02_architecture/后端实施SDD.md)：Admin/API/Socket.IO 后端落地层（从实体起步）：63 表 model 注册与迁移批次、模块/用例/端口布局、HTTP 路由与端点清单、Socket.IO 命名空间与 outbox 投递、Admin（Vue3.5+Element Plus）双轨切换、实施顺序。
+- [后端实施 SDD](./02_architecture/后端实施SDD.md)：Admin/API/Socket.IO 后端落地层（从实体起步）：63 表 model 注册与迁移批次（0007~0018 已落地 `packages/backend`，附录 A 逐表规划）、模块/用例/端口布局、HTTP 路由与端点清单、Socket.IO 命名空间与 outbox 投递、Admin（Vue3.5+Element Plus）双轨切换、实施顺序。
 - [架构评估与落地方案](./02_architecture/架构评估与落地方案.md)：组件取舍、事务、房间控制权、协议和验收。
 - [项目结构规划](./02_architecture/项目结构规划.md)：monorepo 目录、包边界、构建与 Docker。
 - [游戏引擎与游戏模块边界](./02_architecture/游戏引擎与游戏模块边界.md)：平台宿主、SDK、handler 与新增游戏流程。
@@ -150,3 +150,4 @@ P0 地基已收口（2026-10-23）：CI 六道门禁本地逐关实测全绿；�
 | 2026-11-02 | 新增 09 代理与施工速查分类（`docs/09_agent/`）：架构/业务域/API/数据库/开发/测试/项目状态/施工工作流八份速查，并登记 `.agents/skills/` 配套技能。 |
 | 2026-11-02 | 09_agent 增补两份：`OPENAPI.md`（P0 遗留 OpenAPI 生成器选型）与 `P1_WORKPLAN.md`（用例层下沉第一批完成、第二批计划）。 |
 | 2026-11-03 | 增加《后端实施 SDD》索引：Admin/API/Socket.IO 落地层（从实体起步），登记 63 表 model 注册、9 步实施顺序与 Admin 双轨切换映射。 |
+| 2026-11-03 | 《后端实施 SDD》索引更新：0007~0018 迁移批次 57 张表已落地 `packages/backend`（附录 A 逐表规划），server 迁移基础设施迁入 backend；下一步为 11 个 model 文件注册与 identity 模块。 |

@@ -1,0 +1,25 @@
+{
+  "name": "@gameing/backend",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./infrastructure/database": "./src/infrastructure/database/index.ts",
+    "./infrastructure/database/migrations": "./src/infrastructure/database/migrator.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "migrate": "tsx src/cli/migrate.ts"
+  },
+  "dependencies": {
+    "@gameing/contracts": "workspace:*",
+    "mysql2": "3.24.6",
+    "sequelize": "6.37.8",
+    "umzug": "3.8.3"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "tsx": "4.23.15",
+    "typescript": "6.0.3"
+  }
+}

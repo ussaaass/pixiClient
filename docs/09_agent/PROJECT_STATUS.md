@@ -7,7 +7,7 @@
 - 工程基线：CI 六道门禁（`.github/workflows/ci.yml`，pnpm 12.10.1 + node 24.21.0）、ESLint/Prettier/husky+lint-staged、增量门禁 `check:changed`/`test:changed`/`vitest related`。
 - Koa 服务端骨架：统一 envelope、requestId 贯通、结构化日志（敏感字段脱敏）、错误边界、404→失败 envelope；`/health/live`、`/health/ready`（探针依赖当前为空数组）。
 - 只读路由：游戏目录快照（LOCAL_DEMO）、公告空列表 stub、preflight（仅 LOCAL_PRACTICE 可返回 READY）。
-- 数据库：Sequelize + Umzug 迁移框架 + 6 张表（0001~0006），对 compose `mysql:9.7.2` 真跑通过、`MIGRATION_TEST=1` 11/11 集成用例通过、可升可降。
+- 数据库：Sequelize + Umzug 迁移框架 + 63 张表（0001~0018），对 compose `mysql:9.7.2` 真跑通过、`MIGRATION_TEST=1` 全链可升可降（backend 迁移器 18 项注册）。
 - `packages/domain` 纯规则下沉：9 个模块（wallet/social/support/rooms/preferences/coin-market…），web 18 处 import；无 DOM/Node 全局依赖。
 - **用例层下沉第一批（2026-11-02）**：12 个 application 文件（wallet/support/rooms/social×2/notifications/invite-agent/player-entry/preferences/referral/wallet-funding，~1200 行）已移入 `packages/domain`，`apps/web` 改为 `@gameing/domain/*` import；`packages/domain` 新增 `@sinclair/typebox` 依赖与 12 个 subpath 导出。domain 11/11、web 149/149 测试与三包 typecheck 全绿。剩 `local-identity-application`（495 行，强浏览器依赖）与 `social-message-asset-application`（80 行，本地加密）未下沉，见 `docs/09_agent/P1_WORKPLAN.md`。
 - 十三张：rules 包（牌型评估、倒道校验、确定性 72,072 候选自动摆牌、配置化结算）+ Pixi 本地练习牌桌；本地演示不登录、不扣资产。
@@ -18,7 +18,8 @@
 ## 2. 未完成（不要引用为已有能力）
 
 - 服务端：identity（JWT 签发/撤销/设备会话）、wallet 写用例与事务、支付订单/渠道回调、返佣发放、房间与牌局权威、Socket.IO、Redis 接入、outbox、worker app、OpenAPI 生成、备份恢复演练。
-  - **施工蓝图已立（2026-11-03）**：`docs/02_architecture/后端实施SDD.md`——63 表 model 注册与 0007~0018 迁移批次、`packages/backend` 模块/用例/端口布局、玩家 + Admin HTTP 端点清单、Socket.IO 三命名空间与 outbox 投递管线、Admin（Vue3.5+Element Plus）双轨切换映射、9 步实施顺序。代码未开写。
+  - **施工蓝图已立（2026-11-03）**：`docs/02_architecture/后端实施SDD.md`——63 表 model 注册与 0007~0018 迁移批次、`packages/backend` 模块/用例/端口布局、玩家 + Admin HTTP 端点清单、Socket.IO 三命名空间与 outbox 投递管线、Admin（Vue3.5+Element Plus）双轨切换映射、9 步实施顺序。
+  - **实体与迁移已落地（2026-11-03）**：`packages/backend` 包脚手架 + 0007~0018 共 12 批次 57 张表（数据库设计 SDD §5 逐表对照、附录 A.13 校验）；`apps/server` 的 0001~0006 迁移基础设施迁入 backend，server 仅保留 Sequelize 实例 + 探针；server 迁移 CLI 与 `MIGRATION_TEST` 委托 backend 全链 0001~0018，63 张表 up→down→up 验证通过。model 注册（11 个 model 文件）、模块用例、HTTP/Socket 路由尚未开写（见 9 步实施顺序第 2 步起）。
 - 前端生产态：生产构建只注入 `gameExperienceApi`，钱包/社交/客服/邀请在 REMOTE 下缺失（P0-P1 差距项）。
 - Admin：无登录鉴权、无领域 API（19 个工作区全是本地演示数据）。
 - 规划未建：`packages/game-sdk`/`game-host`/`resource-runtime`/`platform-client`、`apps/worker`/`mobile`/`desktop`、`tests/`（e2e/负载/弱网）。
@@ -53,3 +54,4 @@
 | 2026-11-02 | §3 lockfile 债标记为"已更新（容器内 pnpm install）"；8 门逐包顺序跑全绿；修 `apps/server/scripts/build.mjs` 加 Sequelize dialect external。 |
 | 2026-11-03 | 第二批双轨切换标记为"暂缓"（用户确认前后端不同步开发，启动条件为后台代码开写）。 |
 | 2026-11-03 | §2 登记《后端实施 SDD》为服务端施工蓝图（63 表实体起步 → 模块 → HTTP/Socket.IO → Admin 双轨切换 → 9 步实施顺序）；代码未开写。 |
+| 2026-11-03 | §1 数据库条目更新为 63 张表（0001~0018）；§2 登记"实体与迁移已落地"——`packages/backend` 脚手架 + 57 张新表迁移 + server 迁移基础设施迁入 backend + CLI/MIGRATION_TEST 委托全链，63 表 up→down→up 容器实测通过；model 注册与模块用例仍属未完成。 |

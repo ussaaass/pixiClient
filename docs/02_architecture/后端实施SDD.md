@@ -55,7 +55,7 @@ packages/backend/                 @gameing/backend（Node-only，禁浏览器引
 
 1. **全表公共字段**：`id BIGINT UNSIGNED`（model 用 `string` 承载 + `DataTypes.BIGINT`，读写一律十进制字符串）、`status`、`created_at/updated_at/deleted_at DATETIME(3)`（UTC）、全字段 `comment`。迁移逐字段写注释。
 2. **ID/金额 wire 格式**：model getter/setter 保持 BIGINT；**DTO 映射层**（adapter 的 row-mapper）把 ID/金额转十进制字符串，禁止 JS number 跨越 `Number.MAX_SAFE_INTEGER`。
-3. **不可变表**（asset_operation/asset_entry、*_event、*_audit_event、outbox）：model 关闭 `updated_at` 自动更新与软删钩子；用例层提供 append-only API，不提供 update/destroy。
+3. **不可变表**（asset_operation/asset_entry、referral_binding_event、round_event、agent_audit_event/admin_audit_event、user_security_event、payment_event、ai_asset_reference）：model 关闭 `updated_at` 自动更新与软删钩子；用例层提供 append-only API，不提供 update/destroy。`outbox` 例外：行 append-only 但 status 有投递状态机（OutboxStatus 1~4），updated_at 随投递更新。
 4. **generated 列**（`system_marker`、`active_marker`）：建列表达式与 SDD §5 完全一致，Sequelize 声明 `DataTypes.VIRTUAL` 只读或原生列（按 MySQL 支持选择原生 persisted 以便唯一索引生效）。
 5. **保留字**：`order` 表、`user` 表在 SQL 与 Sequelize 引用处一律加反引号。
 6. 每个 model 文件头部注释写明：**领域所有者、读写用例、对应 SDD 章节**；评审时按注释核对越界写入。
@@ -440,7 +440,7 @@ http/
 - [ ] 状态列默认值为非零常量；所有 CHECK 约束逐条落到 DDL。
 - [ ] generated 列表达式与 SDD 给出的 `CASE WHEN` 完全一致（`user.system_marker`、`recovery_credential.active_marker`、`product.active_marker`、`game_entry.active_marker`、`room_membership.active_marker`、`payout_attempt.active_marker`）。
 - [ ] 唯一索引含 `COALESCE(...,0)` 归一的（`game_config`、`social_topic`）在 DDL 用函数索引或生成列等价实现，MySQL 9 直接支持表达式索引。
-- [ ] 不可变表 6 张（asset_operation/asset_entry、referral_binding_event、round_event、social_report*、agent_audit_event/admin_audit_event/user_security_event、payment_event、outbox）确认 `updated_at=created_at`、无软删。
+- [ ] 不可变表（asset_operation/asset_entry、referral_binding_event、round_event、agent_audit_event/admin_audit_event、user_security_event、payment_event、ai_asset_reference、coin_exchange、gift_grant）确认 `updated_at=created_at`、无软删。`outbox` **不是**不可变表：其行 append-only（不删不改），但 `status` 有 OutboxStatus PENDING=1/PROCESSING=2/SENT=3/DEAD=4 状态机，`updated_at` 随投递正常更新、仅 `deleted_at` 恒 NULL（A.10 登记口径以此为准，§2 第 3 条"不可变表"清单的 outbox 为笔误，2026-11-03 校准）。
 - [ ] `order`/`user` 保留字反引号全覆盖（Sequelize `table` 选项 + raw query）。
 - [ ] 资金 FK（`asset_operation`/`asset_entry`/`withdrawal.asset_operation_id`/`settlement.asset_operation_id`/`coin_market_trade.asset_operation_id`）DDL `ON DELETE RESTRICT`。
 
@@ -451,3 +451,5 @@ http/
 | 2026-11-03 | 新建：后端实施 SDD（实体起步）：62 表 model 注册与迁移批次、模块/用例/端口布局、玩家+Admin HTTP 路由与端点清单、Socket.IO 三命名空间与 outbox 投递管线、Admin（Vue3.5+Element Plus）双轨切换映射、Docker 沿用现有 compose、9 步实施顺序与验收红线。 |
 | 2026-11-03 | 校准表数口径：数据库设计 SDD §5 逐表实为 63 张（outbox 后补、开头 62 未更新），本 SDD 按 63 张为准并登记该差异；修 §1/§3.2 链到账子域归属矛盾（payments owns，model 文件独立）与 0008/0017 批次归属（asset/asset_release* 归 ai-assets）。 |
 | 2026-11-03 | 新增附录 A（模型与表结构规划）：63 表按 11 个 model 文件给出 Model 类名、业务字段类型、状态/类型常量、索引与 CHECK 约束；A.12 注册/关联/常量单一来源/row-mapper/不可变钩子/生成列/保留字装配约定；A.13 写迁移前逐表对照数据库设计 SDD §5 的校验清单。 |
+| 2026-11-03 | 校准 A.13 不可变表清单：outbox 移出不可变表（status 有 PENDING/PROCESSING/SENT/DEAD 状态机，updated_at 随投递更新，仅 deleted_at 恒 NULL）；同步 §2 第 3 条。 |
+| 2026-11-03 | 实施第一步落地：`packages/backend` 包脚手架（§1 布局）+ 0007~0018 十二批次 57 张表迁移（§3.1 批次划分，逐表对照数据库设计 SDD §5 与附录 A.13 校验）；`apps/server` 的 0001~0006 迁移基础设施按 §1 迁入 backend，server 仅保留 Sequelize 实例、迁移 CLI 薄壳与 MySQL/Redis 探针；server 迁移 CLI 与 `MIGRATION_TEST` 集成测试委托 backend 全链 0001~0018，容器内 63 张表 up→down→up 实测通过。下一步：§3/附录 A 的 11 个 model 文件注册与 §9 第 1 步 identity 模块。 |

@@ -103,7 +103,7 @@ Redis 键 TTL 不超过 session expires_at；access JWT 带 `sid`，验签后检
 | SupportConversationStatus | WAITING_SUPPORT=1/WAITING_USER=2/CLOSED=3 |
 | SupportMessageStatus | VISIBLE=1/REDACTED=2 |
 | SupportSenderType | CUSTOMER=1/ADMIN=2/SYSTEM=3 |
-| SupportMessageType | TEXT=1/IMAGE=2/SYSTEM_NOTICE=3 |
+| SupportMessageType | TEXT=1/IMAGE=2/ATTACHMENT=3/SYSTEM_NOTICE=4 |
 | SupportCategoryType | ACCOUNT=1/PAYMENT=2/WITHDRAWAL=3/GAME=4/OTHER=5 |
 | EntryStatus | QUEUED=1/SEATED=2/FINISHED=3/CANCELLED=4/EXPIRED=5 |
 | OperationStatus | POSTED=1 |
@@ -1750,3 +1750,4 @@ Redis 租约负责短期房间进程所有权；每次接管先递增 `room.fenc
 | 2026-10-16 | 在既有 `social_conversation` 增加陌生人首句等待回复及当日开放状态字段；以会话行锁保证首句/回复限制并发一致，不新增表。 |
 | 2026-10-18 | 明确未设置密码账号可通过已认证会话直接打开并绑定联系方式；有密码时仍验证密码，TOTP 启用时始终验证 TOTP，匹配前台编辑入口和身份 API DTO。 |
 | 2026-10-18 | 邮箱/手机绑定统一免验证码；换绑输入完整旧值，成功后清除 verified_at 并立即释放旧值。 |
+| 2026-11-03 | 校准 §3 状态常量草案 `SupportMessageType` 与 §5.9 `support_message` 逐表定义的一致性：由 TEXT=1/IMAGE=2/SYSTEM_NOTICE=3 改为 TEXT=1/IMAGE=2/ATTACHMENT=3/SYSTEM_NOTICE=4（图片与附件分列两值，§5.9 为语义权威）。 |

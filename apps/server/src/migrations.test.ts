@@ -18,6 +18,10 @@ import type { Sequelize } from 'sequelize';
  * **迁移器与连接必须是动态导入**：本文件在 `pnpm test` 里总会被加载，若在顶层
  * `import` 迁移器，一旦依赖缺失就会在 ESM 解析阶段抛 `ERR_MODULE_NOT_FOUND`，
  * 让 `skip` 完全失效并把整个测试套件带红（历史缺陷 D1）。
+ *
+ * 迁移链 0001~0018（63 张表）全部在 `@gameing/backend`（见 后端实施SDD §1），
+ * 本测试通过 backend 的 `createMigrator` 验证全链可升可降，并对 P0 基线五表做
+ * 公共字段/注释/类型断言。
  */
 
 const TABLES = ['user', 'asset_account', 'asset_operation', 'asset_hold', 'asset_entry'] as const;
@@ -51,7 +55,7 @@ test(
   { skip: enabled ? false : '未设置 MIGRATION_TEST=1，跳过真实 MySQL 迁移测试' },
   async () => {
     const { createLogger } = await import('./infrastructure/logging/logger.js');
-    const { createMigrator } = await import('./infrastructure/database/migrator.js');
+    const { createMigrator } = await import('@gameing/backend/infrastructure/database/migrations');
     const { closeSequelize, getSequelize } = await import('./infrastructure/database/sequelize.js');
 
     const sequelize = getSequelize();

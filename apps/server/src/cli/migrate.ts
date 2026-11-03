@@ -1,9 +1,14 @@
 import { createLogger } from '../infrastructure/logging/logger.js';
-import { closeSequelize } from '../infrastructure/database/sequelize.js';
-import { createMigrator } from '../infrastructure/database/migrator.js';
+import { createMigrator } from '@gameing/backend/infrastructure/database/migrations';
+import { closeSequelize, getSequelize } from '../infrastructure/database/sequelize.js';
 
 /**
- * 迁移任务 CLI。
+ * 迁移任务 CLI（委托 `@gameing/backend` 的全量迁移链 0001~0018）。
+ *
+ * 依据 `docs/02_architecture/后端实施SDD.md` §1：数据库基础设施（Sequelize/Umzug/迁移）
+ * 迁入 `packages/backend`；`apps/server` 仅保留传输装配与进程健康探针。本 CLI 作为
+ * server 侧入口薄壳，复用 backend 的 18 项迁移注册表，保证 `down({to:0})` 能回滚全部
+ * 领域批次而不被跨表外键卡住。
  *
  * 用法（在 Docker dev 容器或已注入 MYSQL_* 的宿主机环境）：
  *   pnpm --filter @gameing/server migrate           # 等价于 up
@@ -17,7 +22,8 @@ const logger = createLogger({ base: { service: 'gameing-hall-migrate' } });
 
 async function main(): Promise<void> {
   const command = process.argv[2] ?? 'up';
-  const migrator = createMigrator();
+  const sequelize = getSequelize();
+  const migrator = createMigrator(sequelize, { logger });
 
   switch (command) {
     case 'up': {
