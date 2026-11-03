@@ -6,7 +6,11 @@
   "exports": {
     "./infrastructure/database": "./src/infrastructure/database/index.ts",
     "./infrastructure/database/migrations": "./src/infrastructure/database/migrator.ts",
-    "./infrastructure/database/models": "./src/infrastructure/database/models/index.ts"
+    "./infrastructure/database/models": "./src/infrastructure/database/models/index.ts",
+    "./modules/identity": "./src/modules/identity/index.ts",
+    "./modules/identity/public": "./src/modules/identity/public.ts",
+    "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
+    "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
@@ -14,6 +18,9 @@
   },
   "dependencies": {
     "@gameing/contracts": "workspace:*",
+    "argon2": "^0.43.0",
+    "ioredis": "^5.6.1",
+    "jose": "^6.0.11",
     "mysql2": "3.24.6",
     "sequelize": "6.37.8",
     "umzug": "3.8.3"

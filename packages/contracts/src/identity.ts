@@ -1,6 +1,11 @@
 import { Type } from '@sinclair/typebox';
 import type { Static, TSchema } from '@sinclair/typebox';
 
+// 重导出 Static 工具类型（backend NodeNext 下不直接依赖 @sinclair/typebox，
+// 用例层统一经本入口取 `Static`；保持契约单一来源纪律，SDD §1）。
+// 注：contracts 是权威契约包，本行仅新增 export type，不改任何 schema/DTO。
+export type { Static } from '@sinclair/typebox';
+
 export const IdentityErrorCode = {
   OK: 'OK',
   VALIDATION_FAILED: 'VALIDATION_FAILED',
