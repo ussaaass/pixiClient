@@ -12,19 +12,21 @@ import { LOBBY_GAME_EXPERIENCE_REFERENCE, LOBBY_GAME_REFERENCE } from '@gameing/
 import { GameErrorCode } from '@gameing/contracts/common/api-errors';
 import Koa from 'koa';
 import Router from '@koa/router';
+import type { IdentityModule } from '@gameing/backend/modules/identity/public';
 import { createLogger, type Logger } from './infrastructure/logging/logger.js';
 import { ApiError, NotFoundError } from './infrastructure/http/error-boundary.js';
 import { createErrorBoundaryMiddleware } from './infrastructure/http/error-boundary.js';
 import { requestIdMiddleware } from './infrastructure/http/request-context.js';
 import { createRequestLoggingMiddleware } from './infrastructure/http/request-logging.js';
 import { setSuccess } from './infrastructure/http/response.js';
+import { createAuthRoutes, createIdentityRoutes } from './http/auth.routes.js';
 
 /**
  * 服务端应用装配（composition root）。
  *
- * 当前 P0 阶段提供：统一 envelope、requestId 贯通、结构化日志、错误边界、
- * `/health/live` 与 `/health/ready` 探活，以及已有的游戏目录只读路由。
- * 数据库、Redis、Socket 与业务 handler 在后续阶段接入。
+ * 当前提供：统一 envelope、requestId 贯通、结构化日志、错误边界、
+ * JSON body parser、health 路由、游戏目录只读路由、identity auth/identity 路由
+ * （identity 路由仅在 `options.identityModule` 装配后挂载）。
  */
 
 /** 就绪探针报告的单个依赖项状态。 */
@@ -58,15 +60,19 @@ export interface ReadinessCheck {
 
 export interface CreateAppOptions {
   logger?: Logger;
-  /** 就绪探针依赖检查。P0 阶段默认为空数组（进程本身即为唯一依赖）。 */
+  /** 就绪探针依赖检查。 */
   readinessChecks?: ReadinessCheck[];
+  /** identity 模块实例（装配后注入；缺省时 auth/identity 路由不挂载）。 */
+  identityModule?: IdentityModule;
 }
 
 export function createApp(options: CreateAppOptions = {}): Koa {
   const logger = options.logger ?? createLogger({ base: { service: 'gameing-hall-api' } });
   const readinessChecks = options.readinessChecks ?? [];
+  const identityModule = options.identityModule;
 
   const app = new Koa();
+  app.use(createJsonBodyParser());
 
   // 中间件顺序很关键：
   // 访问日志必须包在错误边界**外层**，这样错误边界把业务码写进 ctx.state 之后，
@@ -77,6 +83,7 @@ export function createApp(options: CreateAppOptions = {}): Koa {
 
   const router = new Router({ prefix: '/api/v1' });
 
+  // --- health 路由（始终挂载） ---
   router.get('/health/live', (ctx) => {
     setSuccess(ctx, {
       message: '服务进程正常',
@@ -120,6 +127,7 @@ export function createApp(options: CreateAppOptions = {}): Koa {
     };
   });
 
+  // --- 游戏目录只读路由（P0 stub，platform-events / game 模块落地后替换） ---
   router.get('/platform/announcements/active', (ctx) => {
     setSuccess(ctx, {
       message: '当前没有可展示的公告',
@@ -161,15 +169,18 @@ export function createApp(options: CreateAppOptions = {}): Koa {
 
   router.get('/games/:gameKey/difficulties/:difficultyKey/preflight', (ctx) => {
     const item = LOBBY_GAME_EXPERIENCE_REFERENCE.find((entry) => entry.game.gameKey === ctx.params.gameKey);
-    const hall = item?.difficultyHalls.find((entry) => entry.difficultyKey === ctx.params.difficultyKey && entry.enabled);
-    if (!item || !hall) {
+    if (!item) {
+      throw new ApiError(GameErrorCode.GAME_NOT_FOUND, '未找到此游戏。');
+    }
+    const hall = item.difficultyHalls.find((entry) => entry.difficultyKey === ctx.params.difficultyKey && entry.enabled);
+    if (!hall) {
       throw new ApiError(GameErrorCode.GAME_DIFFICULTY_NOT_FOUND, '未找到此难度厅。');
     }
     const ready = item.entryMode === 'LOCAL_PRACTICE' && item.game.isPlayable;
     setSuccess(ctx, {
       message: '难度准入检查完成',
       data: {
-        gameKey: item.game.gameKey,
+        gameKey: ctx.params.gameKey,
         difficultyKey: hall.difficultyKey,
         availability: ready ? ('READY' as const) : ('MODULE_UNAVAILABLE' as const),
         source: 'LOCAL_DEMO' as const,
@@ -179,6 +190,15 @@ export function createApp(options: CreateAppOptions = {}): Koa {
       status: GameExperienceEndpoint.preflight.successStatus,
     });
   });
+
+  // --- identity 路由（仅在模块装配后挂载） ---
+  if (identityModule) {
+    const authRouter = createAuthRoutes(identityModule);
+    router.use(authRouter.routes(), authRouter.allowedMethods());
+
+    const identityRouter = createIdentityRoutes(identityModule);
+    router.use(identityRouter.routes(), identityRouter.allowedMethods());
+  }
 
   app.use(router.routes());
   app.use(router.allowedMethods());
@@ -190,4 +210,47 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   });
 
   return app;
+}
+
+/** 简单 JSON body parser（不依赖第三方包；MIME 校验 + 64 KB 大小限制）。 */
+function createJsonBodyParser(): Koa.Middleware {
+  return async (ctx, next) => {
+    if (ctx.is('application/json')) {
+      const chunks: Buffer[] = [];
+      let totalBytes = 0;
+      for await (const chunk of ctx.req) {
+        totalBytes += (chunk as Buffer).length;
+        if (totalBytes > 64 * 1024) {
+          ctx.status = 413;
+          ctx.body = {
+            requestId: ctx.state.requestId ?? '',
+            code: 'PAYLOAD_TOO_LARGE',
+            message: '请求体过大。',
+            data: null,
+            serverNow: new Date().toISOString(),
+          };
+          return;
+        }
+        chunks.push(chunk as Buffer);
+      }
+      const raw = Buffer.concat(chunks).toString('utf-8');
+      try {
+        (ctx as unknown as { request: { body?: unknown } }).request.body =
+          raw.length > 0 ? JSON.parse(raw) : {};
+      } catch {
+        ctx.status = 400;
+        ctx.body = {
+          requestId: ctx.state.requestId ?? '',
+          code: 'REQUEST_VALIDATION_FAILED',
+          message: 'JSON 解析失败。',
+          data: null,
+          serverNow: new Date().toISOString(),
+        };
+        return;
+      }
+    } else {
+      (ctx as unknown as { request: { body?: unknown } }).request.body = {};
+    }
+    await next();
+  };
 }

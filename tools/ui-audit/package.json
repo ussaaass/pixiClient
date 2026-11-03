@@ -1,0 +1,16 @@
+{
+  "name": "@gameing/ui-audit",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.0.0 <25"
+  },
+  "description": "边框套娃与表面层密度审计工具：读取运行中的前端页面，输出可复核的 DOM 统计与原始结果。",
+  "scripts": {
+    "audit:dom": "node audit.mjs",
+    "audit:css": "node css-stats.mjs"
+  },
+  "dependencies": {
+    "playwright-core": "1.56.0"
+  }
+}

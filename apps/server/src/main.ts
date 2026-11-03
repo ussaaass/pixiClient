@@ -2,6 +2,10 @@ import { createApp, type ReadinessCheck } from './app.js';
 import { probeMysql } from './infrastructure/database/mysql-probe.js';
 import { probeRedis } from './infrastructure/redis/redis-probe.js';
 import { createLogger } from './infrastructure/logging/logger.js';
+import { getSequelize } from './infrastructure/database/sequelize.js';
+import { getRedis } from '@gameing/backend/infrastructure/redis';
+import { addModels } from '@gameing/backend/infrastructure/database/models';
+import { createIdentityModule } from '@gameing/backend/modules/identity/public';
 
 /**
  * 服务进程入口。
@@ -44,25 +48,68 @@ const logger = createLogger({
 });
 
 const port = readPort();
-const app = createApp({ logger, readinessChecks });
+
+// --- identity 模块装配（Redis 会话 + JWT ES256） ---
+// Sequelize 实例 + addModels（注册全部 63 张表的 Model 定义，含 identity 四表 + outbox）
+// 在装配前完成；Redis 连接 lazyConnect=true（首用才握手），纯读路由阶段不影响。
+let identityModule;
+try {
+  const sequelize = getSequelize();
+  addModels(sequelize);
+  const redis = getRedis();
+  identityModule = await createIdentityModule({
+    sequelize,
+    redis,
+    config: {
+      issuer: 'gameing-hall-api',
+      audiences: ['player'],
+      accessTtlSeconds: 600,
+      kid: 'identity-dev',
+    },
+  });
+  await identityModule.init();
+  logger.info('identity 模块装配完成', { issuer: 'gameing-hall-api' });
+} catch (error) {
+  logger.warn('identity 模块装配失败（auth 路由不挂载；MySQL/Redis 未配置或连接失败）', {
+    errorCode: error instanceof Error ? error.name : 'UnknownError',
+  });
+  identityModule = undefined;
+}
+
+const identityModuleOpt = identityModule ?? undefined;
+const app = createApp({
+  logger,
+  readinessChecks,
+  ...(identityModuleOpt ? { identityModule: identityModuleOpt } : {}),
+});
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });
 });
 
-function shutdown(signal: string): void {
+async function shutdown(signal: string): Promise<void> {
   logger.info('收到关闭信号，开始优雅关闭', { signal });
-  server.close((error) => {
+  server.close(async (error) => {
     if (error) {
       logger.error('关闭时发生错误', { errorCode: error.name, cause: error.stack });
       process.exit(1);
+      return;
     }
+    // 关闭 Redis + Sequelize（身份会话 + 数据库连接池）
+    try {
+      const { closeRedis } = await import('@gameing/backend/infrastructure/redis');
+      await closeRedis();
+    } catch {
+      /* Redis 未初始化则跳过 */
+    }
+    const { closeSequelize } = await import('./infrastructure/database/sequelize.js');
+    await closeSequelize();
     logger.info('服务已关闭');
     process.exit(0);
   });
 }
 
-process.on('SIGTERM', () => shutdown('SIGTERM'));
-process.on('SIGINT', () => shutdown('SIGINT'));
+process.on('SIGTERM', () => void shutdown('SIGTERM'));
+process.on('SIGINT', () => void shutdown('SIGINT'));
 
 // 未捕获异常与未处理 rejection 必须落到日志再退出，不能让进程静默挂起。
 process.on('uncaughtException', (error) => {
