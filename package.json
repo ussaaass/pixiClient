@@ -9,9 +9,9 @@
   "scripts": {
     "dev:web": "pnpm --filter @gameing/web dev",
     "dev:server": "pnpm --filter @gameing/server dev",
-    "typecheck": "pnpm -r --if-present typecheck",
+    "typecheck": "pnpm -r --workspace-concurrency=1 --if-present typecheck",
     "test": "pnpm -r --workspace-concurrency=1 --if-present test",
-    "build": "pnpm -r --if-present build",
+    "build": "pnpm -r --workspace-concurrency=1 --if-present build",
     "lint": "eslint packages games apps/server --max-warnings 0",
     "lint:apps": "eslint apps/web apps/admin --max-warnings 200",
     "lint:fix": "eslint packages games apps/server --fix",

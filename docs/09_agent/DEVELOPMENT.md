@@ -59,9 +59,11 @@ docker compose --profile dev run --rm -e MIGRATION_TEST=1 dev pnpm --filter @gam
 - 宿主机负载高时 4-worker 测试起不来：`--maxWorkers=1 --no-file-parallelism` 临时降级。
 - husky `pre-commit` 会对暂存文件跑 `eslint --fix` + `prettier --write`；`post-checkout`/`post-commit` 钩子也会触发，clone 后首次操作可能较慢。
 - `pnpm test` 顶层串行（`--workspace-concurrency=1`），但包内 vitest 是 4 worker（web/admin）。
+- 根 `pnpm typecheck` / `pnpm build` 已加 `--workspace-concurrency=1` 顺序跑（2026-11-03）；容器内存上限下并行跑会 OOM SIGKILL。CI `ubuntu-latest`（7GB）大概率不触发，但顺序跑更稳。
 
 ## 变更历史
 
 | 日期 | 变更 |
 | --- | --- |
 | 2026-11-02 | 新建：登记容器化开发命令、端口表、迁移/生产命令与常见环境坑，口径与 README/CI 对齐。 |
+| 2026-11-03 | §5 常见坑补充：根 `typecheck`/`build` 顺序跑（`--workspace-concurrency=1`），避免容器并行 OOM。 |
