@@ -29,7 +29,7 @@ import { getActivePlatformAnnouncements, getPlatformAnnouncement } from './platf
 import { getHealth } from './platform/health-api';
 import { localClientPreferenceApplication } from './platform/preferences/composition';
 import { DEFAULT_CLIENT_PREFERENCES } from '@gameing/domain/preferences';
-import type { PlayerEntryApplication } from './platform/player-entry/player-entry-application';
+import type { PlayerEntryApplication } from '@gameing/domain/player-entry';
 import type { Ref } from 'vue';
 import type { SessionResponseDto } from '@gameing/contracts/identity';
 import type { IdentitySettingsResponseDto } from '@gameing/contracts/identity';
@@ -39,21 +39,21 @@ import {
   type WalletActivityResponseDto,
   type WalletSummaryResponseDto,
 } from '@gameing/contracts/wallet';
-import type { WalletApplication } from './platform/wallet/wallet-application';
-import type { SupportClientApplication } from './platform/support/support-application';
+import type { WalletApplication } from '@gameing/domain/wallet/application';
+import type { SupportClientApplication } from '@gameing/domain/support/application';
 import type { SocialFriendsApplication } from './platform/social/friends-application';
-import type { SocialApplication } from './platform/social/social-application';
+import type { SocialApplication } from '@gameing/domain/social/application';
 import type { CoinMarketApplication } from '@gameing/domain/coin-market/application';
 import { NotificationAction, NotificationSource, type NotificationSummaryItemDto } from '@gameing/contracts/notifications';
-import type { NotificationSummaryApplication } from './platform/notifications/notification-summary-application';
+import type { NotificationSummaryApplication } from '@gameing/domain/notifications';
 import {
   countUnseenSocialPosts,
   latestSocialPostCursor,
   readSocialPostCursor,
   saveSocialPostCursor,
 } from '@gameing/domain/social/post-badge';
-import type { InviteAgentApplication } from './platform/invite-agent/invite-agent-application';
-import type { WalletFundingApplication } from './wallet-funding/wallet-funding-application';
+import type { InviteAgentApplication } from '@gameing/domain/invite-agent';
+import type { WalletFundingApplication } from '@gameing/domain/wallet-funding';
 
 const DevelopmentWalletFundingWorkspace = import.meta.env.DEV
   ? defineAsyncComponent(() => import('./components/PlayerWalletFundingWorkspace.vue'))

@@ -1,8 +1,32 @@
-import { SocialMessageAttachmentKind, type FriendLookupResponseDto, type SocialConversationListResponseDto, type SocialFriendDto, type SocialMessageAttachmentDto, type SocialMessageDto, type SocialMessageListResponseDto, type SocialOwnProfileResponseDto } from '@gameing/contracts/social';
+import {
+  SocialMessageAttachmentKind,
+  type FriendLookupResponseDto,
+  type SocialConversationListResponseDto,
+  type SocialFriendDto,
+  type SocialMessageAttachmentDto,
+  type SocialMessageDto,
+  type SocialMessageListResponseDto,
+  type SocialOwnProfileResponseDto,
+} from '@gameing/contracts/social';
 
 export type FriendshipState = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'REMOVED';
-export type FriendshipRecord = { pairKey: string; lowUserId: string; highUserId: string; requesterUserId: string; state: FriendshipState; updatedAt: string };
-export type ConversationRecord = { conversationId: string; pairKey: string; lowUserId: string; highUserId: string; updatedAt: string; pendingFirstMessageUserId?: string; openMessagingDay?: string };
+export type FriendshipRecord = {
+  pairKey: string;
+  lowUserId: string;
+  highUserId: string;
+  requesterUserId: string;
+  state: FriendshipState;
+  updatedAt: string;
+};
+export type ConversationRecord = {
+  conversationId: string;
+  pairKey: string;
+  lowUserId: string;
+  highUserId: string;
+  updatedAt: string;
+  pendingFirstMessageUserId?: string;
+  openMessagingDay?: string;
+};
 
 export interface SocialFriendsRepositoryPort {
   getOwnProfile(userId: string): Promise<SocialOwnProfileResponseDto | null>;
@@ -43,7 +67,9 @@ export class SocialFriendsUseCases {
   async lookup(actorId: string, value: string): Promise<FriendLookupResponseDto> {
     const query = value.trim();
     if (query.length < 3 || query.length > 64) return [];
-    const profile = await this.repository.findUserByExactUsername(query) ?? await this.repository.findUserByFriendCode(query.replace(/^LG-FRIEND:/i, '').toUpperCase());
+    const profile =
+      (await this.repository.findUserByExactUsername(query)) ??
+      (await this.repository.findUserByFriendCode(query.replace(/^LG-FRIEND:/i, '').toUpperCase()));
     if (!profile || profile.userId === actorId) return [];
     return [profile];
   }
@@ -56,7 +82,8 @@ export class SocialFriendsUseCases {
       if (await this.repository.isUserBlocked(actorId, otherId)) continue;
       const profile = await this.repository.getOwnProfile(otherId);
       if (!profile) continue;
-      const state = relation.state === 'ACCEPTED' ? 'ACCEPTED' : relation.requesterUserId === actorId ? 'PENDING_OUTGOING' : 'PENDING_INCOMING';
+      const state =
+        relation.state === 'ACCEPTED' ? 'ACCEPTED' : relation.requesterUserId === actorId ? 'PENDING_OUTGOING' : 'PENDING_INCOMING';
       result.push({ ...profile, state, updatedAt: relation.updatedAt });
     }
     return result.sort((a, b) => a.displayName.localeCompare(b.displayName));
@@ -65,7 +92,7 @@ export class SocialFriendsUseCases {
   async requestFriend(actorId: string, otherId: string): Promise<{ accepted: boolean }> {
     if (actorId === otherId) throw new Error('SELF_FRIEND_REQUEST');
     if (await this.repository.isUserBlocked(actorId, otherId)) throw new Error('SOCIAL_USER_BLOCKED');
-    if (!await this.repository.getOwnProfile(otherId)) throw new Error('SOCIAL_USER_NOT_FOUND');
+    if (!(await this.repository.getOwnProfile(otherId))) throw new Error('SOCIAL_USER_NOT_FOUND');
     const pair = this.pair(actorId, otherId);
     const existing = await this.repository.getFriendship(pair.pairKey);
     if (existing?.state === 'ACCEPTED') return { accepted: true };
@@ -119,8 +146,23 @@ export class SocialFriendsUseCases {
         this.repository.getFriendship(conversation.pairKey),
       ]);
       const last = messages.at(-1);
-      const preview = last?.body || (last?.attachments?.some((attachment) => attachment.kind === SocialMessageAttachmentKind.AUDIO) ? '[语音]' : last?.attachments?.some((attachment) => attachment.kind === SocialMessageAttachmentKind.VIDEO) ? '[视频]' : last?.attachments?.length ? '[图片/动图]' : '');
-      result.push({ conversationId: conversation.conversationId, peerUserId, peerDisplayName: peer.displayName, peerFriendCode: peer.friendCode, peerIsFriend: friendship?.state === 'ACCEPTED', ...(last ? { lastMessage: preview, lastMessageAt: last.createdAt } : {}) });
+      const preview =
+        last?.body ||
+        (last?.attachments?.some((attachment) => attachment.kind === SocialMessageAttachmentKind.AUDIO)
+          ? '[语音]'
+          : last?.attachments?.some((attachment) => attachment.kind === SocialMessageAttachmentKind.VIDEO)
+            ? '[视频]'
+            : last?.attachments?.length
+              ? '[图片/动图]'
+              : '');
+      result.push({
+        conversationId: conversation.conversationId,
+        peerUserId,
+        peerDisplayName: peer.displayName,
+        peerFriendCode: peer.friendCode,
+        peerIsFriend: friendship?.state === 'ACCEPTED',
+        ...(last ? { lastMessage: preview, lastMessageAt: last.createdAt } : {}),
+      });
     }
     return result.sort((left, right) => (right.lastMessageAt ?? '').localeCompare(left.lastMessageAt ?? ''));
   }
@@ -132,12 +174,26 @@ export class SocialFriendsUseCases {
     const friendship = await this.repository.getFriendship(conversation.pairKey);
     const isFriend = friendship?.state === 'ACCEPTED';
     const today = socialPolicyDay(this.repository.now());
-    const requiresReply = !isFriend && Boolean(conversation.pendingFirstMessageUserId && conversation.pendingFirstMessageUserId !== actorId);
-    const canSend = friendship?.state !== 'REMOVED' && (isFriend || conversation.openMessagingDay === today || !conversation.pendingFirstMessageUserId);
-    return { conversationId: conversation.conversationId, messages: await this.repository.listMessages(conversation.conversationId), peerIsFriend: isFriend, canSend, requiresReply };
+    const requiresReply =
+      !isFriend && Boolean(conversation.pendingFirstMessageUserId && conversation.pendingFirstMessageUserId !== actorId);
+    const canSend =
+      friendship?.state !== 'REMOVED' && (isFriend || conversation.openMessagingDay === today || !conversation.pendingFirstMessageUserId);
+    return {
+      conversationId: conversation.conversationId,
+      messages: await this.repository.listMessages(conversation.conversationId),
+      peerIsFriend: isFriend,
+      canSend,
+      requiresReply,
+    };
   }
 
-  async sendMessage(actorId: string, conversationId: string, clientMessageId: string, body: string, attachments: SocialMessageAttachmentDto[] = []): Promise<SocialMessageDto> {
+  async sendMessage(
+    actorId: string,
+    conversationId: string,
+    clientMessageId: string,
+    body: string,
+    attachments: SocialMessageAttachmentDto[] = [],
+  ): Promise<SocialMessageDto> {
     const conversation = await this.memberConversation(actorId, conversationId);
     const peerUserId = conversation.lowUserId === actorId ? conversation.highUserId : conversation.lowUserId;
     if (await this.repository.isUserBlocked(actorId, peerUserId)) throw new Error('SOCIAL_USER_BLOCKED');
@@ -152,7 +208,15 @@ export class SocialFriendsUseCases {
     const cleanBody = body.trim();
     if ((!cleanBody && !attachments.length) || cleanBody.length > 2000 || attachments.length > 4) throw new Error('SOCIAL_MESSAGE_INVALID');
     if (attachments.length && !isFriend) throw new Error('SOCIAL_ATTACHMENT_FRIENDS_ONLY');
-    if (attachments.length && !await this.repository.canSendMessageAssets(actorId, peerUserId, attachments.map((attachment) => attachment.assetId))) throw new Error('SOCIAL_ATTACHMENT_INVALID');
+    if (
+      attachments.length &&
+      !(await this.repository.canSendMessageAssets(
+        actorId,
+        peerUserId,
+        attachments.map((attachment) => attachment.assetId),
+      ))
+    )
+      throw new Error('SOCIAL_ATTACHMENT_INVALID');
     const createdAt = this.repository.now();
     const day = socialPolicyDay(createdAt);
     let nextConversation = conversation;
@@ -166,20 +230,34 @@ export class SocialFriendsUseCases {
         nextConversation = { ...withoutOpenDay, pendingFirstMessageUserId: actorId };
       }
     }
-    const message: SocialMessageDto = { messageId: await this.repository.createId(), conversationId, clientMessageId, senderUserId: actorId, body: cleanBody, ...(attachments.length ? { attachments: attachments.map((attachment) => ({ ...attachment })) } : {}), createdAt };
+    const message: SocialMessageDto = {
+      messageId: await this.repository.createId(),
+      conversationId,
+      clientMessageId,
+      senderUserId: actorId,
+      body: cleanBody,
+      ...(attachments.length ? { attachments: attachments.map((attachment) => ({ ...attachment })) } : {}),
+      createdAt,
+    };
     await this.repository.saveMessage(message, { ...nextConversation, updatedAt: createdAt });
     return message;
   }
 
   private async memberConversation(actorId: string, conversationId: string): Promise<ConversationRecord> {
     const conversation = await this.repository.getConversation(conversationId);
-    if (!conversation || (conversation.lowUserId !== actorId && conversation.highUserId !== actorId)) throw new Error('SOCIAL_CONVERSATION_NOT_FOUND');
+    if (!conversation || (conversation.lowUserId !== actorId && conversation.highUserId !== actorId))
+      throw new Error('SOCIAL_CONVERSATION_NOT_FOUND');
     return conversation;
   }
 }
 
 export function socialPolicyDay(utcTimestamp: string): string {
-  const parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Shanghai', year: 'numeric', month: '2-digit', day: '2-digit' }).formatToParts(new Date(utcTimestamp));
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Shanghai',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(new Date(utcTimestamp));
   const value = (type: Intl.DateTimeFormatPartTypes) => parts.find((part) => part.type === type)?.value ?? '';
   return `${value('year')}-${value('month')}-${value('day')}`;
 }

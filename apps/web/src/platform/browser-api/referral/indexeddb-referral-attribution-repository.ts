@@ -1,5 +1,5 @@
 import type { BrowserDevelopmentDatabase, LocalReferralBinding } from '../database';
-import type { ReferralAttributionRepository, ReferralBinding, ReferralCandidate, ReferralInviter } from '../../../referral/referral-attribution-application';
+import type { ReferralAttributionRepository, ReferralBinding, ReferralCandidate, ReferralInviter } from '@gameing/domain/referral';
 
 const REFERRAL_CANDIDATE_KEY = 'referral:ip-candidate:browser-development-source';
 const REFERRAL_TTL_CONFIG_KEY = 'system_config:referral.attribution.candidate_ttl_seconds';

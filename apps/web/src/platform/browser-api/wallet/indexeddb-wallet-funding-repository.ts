@@ -11,7 +11,7 @@ import {
 } from '@gameing/contracts/wallet-funding';
 import type { LocalAssetAccount, LocalAssetEntry, LocalAssetOperation, LocalOrder } from '../database';
 import type { BrowserDevelopmentDatabase } from '../database';
-import type { WalletFundingRepository } from '../../../wallet-funding/wallet-funding-application';
+import type { WalletFundingRepository } from '@gameing/domain/wallet-funding';
 import { LOCAL_FUNDING_CHANNELS } from './local-funding-channels';
 import { calculatePurchaseCoins, DEFAULT_EXCHANGE_RATE_CASH_FEN, DEFAULT_EXCHANGE_RATE_COIN_UNITS } from '@gameing/domain/wallet';
 import { LocalAssetType, LocalAssetOperationType } from './local-asset-constants';

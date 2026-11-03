@@ -1,5 +1,5 @@
 import { IdentityErrorCode } from '@gameing/contracts/identity';
-import { PlayerEntryOutcome, type PlayerIdentityPort } from '../player-entry/player-entry-application';
+import { PlayerEntryOutcome, type PlayerIdentityPort } from '@gameing/domain/player-entry';
 import type { PlayerEntryResultDto } from '@gameing/contracts/player-entry';
 import { ApiRequestError, createApiClient, type ApiFetchPort } from '../http/api-client';
 import type { SessionResponseDto } from '@gameing/contracts/identity';

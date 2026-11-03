@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick } from 'vue';
 import PlayerEntryPage from './PlayerEntryPage.vue';
-import type { PlayerEntryApplication } from '../platform/player-entry/player-entry-application';
+import type { PlayerEntryApplication } from '@gameing/domain/player-entry';
 
 async function flush(): Promise<void> {
   await nextTick();

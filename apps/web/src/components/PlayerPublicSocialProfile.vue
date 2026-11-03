@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import type { SocialPublicProfileDto, SocialPostDto } from '@gameing/contracts/social';
 import type { SocialAuthorReportRequestDto } from '@gameing/contracts/social';
-import type { SocialApplication } from '../platform/social/social-application';
+import type { SocialApplication } from '@gameing/domain/social/application';
 import type { SocialFriendsApplication } from '../platform/social/friends-application';
 import PlayerSocialShareCard, { type SocialShareCardData } from './PlayerSocialShareCard.vue';
 import PlayerAppSelect from './PlayerAppSelect.vue';

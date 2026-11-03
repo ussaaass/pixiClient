@@ -1,5 +1,5 @@
 import type { GameRoomSnapshotDto } from '@gameing/contracts/game-room';
-import type { RoomRepositoryPort } from './room-application';
+import type { RoomRepositoryPort } from '@gameing/domain/rooms/application';
 
 /** Isolated in-memory adapter for local frontend flow rehearsal. */
 export class OfflineRoomAdapter implements RoomRepositoryPort {

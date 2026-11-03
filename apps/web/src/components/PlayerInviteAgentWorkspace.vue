@@ -2,7 +2,7 @@
 import { computed, ref, watch } from 'vue';
 import { AgentDomainStatus, type AgentDomainDto, type InviteLinkDto, type ReferralInviteeDto, type ReferralRewardDto } from '@gameing/contracts/invite-agent';
 import { RewardType } from '@gameing/contracts/referral';
-import type { InviteAgentApplication } from '../platform/invite-agent/invite-agent-application';
+import type { InviteAgentApplication } from '@gameing/domain/invite-agent';
 
 const props = defineProps<{ application: InviteAgentApplication | undefined; authenticated: boolean }>();
 const invite = ref<InviteLinkDto | null>(null);

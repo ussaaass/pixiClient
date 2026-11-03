@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App as VueApp } from 'vue';
 import PlayerWalletTransferWorkspace from './components/PlayerWalletTransferWorkspace.vue';
-import type { WalletApplication } from './platform/wallet/wallet-application';
+import type { WalletApplication } from '@gameing/domain/wallet/application';
 import type { SocialFriendsApplication } from './platform/social/friends-application';
 
 describe('player wallet transfer workspace', () => {

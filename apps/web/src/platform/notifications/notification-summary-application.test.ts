@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { NotificationAction, NotificationSource } from '@gameing/contracts/notifications';
 import { SupportCategoryType, SupportConversationStatus } from '@gameing/contracts/support';
 import { WalletActivityType, WalletAssetType } from '@gameing/contracts/wallet';
-import { createNotificationSummaryApplication } from './notification-summary-application';
+import { createNotificationSummaryApplication } from '@gameing/domain/notifications';
 
 const now = '2026-10-15T12:00:00.000Z';
 

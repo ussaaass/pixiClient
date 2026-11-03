@@ -25,6 +25,27 @@ function readRequired(env: NodeJS.ProcessEnv, name: string): string {
   return value;
 }
 
+/**
+ * 仅解析连接信息，不要求 MySQL 凭证已注入。
+ *
+ * 供就绪探针使用：在凭证缺失的环境下，配置仍可被解析；连接失败时探针会在
+ * 结果里报 "credentials missing" 而不是让 readDatabaseConfig 抛异常中断探针。
+ */
+export function readDatabaseConfigPermissive(env: NodeJS.ProcessEnv = process.env): DatabaseConfig {
+  const rawPort = env.MYSQL_PORT ?? '10306';
+  const port = Number(rawPort);
+  if (!Number.isInteger(port) || port <= 0 || port > 65535) {
+    throw new Error(`MYSQL_PORT 非法：${rawPort}`);
+  }
+  return {
+    host: env.MYSQL_HOST ?? '127.0.0.1',
+    port,
+    database: env.MYSQL_DATABASE ?? 'gameing_hall',
+    username: env.MYSQL_USER ?? '',
+    password: env.MYSQL_PASSWORD ?? '',
+  };
+}
+
 export function readDatabaseConfig(env: NodeJS.ProcessEnv = process.env): DatabaseConfig {
   const rawPort = env.MYSQL_PORT ?? '10306';
   const port = Number(rawPort);

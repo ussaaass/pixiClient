@@ -5,7 +5,15 @@ const MIN_REFERRAL_CANDIDATE_TTL_SECONDS = 60;
 const MAX_REFERRAL_CANDIDATE_TTL_SECONDS = 86_400;
 
 export type ReferralCandidate = { inviteCode: string; expiresAt: string };
-export type ReferralBinding = { userId: string; parent1UserId: string; parent2UserId?: string; parent3UserId?: string; parent4UserId?: string; createdAt: string; status: (typeof ReferralBindingStatus)[keyof typeof ReferralBindingStatus] };
+export type ReferralBinding = {
+  userId: string;
+  parent1UserId: string;
+  parent2UserId?: string;
+  parent3UserId?: string;
+  parent4UserId?: string;
+  createdAt: string;
+  status: (typeof ReferralBindingStatus)[keyof typeof ReferralBindingStatus];
+};
 export type ReferralInviter = { userId: string; inviteCodeExpiresAt?: string };
 
 export interface ReferralAttributionRepository {
@@ -24,9 +32,12 @@ export class ReferralAttributionApplication {
     const inviter = await this.repository.findInviter(inviteCode);
     if (!inviter?.inviteCodeExpiresAt || inviter.inviteCodeExpiresAt <= now.toISOString()) return { captured: false, expiresAt: null };
     const configuredTtl = Number(await this.repository.candidateTtlConfig());
-    const ttl = Number.isSafeInteger(configuredTtl) && configuredTtl >= MIN_REFERRAL_CANDIDATE_TTL_SECONDS && configuredTtl <= MAX_REFERRAL_CANDIDATE_TTL_SECONDS
-      ? configuredTtl
-      : DEFAULT_REFERRAL_CANDIDATE_TTL_SECONDS;
+    const ttl =
+      Number.isSafeInteger(configuredTtl) &&
+      configuredTtl >= MIN_REFERRAL_CANDIDATE_TTL_SECONDS &&
+      configuredTtl <= MAX_REFERRAL_CANDIDATE_TTL_SECONDS
+        ? configuredTtl
+        : DEFAULT_REFERRAL_CANDIDATE_TTL_SECONDS;
     const expiresAt = new Date(now.getTime() + ttl * 1000).toISOString();
     await this.repository.saveCandidate({ inviteCode, expiresAt });
     return { captured: true, expiresAt };
@@ -39,7 +50,9 @@ export class ReferralAttributionApplication {
     const inviter = await this.repository.findInviter(candidate.inviteCode);
     if (!inviter?.inviteCodeExpiresAt || inviter.inviteCodeExpiresAt <= now.toISOString() || inviter.userId === userId) return;
     const ancestors = await this.repository.findBinding(inviter.userId);
-    const parentIds = [inviter.userId, ancestors?.parent1UserId, ancestors?.parent2UserId, ancestors?.parent3UserId].filter((value): value is string => Boolean(value));
+    const parentIds = [inviter.userId, ancestors?.parent1UserId, ancestors?.parent2UserId, ancestors?.parent3UserId].filter(
+      (value): value is string => Boolean(value),
+    );
     if (parentIds.includes(userId)) return;
     await this.repository.saveBinding({
       userId,

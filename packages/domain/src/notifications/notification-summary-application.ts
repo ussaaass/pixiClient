@@ -1,6 +1,12 @@
 import { Value } from '@sinclair/typebox/value';
 import type { PlatformAnnouncement } from '@gameing/contracts/platform-events/announcement';
-import { NotificationAction, NotificationSource, NotificationSummaryResponseSchema, type NotificationSummaryItemDto, type NotificationSummaryResponseDto } from '@gameing/contracts/notifications';
+import {
+  NotificationAction,
+  NotificationSource,
+  NotificationSummaryResponseSchema,
+  type NotificationSummaryItemDto,
+  type NotificationSummaryResponseDto,
+} from '@gameing/contracts/notifications';
 import type { SocialFriendDto } from '@gameing/contracts/social';
 import { SupportConversationStatus, type SupportConversationDto } from '@gameing/contracts/support';
 import type { WalletActivityItemDto } from '@gameing/contracts/wallet';
@@ -44,7 +50,12 @@ function walletItem(value: WalletActivityItemDto): NotificationSummaryItemDto {
 }
 
 function supportItem(value: SupportConversationDto): NotificationSummaryItemDto {
-  const statusCopy = value.status === SupportConversationStatus.WAITING_SUPPORT ? '等待客服回复' : value.status === SupportConversationStatus.WAITING_USER ? '等待你回复' : '会话已结束';
+  const statusCopy =
+    value.status === SupportConversationStatus.WAITING_SUPPORT
+      ? '等待客服回复'
+      : value.status === SupportConversationStatus.WAITING_USER
+        ? '等待你回复'
+        : '会话已结束';
   return {
     itemId: `support:${value.conversationId}`,
     source: NotificationSource.SUPPORT,
@@ -87,7 +98,8 @@ export function createNotificationSummaryApplication(sources: NotificationSource
       else unavailableSources.push(NotificationSource.WALLET);
       if (support.status === 'fulfilled') items.push(...support.value.map(supportItem));
       else unavailableSources.push(NotificationSource.SUPPORT);
-      if (social.status === 'fulfilled') items.push(...social.value.filter((friend) => friend.state === 'PENDING_INCOMING').map(friendRequestItem));
+      if (social.status === 'fulfilled')
+        items.push(...social.value.filter((friend) => friend.state === 'PENDING_INCOMING').map(friendRequestItem));
       else unavailableSources.push(NotificationSource.SOCIAL_FRIEND_REQUEST);
       items.sort((left, right) => right.occurredAt.localeCompare(left.occurredAt) || left.itemId.localeCompare(right.itemId));
       const response: NotificationSummaryResponseDto = { items: items.slice(0, 100), unavailableSources };

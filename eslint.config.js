@@ -54,6 +54,16 @@ export default [
     rules: sharedRules,
   },
   {
+    // Node CLI 脚本（.mjs）：process/console 是 Node 全局，需显式声明为 environment。
+    // 用 globalThis 访问以兼容"浏览器 + Node 双环境"的 TS 类型检查（packages/domain
+    // 的 lib 只声明 ES2022，不含 Node 类型）；ESLint 侧仍按 Node 环境豁免 no-undef。
+    files: ['**/*.mjs'],
+    languageOptions: {
+      globals: { process: 'readonly', console: 'readonly', Buffer: 'readonly' },
+    },
+    rules: { 'no-undef': 'error' },
+  },
+  {
     // Vue 模板里的中文文案按中文排版惯例使用全角空格 U+3000 做视觉间隔，
     // 属于有意为之的排版字符而非复制粘贴产生的隐形字符。
     // ESLint 10 的 no-irregular-whitespace 不支持按字符豁免，故在 .vue 内整体关闭，

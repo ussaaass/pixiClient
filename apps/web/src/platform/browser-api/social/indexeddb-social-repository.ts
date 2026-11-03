@@ -20,8 +20,8 @@ import type {
   LocalUser,
 } from '../database';
 import type { EncryptedMessageAsset, SocialMessageAssetRepository } from '../../assets/social-message-asset-application';
-import type { ConversationRecord, FriendshipRecord, SocialFriendsRepositoryPort } from '../../social/social-friends-use-cases';
-import type { SocialRepositoryPort } from '../../social/social-application';
+import type { ConversationRecord, FriendshipRecord, SocialFriendsRepositoryPort } from '@gameing/domain/social/friends-use-cases';
+import type { SocialRepositoryPort } from '@gameing/domain/social/application';
 import type { SocialAccessRepositoryPort } from '@gameing/domain/social/access-policy';
 import { RewardType } from '@gameing/contracts/referral';
 import { ensureLocalDemoCommunity, ensureLocalDemoSocialUsers, localDemoProfileOutcomes } from './local-demo-social-seed';

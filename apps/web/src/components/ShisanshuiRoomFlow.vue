@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import type { RoomDifficultyKey, GameRoomSnapshotDto } from '@gameing/contracts/game-room';
-import type { RoomApplication, RoomApplicationFailureCode } from '../platform/rooms/room-application';
+import type { RoomApplication, RoomApplicationFailureCode } from '@gameing/domain/rooms/application';
 
 const props = defineProps<{
   application: RoomApplication;

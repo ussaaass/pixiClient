@@ -38,3 +38,11 @@ jobs:
         run: pnpm test
       - name: 构建
         run: pnpm build
+      # 第七关：OpenAPI 生成与 diff（`docs/09_agent/OPENAPI.md`）
+      # 生成器把 `packages/contracts` 的 TypeBox schema 原样拼成 OpenAPI 3.1 JSON。
+      # `openapi:check` 在 CI 上对比 `packages/contracts/dist/openapi.json` 与重新生成产物，
+      # 破坏性 schema 变更（additionalProperties / 字段删除 / 枚举语义）在合并前被发现。
+      - name: 生成 OpenAPI 文档
+        run: pnpm --filter @gameing/contracts openapi
+      - name: 校验 OpenAPI 文档与注册表一致
+        run: pnpm --filter @gameing/contracts openapi:check

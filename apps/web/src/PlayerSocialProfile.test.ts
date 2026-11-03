@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App as VueApp } from 'vue';
 import type { SocialFriendsApplication } from './platform/social/friends-application';
 import PlayerPublicSocialProfile from './components/PlayerPublicSocialProfile.vue';
-import { createSocialApplication } from './platform/social/social-application';
+import { createSocialApplication } from '@gameing/domain/social/application';
 import { openBrowserDevelopmentDatabase, resetBrowserDevelopmentDatabase } from './platform/browser-api/database';
 import { IndexedDbSocialRepository } from './platform/browser-api/social/indexeddb-social-repository';
 

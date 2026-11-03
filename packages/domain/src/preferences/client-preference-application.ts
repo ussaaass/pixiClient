@@ -5,7 +5,7 @@ import {
   type ClientPreferenceDto,
   type UpdateClientPreferenceRequestDto,
 } from '@gameing/contracts/client-preferences';
-import { DEFAULT_CLIENT_PREFERENCES, updateClientPreference } from '@gameing/domain/preferences';
+import { DEFAULT_CLIENT_PREFERENCES, updateClientPreference } from '../preferences/preferences-domain';
 
 export interface ClientPreferenceRepositoryPort {
   load(): Promise<unknown>;

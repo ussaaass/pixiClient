@@ -1,7 +1,7 @@
 import type { ClientPreferenceDto } from '@gameing/contracts/client-preferences';
 import { ClientPreferenceDtoSchema } from '@gameing/contracts/client-preferences';
 import { Value } from '@sinclair/typebox/value';
-import type { ClientPreferenceRepositoryPort } from './client-preference-application';
+import type { ClientPreferenceRepositoryPort } from '@gameing/domain/preferences/application';
 
 const STORAGE_KEY = 'gameing-hall.clientPreferences.v1';
 

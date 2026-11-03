@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { ClientPreferenceKey } from '@gameing/contracts/client-preferences';
-import { createClientPreferenceApplication } from './client-preference-application';
+import { createClientPreferenceApplication } from '@gameing/domain/preferences/application';
 import { LocalStorageClientPreferenceAdapter } from './local-storage-client-preference-adapter';
 
 describe('client preference application', () => {

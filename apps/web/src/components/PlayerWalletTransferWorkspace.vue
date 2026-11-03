@@ -3,7 +3,7 @@ import { computed, ref } from 'vue';
 import type { FriendLookupResponseDto } from '@gameing/contracts/social';
 import type { WalletTransferQuoteDto } from '@gameing/contracts/wallet';
 import type { SocialFriendsApplication } from '../platform/social/friends-application';
-import type { WalletApplication } from '../platform/wallet/wallet-application';
+import type { WalletApplication } from '@gameing/domain/wallet/application';
 
 const props = defineProps<{ wallet: WalletApplication; friends: SocialFriendsApplication; canTransfer: boolean; turnoverRemaining: string; availableCoins: string }>();
 const emit = defineEmits<{ completed: [] }>();

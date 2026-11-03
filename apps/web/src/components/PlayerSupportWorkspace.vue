@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onBeforeUnmount, onMounted, ref } from 'vue';
 import { SupportCategoryType, SupportConversationStatus, type CreateSupportConversationRequestDto, type SupportConversationDto, type SupportMessageDto } from '@gameing/contracts/support';
-import type { SupportClientApplication } from '../platform/support/support-application';
+import type { SupportClientApplication } from '@gameing/domain/support/application';
 
 const props = defineProps<{ application: SupportClientApplication }>();
 const categories = [

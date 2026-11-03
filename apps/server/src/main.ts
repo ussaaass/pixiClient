@@ -1,4 +1,6 @@
 import { createApp, type ReadinessCheck } from './app.js';
+import { probeMysql } from './infrastructure/database/mysql-probe.js';
+import { probeRedis } from './infrastructure/redis/redis-probe.js';
 import { createLogger } from './infrastructure/logging/logger.js';
 
 /**
@@ -18,9 +20,23 @@ function readPort(): number {
 
 /**
  * 就绪探针依赖。
- * P0 阶段服务进程本身是唯一依赖；接入 MySQL/Redis 后在此登记对应探针。
+ *
+ * P1 阶段登记 MySQL 与 Redis 两个探针：
+ * - `mysql`：通过进程内唯一 Sequelize 实例执行 `authenticate`，凭证缺失时
+ *   报 "credentials missing" 而不是抛异常中断探针。
+ * - `redis`：当前仅做 TCP 可达性检查（Redis 尚未接入服务端依赖）；接入
+ *   ioredis 后扩展为 `PING` 校验，契约保持不变。
+ *
+ * 探针返回 null 表示就绪；返回字符串表示未就绪的安全原因（不含密码等敏感信息）。
+ * 任一探针未就绪时，`/health/ready` 返回 503 + `SERVICE_UNAVAILABLE`。
+ *
+ * 注意：探针未就绪不会阻止服务启动（`/health/live` 仍返回 200），
+ * 只影响 `/health/ready` 与容器编排的就绪判定。
  */
-const readinessChecks: ReadinessCheck[] = [];
+const readinessChecks: ReadinessCheck[] = [
+  { name: 'mysql', probe: probeMysql },
+  { name: 'redis', probe: () => probeRedis() },
+];
 
 const logger = createLogger({
   level: (process.env.LOG_LEVEL as 'debug' | 'info' | 'warn' | 'error' | undefined) ?? 'info',

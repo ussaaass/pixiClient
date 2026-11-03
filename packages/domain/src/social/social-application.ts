@@ -21,7 +21,7 @@ import {
   type SocialPublicProfilePostsResponseDto,
   type SocialAuthorReportRequestDto,
 } from '@gameing/contracts/social';
-import { createPost, createReply, type SocialFailureCode as DomainSocialFailureCode } from '@gameing/domain/social';
+import { createPost, createReply, type SocialFailureCode as DomainSocialFailureCode } from './social-domain';
 
 export interface SocialRepositoryPort {
   currentActor(): Promise<{ userId: string; displayName: string } | null>;

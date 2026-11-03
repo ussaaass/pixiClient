@@ -32,17 +32,21 @@
     "./agent-announcements": "./src/agent-announcements.ts",
     "./agent-social": "./src/agent-social.ts",
     "./coin-market": "./src/coin-market.ts",
-    "./event-operations": "./src/event-operations.ts"
+    "./event-operations": "./src/event-operations.ts",
+    "./openapi": "./src/openapi/registry.ts"
   },
   "dependencies": {
     "@sinclair/typebox": "0.34.52"
   },
   "devDependencies": {
+    "tsx": "4.23.15",
     "typescript": "6.0.3",
     "vitest": "5.0.5"
   },
   "scripts": {
     "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run --maxWorkers=1 --no-file-parallelism"
+    "test": "vitest run --maxWorkers=1 --no-file-parallelism",
+    "openapi": "node --import tsx ./openapi.mjs",
+    "openapi:check": "node --import tsx ./openapi.mjs --check"
   }
 }

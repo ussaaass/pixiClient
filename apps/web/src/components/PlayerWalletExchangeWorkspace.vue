@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue';
 import type { WalletExchangeQuoteDto } from '@gameing/contracts/wallet';
-import type { WalletApplication } from '../platform/wallet/wallet-application';
+import type { WalletApplication } from '@gameing/domain/wallet/application';
 
 const props = defineProps<{ wallet: WalletApplication; canExchange: boolean; turnoverRemaining: string; availableCoins: string }>();
 const emit = defineEmits<{ completed: [] }>();

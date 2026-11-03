@@ -2,7 +2,7 @@
 import { computed, onMounted, ref, watch } from 'vue';
 import { PayoutChannelType, WithdrawalStatus, type CreatePayoutAccountRequestDto, type PayoutAccountDto, type WithdrawalDto, type WithdrawalQuoteDto } from '@gameing/contracts/wallet';
 import PlayerAppSelect from './PlayerAppSelect.vue';
-import type { WalletApplication } from '../platform/wallet/wallet-application';
+import type { WalletApplication } from '@gameing/domain/wallet/application';
 
 const props = defineProps<{ wallet: WalletApplication; turnoverRemaining: string; availableCnyFen: string; view?: 'all' | 'withdraw' | 'history' | 'accounts' }>();
 const emit = defineEmits<{ completed: []; manageAccounts: [] }>();

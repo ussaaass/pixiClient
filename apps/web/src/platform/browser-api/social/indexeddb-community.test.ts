@@ -2,7 +2,7 @@ import 'fake-indexeddb/auto';
 import { afterEach, describe, expect, it } from 'vitest';
 import { resetBrowserDevelopmentDatabase, openBrowserDevelopmentDatabase } from '../database';
 import { IndexedDbSocialRepository } from './indexeddb-social-repository';
-import { createSocialApplication } from '../../social/social-application';
+import { createSocialApplication } from '@gameing/domain/social/application';
 
 describe('IndexedDB community workflow', () => {
   afterEach(async () => { await resetBrowserDevelopmentDatabase(); });

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createPlayerEntryApplication, PlayerEntryOutcome } from './player-entry-application';
+import { createPlayerEntryApplication, PlayerEntryOutcome } from '@gameing/domain/player-entry';
 import { OfflinePlayerIdentityAdapter } from './offline-player-identity-adapter';
 
 describe('player entry application', () => {

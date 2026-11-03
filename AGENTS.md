@@ -1,4 +1,61 @@
-# 项目约束
+# Gameing Hall Pixi — 项目代理指南（AGENTS.md）
+
+多端游戏大厅 monorepo（pnpm workspace）：手机/PC 浏览器 H5 + 游戏子厅 + 独立 Admin 后台 + Koa API。首个自研游戏为十三张（`games/shisanshui`），PixiJS 本地练习牌桌已可玩；联机房间、真实账号/资产/结算尚未闭环。施工前必须读 `README.md` 与对应 SDD，本文件是入口而非全部规范。
+
+## 1. 技术栈（已锁定）
+
+- Node `>=24 <25`（镜像锁 `24.21.0`）、pnpm `12.10.1`、TypeScript `6.0.3`（strict）、ESM。
+- 前端：Vue 3.5 + Vite 8 + Element Plus（仅 admin）；游戏视图 PixiJS `8.22.0`；契约 TypeBox `0.34.52`（`@sinclair/typebox`）。
+- 服务端：Koa 3 + `@koa/router`；MySQL 9.7.2 + Sequelize 6.37.8 + mysql2 3.24.6；迁移 Umzug 3.8.3 + 自定义 `migration_history`。
+- 测试：Vitest + Happy DOM（前端/DOM）、`node --test`（server 迁移集成测试，需 `MIGRATION_TEST=1`）。
+- 容器：Compose project `gameing-hall-pixi`，MySQL/Redis 具名 external 卷；构建/部署一律在 Docker dev 容器内。
+
+## 2. 仓库地图
+
+| 路径 | 职责 |
+| --- | --- |
+| `apps/web` | `@gameing/web` 玩家大厅 H5：大厅/子厅、钱包/社交/客服/邀请等工作区，Vue 组件 + 领域 application；`src/platform/browser-api/` 是 IndexedDB 本地适配器（LOCAL_BROWSER_SERVER 模式，dev-only） |
+| `apps/admin` | `@gameing/admin` 独立后台：Element Plus，19 个领域工作区当前全部使用本地演示数据，无认证、无领域 API |
+| `apps/server` | `@gameing/server` Koa 入口：envelope/requestId/日志/错误边界、health 路由、只读游戏目录路由；`src/infrastructure/database/` 含 Sequelize 实例与 Umzug 迁移（0001~0006 六张表） |
+| `packages/contracts` | 玩家端 TypeBox DTO/schema/非零常量（按 subpath 导出，单一来源） |
+| `packages/admin-contracts` | Admin 专属 DTO/schema |
+| `packages/domain` | 前后端共用的纯领域规则（wallet/social/support/rooms/preferences/coin-market），只依赖 contracts，无 DOM/Node 全局 |
+| `games/shisanshui/rules` | 十三张纯 TS 规则与结算（确定性、无随机/时钟/IO） |
+| `games/shisanshui/client` | PixiJS 本地练习牌桌客户端 |
+| `tools/asset-generation` | AI 素材生成 CLI（`assetgen`，OpenAI/Kling）；密钥只在 `tools/asset-generation/.env`，不提交 |
+| `tools/audio-placeholders` | 占位音频生成脚本（`generate.mjs`） |
+| `tools/ui-audit` | 边框/表面层 DOM 审计脚本（playwright-core） |
+| `assets/` | AI 原图、provenance、manifest；`candidates/`、`provenance/jobs/` 不提交 |
+| `docs/` | 权威规则来源，按编号目录归档（`00_problem`~`08_reference`），入口 `docs/README.md` |
+| `compose.yaml` / `Dockerfile` / `Dockerfile.dev` | 本地开发与生产镜像；`prod` profile 提供 `api-prod` |
+
+包依赖边界（铁律）：web/admin 不得 import backend/Sequelize/Koa；domain 不依赖任何 I/O；contracts 不依赖 Node built-ins；游戏 client 不得引 backend。详见 `docs/02_architecture/代码分层与接口实现规范.md`。
+
+## 3. 开发命令
+
+全量门禁只在 Docker 内（宿主机直跑 `apps/web` 构建会 `write EPIPE`）：
+
+```sh
+docker compose --profile dev run --rm dev pnpm install   # 首次/lockfile 变化
+pnpm docker:check          # 等价 CI：lint → lint:apps → format:check → typecheck → test → build
+pnpm check:changed         # 本地增量（基线 origin/main，SINCE 可覆盖）；合并前仍须 docker:check
+pnpm --filter @gameing/server migrate [up|down|status]   # 需 compose MySQL 已启动
+docker compose --profile full up --build -d --wait        # 大厅 10373 / Admin 10374 / API 10300
+```
+
+本机端口：server `10300`、MySQL `10306`、Redis `10371`、web `10373`、admin `10374`。迁移集成测试需显式 `MIGRATION_TEST=1`。详见 `docs/09_agent/DEVELOPMENT.md` 与 `docs/09_agent/TESTING.md`。
+
+## 4. 业务规则速查（权威定义见 04_domains 文档，勿在代码里另写一套）
+
+- 常量/枚举一律非零，从 1 起；`0` 仅作查询筛选哨兵。所有表 `id BIGINT UNSIGNED` + `status` + `created_at/updated_at/deleted_at DATETIME(3)` + 全字段注释；引用字段 `abc_id` / `<role>_<table>_id`；流水与审计不可变。
+- 玩家统一 `user` 表；`role_type`/`reward_type` 非零常量；邀请五级（含本人）上限四个上级，返点 10/8/5/3；默认 `reward_type=1`（充值返点）。
+- 金币转账手续费 5%（发送方额外支付）；赠币与普通金币同钱包，赠币按配置加流水要求，未完成流水禁止提现/转出。
+- 充值买金币、返点入余额、金币兑余额后提现；CNY 余额默认 1:10，配置取值；TRON USDT 自建；提现默认 1000 枚金币整数倍门槛 + 身份三选一。
+- 系统账户为资产来源/归宿，外部收支与内部转账守恒边界分开；系统金币发行余额可为负，玩家资产与系统 CNY 不可透支。
+- 登录 JWT：访问令牌与设备/刷新/二维码凭证分离，服务端撤销。
+- 金额用十进制字符串传输（BIGINT ID 同）；时区统一 UTC；不可变分录 `deleted_at` 恒 NULL、`updated_at=created_at`。
+
+## 5. 项目硬约束（原有内容，全部保留）
 
 - 每个 Markdown（`.md`）文件末尾必须包含“变更历史”区块；每次修改文件时，在该区块追加日期与简明变更摘要。新建 Markdown 文件也必须以该区块结束。
 - `docs/` 按文档性质归档到编号分类目录；新增文档放入对应分类并更新 `docs/README.md`，不要把专项文档散放在 `docs/` 根目录。
@@ -25,6 +82,13 @@
 - 每次修改页面或页面样式后，必须检查代表性桌面/移动视口的宽高：至少记录视口尺寸、页面 `scrollWidth/clientWidth` 与 `scrollHeight/clientHeight`，确认是否有非预期横向或纵向溢出；设计内的轮播/滚动容器单独验收。优先用真实浏览器预览或 E2E；若环境没有浏览器，运行可用的构建/测试并明确记录几何验收未完成，不能把它说成已通过。
 - 如确认某项偏离现有规范能够显著减少代码量或结构复杂度，不得擅自偏离或悄悄回退；先向用户给出具体差异、节省点、影响与维护代价，等待用户决定。未获批准时遵循现行规范。
 
+## 6. 施工流程（给编码代理）
+
+1. 读本文件 → `docs/README.md` → 受影响的 04_domains/05_data SDD 与现有实现（结构问题先用 graphify 查询）。
+2. 纵向闭环推进，按受影响模块跑 `pnpm check:changed`；页面/样式改动做视口几何验收；合并前 `pnpm docker:check`。
+3. 更新受影响 Markdown 的“变更历史”；文档与代码冲突时先报告冲突，不擅自重定义产品规则。
+4. 详细步骤见 `docs/09_agent/AGENT_WORKFLOW.md`；数据库迁移见 `docs/09_agent/DATABASE.md`；验收标准见 `docs/09_agent/PROJECT_STATUS.md`。
+
 ## 变更历史
 
 | 日期 | 变更 |
@@ -38,3 +102,4 @@
 | 2026-10-10 | 增加施工后规范回顾，并规定显著简化但偏离规范的方案须先交用户决定。 |
 | 2026-10-10 | 增加页面修改后的视口宽高及滚动溢出检查纪律。 |
 | 2026-10-22 | 增补 Graphify 知识图谱使用纪律（查询优先于 grep、改后增量更新、产物不提交），并明确本仓库无 Python 源码、自动化一律用 Node/TS。 |
+| 2026-11-02 | 重构为代理入口文件：新增技术栈、仓库地图、开发命令与施工流程索引，原有“项目约束”逐条保留并移入 §5；新增 `docs/09_agent/` 文档组并在此登记链接。 |

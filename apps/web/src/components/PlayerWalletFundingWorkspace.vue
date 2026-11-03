@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
 import { FundingOrderStatus, type FundingChannelDto, type FundingOrderDto } from '@gameing/contracts/wallet-funding';
-import type { WalletFundingApplication } from '../wallet-funding/wallet-funding-application';
+import type { WalletFundingApplication } from '@gameing/domain/wallet-funding';
 
 const props = defineProps<{ application: WalletFundingApplication; view?: 'all' | 'purchase' | 'orders' }>();
 const emit = defineEmits<{ completed: []; contactSupport: [] }>();

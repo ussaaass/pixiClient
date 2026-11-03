@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue';
 import type { CreateSocialPostReplyRequestDto, CreateSocialPostRequestDto, SocialContentActionRequestDto, SocialContentActionStateDto, SocialPostDto, SocialPostReplyDto, SocialTopicDto } from '@gameing/contracts/social';
-import type { SocialApplication } from '../platform/social/social-application';
+import type { SocialApplication } from '@gameing/domain/social/application';
 import PlayerSocialShareCard, { type SocialShareCardData } from './PlayerSocialShareCard.vue';
 import PlayerAppSelect from './PlayerAppSelect.vue';
 

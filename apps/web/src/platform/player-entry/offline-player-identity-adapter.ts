@@ -1,4 +1,4 @@
-import { PlayerEntryOutcome, type PlayerIdentityPort } from './player-entry-application';
+import { PlayerEntryOutcome, type PlayerIdentityPort } from '@gameing/domain/player-entry';
 import type { PlayerEntryResultDto } from '@gameing/contracts/player-entry';
 import type { IdentitySettingsResponseDto } from '@gameing/contracts/identity';
 
@@ -40,6 +40,6 @@ export class OfflinePlayerIdentityAdapter implements PlayerIdentityPort {
 
   async disableTotp(): Promise<import('@gameing/contracts/identity').TotpDisabledResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
   async rotateTotpRecoveryCodes(): Promise<import('@gameing/contracts/identity').TotpEnabledResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
-  async prepareRecoveryCredential(): Promise<import('./player-entry-application').PreparedRecoveryCredential> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
+  async prepareRecoveryCredential(): Promise<import('@gameing/domain/player-entry').PreparedRecoveryCredential> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
   async activateRecoveryCredential(): Promise<import('@gameing/contracts/identity').IdentitySettingsResponseDto> { throw new Error('IDENTITY_SERVICE_REQUIRED'); }
 }

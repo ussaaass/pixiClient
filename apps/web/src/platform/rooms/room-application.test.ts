@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { Value } from '@sinclair/typebox/value';
 import { GameRoomSnapshotSchema } from '@gameing/contracts/game-room';
-import { createRoomApplication } from './room-application';
+import { createRoomApplication } from '@gameing/domain/rooms/application';
 import { OfflineRoomAdapter } from './offline-room-adapter';
 
 describe('offline room application', () => {

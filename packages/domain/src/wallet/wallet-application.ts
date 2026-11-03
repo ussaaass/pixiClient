@@ -1,5 +1,30 @@
 import { Value } from '@sinclair/typebox/value';
-import { CreatePayoutAccountRequestSchema, CreateWithdrawalRequestSchema, WalletExchangeQuoteRequestSchema, WalletExchangeRequestSchema, WalletTransferQuoteRequestSchema, WalletTransferRequestSchema, WithdrawalQuoteRequestSchema, type CreatePayoutAccountRequestDto, type CreateWithdrawalRequestDto, type PayoutAccountDto, type WalletActivityCursorDto, type WalletActivityResponseDto, type WalletExchangeQuoteDto, type WalletExchangeQuoteRequestDto, type WalletExchangeRequestDto, type WalletExchangeResultDto, type WalletSummaryResponseDto, type WalletTransferQuoteDto, type WalletTransferQuoteRequestDto, type WalletTransferRequestDto, type WalletTransferResultDto, type WithdrawalDto, type WithdrawalQuoteDto, type WithdrawalQuoteRequestDto } from '@gameing/contracts/wallet';
+import {
+  CreatePayoutAccountRequestSchema,
+  CreateWithdrawalRequestSchema,
+  WalletExchangeQuoteRequestSchema,
+  WalletExchangeRequestSchema,
+  WalletTransferQuoteRequestSchema,
+  WalletTransferRequestSchema,
+  WithdrawalQuoteRequestSchema,
+  type CreatePayoutAccountRequestDto,
+  type CreateWithdrawalRequestDto,
+  type PayoutAccountDto,
+  type WalletActivityCursorDto,
+  type WalletActivityResponseDto,
+  type WalletExchangeQuoteDto,
+  type WalletExchangeQuoteRequestDto,
+  type WalletExchangeRequestDto,
+  type WalletExchangeResultDto,
+  type WalletSummaryResponseDto,
+  type WalletTransferQuoteDto,
+  type WalletTransferQuoteRequestDto,
+  type WalletTransferRequestDto,
+  type WalletTransferResultDto,
+  type WithdrawalDto,
+  type WithdrawalQuoteDto,
+  type WithdrawalQuoteRequestDto,
+} from '@gameing/contracts/wallet';
 
 export interface WalletRepository {
   grantWelcomeGift(userId: string): Promise<void>;
@@ -53,22 +78,30 @@ export class WalletUseCases {
     return this.repository.exchangeCoins(userId, request);
   }
 
-  listPayoutAccounts(userId: string): Promise<PayoutAccountDto[]> { return this.repository.listPayoutAccounts(userId); }
+  listPayoutAccounts(userId: string): Promise<PayoutAccountDto[]> {
+    return this.repository.listPayoutAccounts(userId);
+  }
   async createPayoutAccount(userId: string, request: CreatePayoutAccountRequestDto): Promise<PayoutAccountDto> {
     if (!Value.Check(CreatePayoutAccountRequestSchema, request)) throw new Error('INVALID_PAYOUT_ACCOUNT');
     return this.repository.createPayoutAccount(userId, request);
   }
-  deletePayoutAccount(userId: string, payoutAccountId: string): Promise<{ deleted: boolean }> { return this.repository.deletePayoutAccount(userId, payoutAccountId); }
+  deletePayoutAccount(userId: string, payoutAccountId: string): Promise<{ deleted: boolean }> {
+    return this.repository.deletePayoutAccount(userId, payoutAccountId);
+  }
   async quoteWithdrawal(userId: string, request: WithdrawalQuoteRequestDto): Promise<WithdrawalQuoteDto> {
     if (!Value.Check(WithdrawalQuoteRequestSchema, request)) throw new Error('INVALID_WITHDRAWAL_AMOUNT');
     return this.repository.quoteWithdrawal(userId, request);
   }
-  listWithdrawals(userId: string): Promise<WithdrawalDto[]> { return this.repository.listWithdrawals(userId); }
+  listWithdrawals(userId: string): Promise<WithdrawalDto[]> {
+    return this.repository.listWithdrawals(userId);
+  }
   async createWithdrawal(userId: string, request: CreateWithdrawalRequestDto): Promise<WithdrawalDto> {
     if (!Value.Check(CreateWithdrawalRequestSchema, request)) throw new Error('INVALID_WITHDRAWAL_AMOUNT');
     return this.repository.createWithdrawal(userId, request);
   }
-  cancelWithdrawal(userId: string, withdrawalId: string): Promise<WithdrawalDto> { return this.repository.cancelWithdrawal(userId, withdrawalId); }
+  cancelWithdrawal(userId: string, withdrawalId: string): Promise<WithdrawalDto> {
+    return this.repository.cancelWithdrawal(userId, withdrawalId);
+  }
 }
 
 export interface WalletApplication {
@@ -102,5 +135,19 @@ export function createWalletApplication(
   createWithdrawal: (request: CreateWithdrawalRequestDto) => Promise<WithdrawalDto>,
   cancelWithdrawal: (withdrawalId: string) => Promise<WithdrawalDto>,
 ): WalletApplication {
-  return { getSummary: readSummary, getActivity: readActivity, quoteTransfer, transferCoins, quoteExchange, exchangeCoins, listPayoutAccounts, createPayoutAccount, deletePayoutAccount, quoteWithdrawal, listWithdrawals, createWithdrawal, cancelWithdrawal };
+  return {
+    getSummary: readSummary,
+    getActivity: readActivity,
+    quoteTransfer,
+    transferCoins,
+    quoteExchange,
+    exchangeCoins,
+    listPayoutAccounts,
+    createPayoutAccount,
+    deletePayoutAccount,
+    quoteWithdrawal,
+    listWithdrawals,
+    createWithdrawal,
+    cancelWithdrawal,
+  };
 }

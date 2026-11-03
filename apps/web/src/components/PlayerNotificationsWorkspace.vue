@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from 'vue';
 import { NotificationSource, type NotificationSummaryItemDto, type NotificationSummaryResponseDto } from '@gameing/contracts/notifications';
-import type { NotificationSummaryApplication } from '../platform/notifications/notification-summary-application';
+import type { NotificationSummaryApplication } from '@gameing/domain/notifications';
 
 const props = defineProps<{ application: NotificationSummaryApplication; authenticated: boolean; sources?: readonly string[] | undefined; socialEnabled?: boolean | undefined }>();
 const emit = defineEmits<{ open: [item: NotificationSummaryItemDto]; login: [] }>();

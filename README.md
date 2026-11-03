@@ -121,6 +121,8 @@ ORM 指定 Sequelize。[数据库规范](./docs/05_data/数据库设计规范与
 - [monorepo 结构规划](./docs/02_architecture/项目结构规划.md)
 - [网络预加载设计](./docs/02_architecture/网络预加载设计.md)
 
+编码代理入口：`AGENTS.md`（仓库地图、开发命令、业务规则速查与硬约束）；分主题速查见 `docs/09_agent/`（架构/业务域/API/数据库/开发/测试/项目状态/施工工作流），可复用技能在 `.agents/skills/`（`add-database-migration`、`vertical-slice-build`）。
+
 全部视觉美术由 AI 创作，资源按版本/格式分级加载；大厅通过 Workbox + vite-plugin-pwa 与自有网络调度提前缓存游戏资源。具体运行命令与五端工程在实施阶段初始化。
 
 素材创作接入 OpenAI API，主模型采用 GPT-6 系列，图像工具模型单独配置，见 [AI 素材接口生产方案](./docs/07_assets/AI素材接口生产方案.md)。如需 Python，一律使用项目专用 venv，见 [项目约束](./AGENTS.md)。
@@ -150,3 +152,4 @@ ORM 指定 Sequelize。[数据库规范](./docs/05_data/数据库设计规范与
 | 2026-10-22 | 增加数据库迁移命令与迁移集成测试的开启方式（`pnpm --filter @gameing/server migrate`、`MIGRATION_TEST=1`）。 |
 | 2026-10-23 | 质量门禁改为六关并补齐增量路径：新增 `docker:install/typecheck/test/build/check` 把全量门禁收敛到容器内（宿主机直跑 web 构建会报 `write EPIPE`），新增 `check:changed`/`typecheck:changed`/`test:changed` 与 `test:related` 供本地只跑变动部分。 |
 | 2026-10-23 | `apps/web`、`apps/admin` 的 Vitest 由单 worker 改为 4 worker 并行（串行时 26~28 个测试文件各建一次 happy-dom，是主要耗时），并注明内存吃紧时的降级命令。 |
+| 2026-11-02 | 登记编码代理知识基础：`AGENTS.md` 重构为代理入口（保留全部项目约束），新增 `docs/09_agent/` 八份速查文档与 `.agents/skills/` 两个可复用技能。 |

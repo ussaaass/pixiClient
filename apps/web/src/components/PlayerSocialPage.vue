@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, ref, watch } from 'vue';
-import type { SocialApplication } from '../platform/social/social-application';
+import type { SocialApplication } from '@gameing/domain/social/application';
 import type { SocialFriendsApplication } from '../platform/social/friends-application';
 import type { CoinMarketApplication } from '@gameing/domain/coin-market/application';
 import PlayerSocialWorkspace from './PlayerSocialWorkspace.vue';

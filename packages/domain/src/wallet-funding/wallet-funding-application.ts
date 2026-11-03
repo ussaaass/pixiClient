@@ -1,5 +1,15 @@
 import { Value } from '@sinclair/typebox/value';
-import { CreateFundingOrderRequestSchema, FundingChannelListResponseSchema, FundingOrderDtoSchema, FundingOrderListResponseSchema, SimulateFundingPaymentRequestSchema, type CreateFundingOrderRequestDto, type FundingChannelDto, type FundingOrderDto, type SimulateFundingPaymentRequestDto } from '@gameing/contracts/wallet-funding';
+import {
+  CreateFundingOrderRequestSchema,
+  FundingChannelListResponseSchema,
+  FundingOrderDtoSchema,
+  FundingOrderListResponseSchema,
+  SimulateFundingPaymentRequestSchema,
+  type CreateFundingOrderRequestDto,
+  type FundingChannelDto,
+  type FundingOrderDto,
+  type SimulateFundingPaymentRequestDto,
+} from '@gameing/contracts/wallet-funding';
 
 export interface WalletFundingRepository {
   listChannels(): Promise<FundingChannelDto[]>;
@@ -40,4 +50,3 @@ export interface WalletFundingApplication {
   createOrder(request: CreateFundingOrderRequestDto): Promise<FundingOrderDto>;
   simulatePayment(request: SimulateFundingPaymentRequestDto): Promise<FundingOrderDto>;
 }
-

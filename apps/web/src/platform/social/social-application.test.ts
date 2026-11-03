@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createSocialApplication } from './social-application';
+import { createSocialApplication } from '@gameing/domain/social/application';
 import { OfflineSocialAdapter } from './offline-social-adapter';
 
 describe('social application local demo flow', () => {

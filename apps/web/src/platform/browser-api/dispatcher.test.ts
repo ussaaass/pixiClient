@@ -10,7 +10,7 @@ import { openBrowserDevelopmentDatabase } from './database';
 import { BrowserPlayerIdentityAdapter } from './player-identity-adapter';
 import { LocalCookieJar } from './local-cookie-jar';
 import { createBrowserDevelopmentIdentity } from './composition';
-import { createPlayerEntryApplication } from '../player-entry/player-entry-application';
+import { createPlayerEntryApplication } from '@gameing/domain/player-entry';
 import PlayerEntryPage from '../../components/PlayerEntryPage.vue';
 import { clearLocalContactChallengeInbox, readLocalContactChallengeCode } from './identity/local-contact-challenge-inbox';
 import { decodeBase32, generateTotp, verifyTotp } from './identity/totp';

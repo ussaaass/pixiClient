@@ -1,8 +1,8 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, defineComponent, h, nextTick, ref, type App as VueApp } from 'vue';
-import type { NotificationSummaryApplication } from './platform/notifications/notification-summary-application';
+import type { NotificationSummaryApplication } from '@gameing/domain/notifications';
 import type { SocialFriendsApplication } from './platform/social/friends-application';
-import type { SupportClientApplication } from './platform/support/support-application';
+import type { SupportClientApplication } from '@gameing/domain/support/application';
 import PlayerMessagesPage, { type PlayerMessagesSection } from './components/PlayerMessagesPage.vue';
 
 describe('player messages navigation and refresh', () => {

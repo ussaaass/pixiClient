@@ -16,7 +16,7 @@ import {
   startRoom,
   type RoomFailureCode,
   type RoomResult,
-} from '@gameing/domain/rooms';
+} from './room-domain';
 
 export interface RoomRepositoryPort {
   findById(roomId: string): Promise<GameRoomSnapshotDto | null>;

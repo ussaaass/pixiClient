@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createApp, h, nextTick, ref, type App as VueApp } from 'vue';
 import PlayerSocialWorkspace from './components/PlayerSocialWorkspace.vue';
-import { createSocialApplication } from './platform/social/social-application';
+import { createSocialApplication } from '@gameing/domain/social/application';
 import { OfflineSocialAdapter } from './platform/social/offline-social-adapter';
 
 describe('player community topic drafts', () => {

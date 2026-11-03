@@ -10,6 +10,10 @@
  *
  * 契约包只打包被引用的具体入口（`@gameing/contracts/health` 等），
  * 未被引用的契约模块不会进入产物。
+ *
+ * Sequelize 内置多 dialect 驱动（pg/oracledb/sqlite 等），本项目只使用 mysql2；
+ * 这些 peer 依赖不在锁文件中（P0 基线有意移除），esbuild 必须标记为 external，
+ * 否则 postgres dialect 的 `require("pg-hstore")` 会在 bundle 阶段报错。
  */
 
 import { build } from 'esbuild';
@@ -36,6 +40,10 @@ const result = await build({
   minify: false,
   legalComments: 'none',
   logLevel: 'info',
+  // Sequelize 内置多 dialect 驱动（pg/oracledb/sqlite 等），本项目只使用 mysql2；
+  // 这些 peer 依赖不在锁文件中（P0 基线有意移除），esbuild 必须标记为 external，
+  // 否则 postgres dialect 的 `require("pg-hstore")` 会在 bundle 阶段报错。
+  external: ['pg', 'pg-hstore', 'oracledb', 'snowflake-sdk', 'sqlite3', 'mariadb', 'ibm_db'],
   banner: {
     js: [
       "import { createRequire as __createRequire } from 'node:module';",

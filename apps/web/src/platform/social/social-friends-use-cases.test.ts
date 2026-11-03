@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SocialMessageAttachmentKind, type SocialMessageAttachmentDto } from '@gameing/contracts/social';
-import { SocialFriendsUseCases, type ConversationRecord, type SocialFriendsRepositoryPort } from './social-friends-use-cases';
+import { SocialFriendsUseCases, type ConversationRecord, type SocialFriendsRepositoryPort } from '@gameing/domain/social/friends-use-cases';
 
 describe('SocialFriendsUseCases stranger messaging policy', () => {
   it('allows one opener, then both participants can message until Shanghai midnight after a reply', async () => {

@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App as VueApp } from 'vue';
 import { AgentDomainStatus, type AgentDomainDto, type InviteLinkDto } from '@gameing/contracts/invite-agent';
 import PlayerInviteAgentWorkspace from './components/PlayerInviteAgentWorkspace.vue';
-import type { InviteAgentApplication } from './platform/invite-agent/invite-agent-application';
+import type { InviteAgentApplication } from '@gameing/domain/invite-agent';
 
 describe('player invitation and agent application workspace', () => {
   let host: HTMLDivElement;

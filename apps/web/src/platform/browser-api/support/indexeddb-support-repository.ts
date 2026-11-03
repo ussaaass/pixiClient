@@ -7,7 +7,7 @@ import type {
 } from '@gameing/contracts/support';
 import type { LocalSupportConversation, LocalSupportMessage } from '../database';
 import { openBrowserDevelopmentDatabase, type BrowserDevelopmentDatabase } from '../database';
-import { SupportRepositoryConflictError, type SupportRepository } from '../../support/support-application';
+import { SupportRepositoryConflictError, type SupportRepository } from '@gameing/domain/support/application';
 import { statusAfterCustomerClose, statusAfterCustomerReply } from '@gameing/domain/support';
 
 function toConversation(row: LocalSupportConversation): SupportConversationDto {

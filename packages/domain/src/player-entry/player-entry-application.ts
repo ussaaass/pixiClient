@@ -8,7 +8,26 @@ import {
   type PlayerPasswordLoginRequestDto,
   type PlayerRecoveryRequestDto,
 } from '@gameing/contracts/player-entry';
-import { SetEmailContactRequestSchema, SetPhoneContactRequestSchema, type ChangePasswordRequestDto, type ConfirmContactChallengeRequestDto, type ContactChallengeResponseDto, type CreateContactChallengeRequestDto, type IdentitySettingsResponseDto, type RecoveryCredentialIssueResponseDto, type SetEmailContactRequestDto, type SetPhoneContactRequestDto, type SetUsernameRequestDto, type TotpConfirmRequestDto, type TotpDisableRequestDto, type TotpDisabledResponseDto, type TotpEnabledResponseDto, type TotpSetupRequestDto, type TotpSetupResponseDto, type TotpRecoveryCodesRotateRequestDto } from '@gameing/contracts/identity';
+import {
+  SetEmailContactRequestSchema,
+  SetPhoneContactRequestSchema,
+  type ChangePasswordRequestDto,
+  type ConfirmContactChallengeRequestDto,
+  type ContactChallengeResponseDto,
+  type CreateContactChallengeRequestDto,
+  type IdentitySettingsResponseDto,
+  type RecoveryCredentialIssueResponseDto,
+  type SetEmailContactRequestDto,
+  type SetPhoneContactRequestDto,
+  type SetUsernameRequestDto,
+  type TotpConfirmRequestDto,
+  type TotpDisableRequestDto,
+  type TotpDisabledResponseDto,
+  type TotpEnabledResponseDto,
+  type TotpSetupRequestDto,
+  type TotpSetupResponseDto,
+  type TotpRecoveryCodesRotateRequestDto,
+} from '@gameing/contracts/identity';
 
 export type PrepareRecoveryCredentialRequest = { password: string; qrPassword: string; totp?: string };
 export type PreparedRecoveryCredential = RecoveryCredentialIssueResponseDto & { qrPayload: string };
@@ -65,7 +84,10 @@ export interface PlayerEntryApplication {
   createContactChallenge(request: CreateContactChallengeRequestDto): Promise<PlayerEntryResult<ContactChallengeResponseDto>>;
   setPhoneContact(request: SetPhoneContactRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
   setEmailContact(request: SetEmailContactRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
-  confirmContactChallenge(challengeId: string, request: ConfirmContactChallengeRequestDto): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
+  confirmContactChallenge(
+    challengeId: string,
+    request: ConfirmContactChallengeRequestDto,
+  ): Promise<PlayerEntryResult<IdentitySettingsResponseDto>>;
   startTotpSetup(request: TotpSetupRequestDto): Promise<PlayerEntryResult<TotpSetupResponseDto>>;
   confirmTotpSetup(request: TotpConfirmRequestDto): Promise<PlayerEntryResult<TotpEnabledResponseDto>>;
   disableTotp(request: TotpDisableRequestDto): Promise<PlayerEntryResult<TotpDisabledResponseDto>>;
@@ -79,7 +101,31 @@ const failure = <T>(code: PlayerEntryFailureCode): PlayerEntryResult<T> => ({ ok
 function identityFailureCode(error: unknown): PlayerEntryFailureCode {
   if (error && typeof error === 'object' && 'code' in error && typeof error.code === 'string') {
     const code = error.code as PlayerEntryFailureCode;
-    if (['IDENTIFIER_ALREADY_USED', 'CURRENT_PHONE_MISMATCH', 'REAUTHENTICATION_FAILED', 'USERNAME_INVALID', 'PASSWORD_REUSE', 'TOTP_REQUIRED', 'SESSION_REVOKED', 'TOTP_VERIFICATION_NOT_IMPLEMENTED', 'TOTP_INVALID', 'TOTP_ALREADY_ENABLED', 'TOTP_NOT_ENABLED', 'SETUP_NOT_FOUND', 'SETUP_EXPIRED', 'RECOVERY_CREDENTIAL_NOT_FOUND', 'RECOVERY_CREDENTIAL_PENDING_EXPIRED', 'VALIDATION_FAILED', 'VERIFICATION_CODE_INVALID', 'CHALLENGE_NOT_FOUND', 'CHALLENGE_EXPIRED', 'AUTH_RATE_LIMITED'].includes(code)) return code;
+    if (
+      [
+        'IDENTIFIER_ALREADY_USED',
+        'CURRENT_PHONE_MISMATCH',
+        'REAUTHENTICATION_FAILED',
+        'USERNAME_INVALID',
+        'PASSWORD_REUSE',
+        'TOTP_REQUIRED',
+        'SESSION_REVOKED',
+        'TOTP_VERIFICATION_NOT_IMPLEMENTED',
+        'TOTP_INVALID',
+        'TOTP_ALREADY_ENABLED',
+        'TOTP_NOT_ENABLED',
+        'SETUP_NOT_FOUND',
+        'SETUP_EXPIRED',
+        'RECOVERY_CREDENTIAL_NOT_FOUND',
+        'RECOVERY_CREDENTIAL_PENDING_EXPIRED',
+        'VALIDATION_FAILED',
+        'VERIFICATION_CODE_INVALID',
+        'CHALLENGE_NOT_FOUND',
+        'CHALLENGE_EXPIRED',
+        'AUTH_RATE_LIMITED',
+      ].includes(code)
+    )
+      return code;
   }
   return 'IDENTITY_SERVICE_ERROR';
 }
@@ -126,68 +172,110 @@ export function createPlayerEntryApplication(identity: PlayerIdentityPort): Play
     },
 
     async setUsername(request) {
-      try { return { ok: true, value: await identity.setUsername(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.setUsername(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async changePassword(request) {
-      try { return { ok: true, value: await identity.changePassword(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.changePassword(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async createContactChallenge(request) {
-      try { return { ok: true, value: await identity.createContactChallenge(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.createContactChallenge(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async setPhoneContact(request) {
       if (!Value.Check(SetPhoneContactRequestSchema, request)) return failure('INVALID_REQUEST');
-      try { return { ok: true, value: await identity.setPhoneContact(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.setPhoneContact(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async setEmailContact(request) {
       if (!Value.Check(SetEmailContactRequestSchema, request)) return failure('INVALID_REQUEST');
-      try { return { ok: true, value: await identity.setEmailContact(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.setEmailContact(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async confirmContactChallenge(challengeId, request) {
-      try { return { ok: true, value: await identity.confirmContactChallenge(challengeId, request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.confirmContactChallenge(challengeId, request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async startTotpSetup(request) {
-      try { return { ok: true, value: await identity.startTotpSetup(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.startTotpSetup(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async confirmTotpSetup(request) {
-      try { return { ok: true, value: await identity.confirmTotpSetup(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.confirmTotpSetup(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async disableTotp(request) {
-      try { return { ok: true, value: await identity.disableTotp(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.disableTotp(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async rotateTotpRecoveryCodes(request) {
       if (!/^\d{6}$/.test(request.code)) return failure('INVALID_REQUEST');
-      try { return { ok: true, value: await identity.rotateTotpRecoveryCodes(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.rotateTotpRecoveryCodes(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async prepareRecoveryCredential(request) {
-      if (!request.password || request.qrPassword.length < 8 || request.qrPassword.length > 256 || (request.totp !== undefined && !/^(?:\d{6}|[A-Fa-f0-9]{16})$/.test(request.totp))) return failure('INVALID_REQUEST');
-      try { return { ok: true, value: await identity.prepareRecoveryCredential(request) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      if (
+        !request.password ||
+        request.qrPassword.length < 8 ||
+        request.qrPassword.length > 256 ||
+        (request.totp !== undefined && !/^(?:\d{6}|[A-Fa-f0-9]{16})$/.test(request.totp))
+      )
+        return failure('INVALID_REQUEST');
+      try {
+        return { ok: true, value: await identity.prepareRecoveryCredential(request) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
 
     async activateRecoveryCredential(credentialId) {
       if (!/^[1-9][0-9]{0,19}$/.test(credentialId)) return failure('INVALID_REQUEST');
-      try { return { ok: true, value: await identity.activateRecoveryCredential(credentialId) }; }
-      catch (error) { return failure(identityFailureCode(error)); }
+      try {
+        return { ok: true, value: await identity.activateRecoveryCredential(credentialId) };
+      } catch (error) {
+        return failure(identityFailureCode(error));
+      }
     },
   };
 }

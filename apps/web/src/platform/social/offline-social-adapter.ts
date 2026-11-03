@@ -1,5 +1,5 @@
 import type { SocialAuthorReportRequestDto, SocialContentActionRequestDto, SocialContentActionStateDto, SocialPostDto, SocialPostReplyDto, SocialPublicProfileDto, SocialTopicDto } from '@gameing/contracts/social';
-import type { SocialRepositoryPort } from './social-application';
+import type { SocialRepositoryPort } from '@gameing/domain/social/application';
 
 /** Local sandbox only: topics are bundled demo configuration; user content lives in memory. */
 export class OfflineSocialAdapter implements SocialRepositoryPort {

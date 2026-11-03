@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App as VueApp } from 'vue';
 import { PayoutChannelType, WithdrawalStatus } from '@gameing/contracts/wallet';
 import PlayerWalletWithdrawalWorkspace from './components/PlayerWalletWithdrawalWorkspace.vue';
-import type { WalletApplication } from './platform/wallet/wallet-application';
+import type { WalletApplication } from '@gameing/domain/wallet/application';
 
 describe('player wallet withdrawal workspace', () => {
   let host: HTMLDivElement;

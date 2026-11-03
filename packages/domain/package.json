@@ -5,17 +5,29 @@
   "type": "module",
   "exports": {
     "./wallet": "./src/wallet/wallet-domain.ts",
+    "./wallet/application": "./src/wallet/wallet-application.ts",
     "./social": "./src/social/social-domain.ts",
     "./social/access-policy": "./src/social/social-access-policy.ts",
     "./social/post-badge": "./src/social/social-post-badge.ts",
+    "./social/application": "./src/social/social-application.ts",
+    "./social/friends-use-cases": "./src/social/social-friends-use-cases.ts",
     "./support": "./src/support/support-domain.ts",
+    "./support/application": "./src/support/support-application.ts",
     "./rooms": "./src/rooms/room-domain.ts",
+    "./rooms/application": "./src/rooms/room-application.ts",
     "./preferences": "./src/preferences/preferences-domain.ts",
+    "./preferences/application": "./src/preferences/client-preference-application.ts",
     "./coin-market": "./src/coin-market/coin-market-pricing.ts",
-    "./coin-market/application": "./src/coin-market/coin-market-application.ts"
+    "./coin-market/application": "./src/coin-market/coin-market-application.ts",
+    "./notifications": "./src/notifications/notification-summary-application.ts",
+    "./invite-agent": "./src/invite-agent/invite-agent-application.ts",
+    "./player-entry": "./src/player-entry/player-entry-application.ts",
+    "./referral": "./src/referral/referral-attribution-application.ts",
+    "./wallet-funding": "./src/wallet-funding/wallet-funding-application.ts"
   },
   "dependencies": {
-    "@gameing/contracts": "workspace:*"
+    "@gameing/contracts": "workspace:*",
+    "@sinclair/typebox": "0.34.52"
   },
   "devDependencies": {
     "typescript": "6.0.3",

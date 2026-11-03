@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { defineAsyncComponent, onUnmounted, ref } from 'vue';
-import { PlayerEntryOutcome } from '../platform/player-entry/player-entry-application';
-import type { PlayerEntryApplication } from '../platform/player-entry/player-entry-application';
+import { PlayerEntryOutcome } from '@gameing/domain/player-entry';
+import type { PlayerEntryApplication } from '@gameing/domain/player-entry';
 import { ApiRequestError } from '../platform/http/api-client';
 
 const props = defineProps<{

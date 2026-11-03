@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App as VueApp } from 'vue';
 import { FundingOrderStatus, FundingPaymentMethod, type SimulateFundingPaymentRequestDto } from '@gameing/contracts/wallet-funding';
 import PlayerWalletFundingWorkspace from './components/PlayerWalletFundingWorkspace.vue';
-import type { WalletFundingApplication } from './wallet-funding/wallet-funding-application';
+import type { WalletFundingApplication } from '@gameing/domain/wallet-funding';
 
 describe('player wallet funding workspace', () => {
   let host: HTMLDivElement;

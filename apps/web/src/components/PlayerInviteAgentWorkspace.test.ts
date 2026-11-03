@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { createApp, nextTick } from 'vue';
-import type { InviteAgentApplication } from '../platform/invite-agent/invite-agent-application';
+import type { InviteAgentApplication } from '@gameing/domain/invite-agent';
 import PlayerInviteAgentWorkspace from './PlayerInviteAgentWorkspace.vue';
 
 describe('PlayerInviteAgentWorkspace', () => {
