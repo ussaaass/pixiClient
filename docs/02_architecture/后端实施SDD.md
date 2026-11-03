@@ -269,9 +269,185 @@ http/
 - 金额/ID wire 一律十进制字符串；状态常量非零；DTO 只出自 contracts 包，OpenAPI 由 registry 生成。
 - 不把未跑的检查描述为通过；Admin 页面改动做视口几何验收。
 
+## 附录 A：模型与表结构规划（63 表 → Sequelize Model）
+
+> 本附录是 §3 实体注册表的**落地细节**：每张表对应的 Model 类名、关键字段（公共 5 字段 `id/status/created_at/updated_at/deleted_at` 按 §2 约定省略，仅列业务字段）、状态/类型常量、索引与约束。DDL 以 `docs/05_data/数据库设计SDD.md` §5 逐表定义为唯一权威，本附录只做 **Sequelize model 映射规划**，不重新定义表结构；发现矛盾先报告再修数据库设计 SDD。
+>
+> 约定（同 §2）：
+> - Model 类名 = 表名 PascalCase + `Model`（`asset_account` → `AssetAccountModel`）；表名 `tableName` 显式指定 snake_case，`order`/`user` 加反引号。
+> - 所有 `BIGINT UNSIGNED` ID 字段在 Model 类型中声明为 `string`（十进制字符串 wire），Sequelize attribute 用 `DataTypes.BIGINT.UNSIGNED`；金额列用有符号 `DataTypes.BIGINT`。
+> - `DATETIME(3)` → `DataTypes.DATE(3)`，UTC；JSON → `DataTypes.JSON`；VARBINARY/BINARY(32) → `DataTypes.BINARY(n)`；MEDIUMBLOB → `DataTypes.BLOB`。
+> - generated 列（`system_marker`/`active_marker`）：Model 声明 `field` 指向原生列，`onlyInCreate/onlyInUpdate: false`，读写均走 DB 表达式；Sequelize `DataTypes.VIRTUAL` 无法建唯一索引，故 **DDL 用原生 `GENERATED ALWAYS AS (..) STORED`**（与 0002 `user.system_marker` 写法一致），Model 侧标只读。
+> - 不可变表（`asset_operation`/`asset_entry`/`*_event`/`*_audit_event`/`outbox`）：Model 选项 `timestamps: false` + 手工列 `created_at`/`updated_at`（`updated_at` 默认 = `created_at`，见 0004 写法），禁用 soft delete。
+
+### A.1 identity（0007 批次：device / recovery_credential / user_security_event；user 已有 0002）
+
+**Model 文件：`models/identity.ts`**（`UserModel` 已存在于 `apps/server` 0002 迁移，迁入 backend 后扩展）
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `user`（0002 已有） | `UserModel` | role_type SMALLINT UNSIGNED; reward_type; public_code VARCHAR(32) U; username VARCHAR(64) U; password_hash VARCHAR(255); email VARCHAR(254) U; phone VARCHAR(32) U; totp_secret_ciphertext VARBINARY(512); totp_last_accepted_counter BIGINT UNSIGNED; totp_recovery_code_hashes JSON; nickname VARCHAR(64); asset_id BIGINT UNSIGNED（FK 待 0017）; auth_version BIGINT UNSIGNED DEFAULT 1; permissions JSON; invite_code VARCHAR(32) U; system_marker GENERATED STORED U | UserStatus ACTIVE=1/DISABLED=2/CLOSED=3；role_type CHECK IN (1,3,4,8)；reward_type IN (1,2)；TOTP 成对 CHECK |
+| `device` | `DeviceModel` | user_id FK; fingerprint_hash BINARY(32); device_digest BINARY(32); credential_key CHAR(36) U; credential_secret_hash BINARY(32); credential_status SMALLINT UNSIGNED（NULL=从未签发）; platform_type SMALLINT UNSIGNED; last_seen_at | CredentialStatus ACTIVE=1/REVOKED=2/EXPIRED=3；PlatformType WEB=1/IOS=2/ANDROID=3/WINDOWS=4/MACOS=5/LINUX=6 |
+| `recovery_credential` | `RecoveryCredentialModel` | user_id FK; credential_key CHAR(36) U; secret_hash BINARY(32); active_marker GENERATED U(user_id,active_marker); expires_at; last_used_at; revoked_at | RecoveryStatus ISSUED=1/REVOKED=2/EXPIRED=3 |
+| `user_security_event` | `UserSecurityEventModel`（不可变） | user_id; session_key CHAR(36); admin_session_key CHAR(36); admin_user_id; device_id; support_conversation_id; event_key VARCHAR(160) U; action_type SMALLINT UNSIGNED; result_type SMALLINT UNSIGNED; snapshot JSON | RecordStatus RECORDED=1；ActionType LOGIN=1/CONTACT=2/PASSWORD=3/RECOVERY=4/REVOKE=5/TOTP=6；ResultType SUCCESS=1/DENIED=2/FAILED=3 |
+
+### A.2 game（0008：game / game_tier / game_config / system_config / game_event_instance；0013：room / room_membership / round / round_player / round_event / settlement / game_entry）
+
+**Model 文件：`models/game.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `game` | `GameModel` | game_code VARCHAR(64) U; name; integration_type SMALLINT UNSIGNED; client_module_key VARCHAR(128); asset_id BIGINT UNSIGNED FK(0017); sort_order INT | IntegrationType INTERNAL=1/EXTERNAL_STUB=2 |
+| `game_tier` | `GameTierModel` | game_id FK; tier_code VARCHAR(64) U(game_id,tier_code); name; min_coins BIGINT; max_coins BIGINT NULL; sort_order INT | CHECK min_coins>=0 AND (max_coins IS NULL OR max_coins>=min_coins) |
+| `system_config` | `SystemConfigModel` | config_key VARCHAR(128) U; config_type SMALLINT UNSIGNED; config_value TEXT; description VARCHAR(255) | ConfigType STRING=1/BOOLEAN=2/INTEGER=3/DECIMAL=4/JSON=5 |
+| `game_config` | `GameConfigModel` | game_id FK; game_tier_id FK NULL; agent_domain_id FK NULL; scope_type SMALLINT UNSIGNED; config_key; config_type; config_value TEXT; description | U(COALESCE(agent_domain_id,0),game_id,COALESCE(game_tier_id,0),config_key)；CHECK scope_type 与 game_tier_id 空值匹配 |
+| `game_event_instance` | `GameEventInstanceModel` | event_key CHAR(36) U; trigger_key VARCHAR(160) U; event_type SMALLINT UNSIGNED; agent_domain_id NULL; audience_scope_type SMALLINT UNSIGNED; game_id/game_tier_id NULL; source_round_id NULL; source_actor_type; subject_user_id NULL; state_version BIGINT UNSIGNED DEFAULT 1; starts_at/expires_at/ended_at; end_reason_type NULL; config_snapshot JSON; effect_snapshot JSON; runtime_snapshot JSON NULL; announcement_snapshot JSON | GameEventInstanceStatus ACTIVE=1/ENDED=2/CANCELLED=3；EndReason EXPIRED=1/POOL_EXHAUSTED=2/ADMIN_CANCELLED=3；AudienceScope GLOBAL=1/GAME=2/GAME_TIER=3 |
+| `room` | `RoomModel` | game_id/game_tier_id FK; room_key VARCHAR(64) U; room_type SMALLINT UNSIGNED; capacity SMALLINT UNSIGNED; rules_snapshot JSON; version BIGINT UNSIGNED DEFAULT 1; owner_key VARCHAR(128) NULL; fencing_token BIGINT UNSIGNED DEFAULT 1; checkpoint_version BIGINT UNSIGNED DEFAULT 0; closed_at | RoomStatus WAITING=1/ACTIVE=2/RECOVERING=3/CLOSED=4；RoomType PRIVATE=1/MATCHED=2 |
+| `room_membership` | `RoomMembershipModel` | room_id/user_id FK; seat_no SMALLINT UNSIGNED; joined_at; left_at NULL; game_state_ciphertext MEDIUMBLOB NULL; game_state_version BIGINT UNSIGNED DEFAULT 1; active_marker GENERATED | MembershipStatus SEATED=1/LEFT=2；U(user_id,active_marker)；U(room_id,seat_no,active_marker) |
+| `round` | `RoundModel` | room_id FK; round_no BIGINT UNSIGNED; round_key CHAR(36) U; fencing_token; handler_version VARCHAR(64); rules_snapshot JSON; rules_hash BINARY(32); game_state_ciphertext MEDIUMBLOB NULL; playing_started_at/playing_deadline_at NULL; settlement_input JSON NULL; settlement_input_hash BINARY(32) NULL; settled_at NULL | RoundStatus PREPARING=1/ACTIVE=2/SETTLING=3/SETTLED=4/CANCELLED=5/RECOVERING=6；U(room_id,round_no)；U(round_key) |
+| `round_player` | `RoundPlayerModel` | round_id/user_id FK; room_membership_id NULL; seat_no SMALLINT UNSIGNED; asset_hold_id FK U; player_state_ciphertext MEDIUMBLOB NULL; submission_snapshot JSON NULL; submission_key CHAR(36) NULL U; submission_hash BINARY(32) NULL; submitted_at NULL; submission_type NULL; wager_coins BIGINT; max_loss_hold_coins BIGINT; net_coin_delta BIGINT NULL | RoundPlayerStatus ACTIVE=1/SUBMITTED=2/SETTLED=3/ABORTED=4；SubmissionType MANUAL=1/TIMEOUT_AUTO=2；U(round_id,user_id)；U(round_id,seat_no) |
+| `round_event` | `RoundEventModel`（不可变） | round_id/round_player_id FK; seq BIGINT UNSIGNED; event_key VARCHAR(160) U; event_type SMALLINT UNSIGNED; fencing_token; payload_ciphertext MEDIUMBLOB | RecordStatus RECORDED=1；EventType START=1/SUBMIT=2/INTENT=3/SETTLE=4/RECOVER=5/CANCEL=6；U(round_id,seq)；U(event_key) |
+| `settlement` | `SettlementModel` | round_id FK U; asset_operation_id FK NULL U; input_hash BINARY(32); result_hash BINARY(32); result_snapshot JSON; completed_at NULL | SettlementStatus PREPARED=1/COMMITTED=2/CANCELLED=3；U(round_id)；U(asset_operation_id) |
+| `game_entry` | `GameEntryModel` | user_id/game_id/game_tier_id FK; entry_key CHAR(36) U; rules_snapshot JSON; room_id NULL; expires_at; active_marker GENERATED | EntryStatus QUEUED=1/SEATED=2/FINISHED=3/CANCELLED=4/EXPIRED=5；U(user_id,active_marker) |
+
+### A.3 wallet（0003~0006 已有 + 0010：coin_exchange / gift_grant / turnover_state）
+
+**Model 文件：`models/wallet.ts`**（`AssetAccountModel`/`AssetOperationModel`/`AssetEntryModel`/`AssetHoldModel` 已存在于 0003~0006，迁入 backend）
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `asset_account`（0003） | `AssetAccountModel` | user_id FK U(user_id,asset_type,currency); account_type SMALLINT UNSIGNED; asset_type SMALLINT UNSIGNED; currency CHAR(3); amount BIGINT DEFAULT 0; frozen_amount BIGINT DEFAULT 0; version BIGINT UNSIGNED DEFAULT 1 | AccountType PLAYER=1/SYSTEM=2；AssetType COIN=1/CNY_BALANCE=2；Currency COI/CNY；CHECK frozen<=GREATEST(amount,0) |
+| `asset_operation`（0004，不可变） | `AssetOperationModel` | operation_key VARCHAR(160) U; operation_type SMALLINT UNSIGNED; request_hash BINARY(32); initiated_by_user_id NULL; operated_by_admin_user_id NULL; approved_by_admin_user_id NULL; admin_session_key CHAR(36) NULL; reverses_asset_operation_id NULL; reason VARCHAR(500) NULL; extra JSON NULL; result_snapshot JSON NULL; committed_at NULL | OperationStatus POSTED=1；AssetOperationType TRANSFER=1/COIN_EXCHANGE=2/GIFT_GRANT=3/GAME_SETTLEMENT=4/ORDER_FULFILLMENT=5/WITHDRAWAL_HOLD=6/WITHDRAWAL_SETTLEMENT=7/WITHDRAWAL_RELEASE=8/ADMIN_ADJUSTMENT=9/COMPENSATION=10/REFERRAL_REWARD=11/COIN_MARKET_HOLD=12/COIN_MARKET_TRADE=13/COIN_MARKET_RELEASE=14 |
+| `asset_entry`（0006，不可变） | `AssetEntryModel` | asset_operation_id FK; asset_account_id FK; asset_hold_id NULL; entry_seq INT UNSIGNED; entry_type SMALLINT UNSIGNED; delta BIGINT; frozen_delta BIGINT DEFAULT 0; amount_after BIGINT; frozen_after BIGINT; account_version BIGINT UNSIGNED; memo VARCHAR(500) | EntryType INTERNAL=1/EXTERNAL=2/HOLD=3/COMPENSATION=4；U(asset_operation_id,entry_seq)；U(asset_account_id,account_version) |
+| `asset_hold`（0005） | `AssetHoldModel` | asset_account_id FK; asset_operation_id FK; hold_key VARCHAR(160) U; hold_type SMALLINT UNSIGNED; amount BIGINT; remaining_amount BIGINT; expires_at NULL; closed_at NULL | HoldStatus OPEN=1/PARTIAL=2/CONSUMED=3/RELEASED=4；HoldType GAME=1/WITHDRAWAL=2/REWARD=3/CHANNEL_UNSETTLED=4/COIN_MARKET_LISTING=5；CHECK 0<=remaining<=amount AND amount>0 |
+| `coin_exchange` | `CoinExchangeModel`（不可变） | user_id FK; asset_operation_id FK U; coins BIGINT; cash_cents BIGINT; fee_cents BIGINT DEFAULT 0; rate_coin_units BIGINT; rate_cash_cents BIGINT; rounding_type SMALLINT UNSIGNED DEFAULT 2; preview_key CHAR(36) U | RoundingMode CEIL_CHARGE=1/FLOOR_CREDIT=2；U(preview_key) |
+| `gift_grant` | `GiftGrantModel`（不可变） | user_id FK; asset_operation_id FK U; order_id NULL; grant_key VARCHAR(160) U; coins BIGINT; turnover_multiplier DECIMAL(12,4) DEFAULT 5; required_turnover_coins BIGINT | U(asset_operation_id)；U(grant_key) |
+| `turnover_state` | `TurnoverStateModel` | user_id FK U; remaining_coins BIGINT DEFAULT 0; version BIGINT UNSIGNED DEFAULT 1 | TurnoverStatus ACTIVE=1/COMPLETE=2/REVERSED=3 |
+
+### A.4 payments + chain（0010/0011）
+
+**Model 文件：`models/payments.ts`** 与 **`models/chain.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `payment_provider` | `PaymentProviderModel` | provider_code VARCHAR(64) U; provider_type SMALLINT UNSIGNED; name; adapter_key VARCHAR(64); secret_reference VARCHAR(255) NULL; capability_snapshot JSON | PaymentProviderType AGGREGATOR=1/SELF_TRON=2/MOCK=3 |
+| `payment_channel` | `PaymentChannelModel` | payment_provider_id FK U(payment_provider_id,channel_code); channel_code VARCHAR(64); method_type SMALLINT UNSIGNED; channel_config JSON; fee_config JSON; priority INT DEFAULT 0 | MethodType ALIPAY=1/WECHAT=2/BANK=3/UNIONPAY_QR=4/ECNY=5/USDT_TRON=6 |
+| `product` | `ProductModel` | product_code VARCHAR(64) U(product_code,version); product_type SMALLINT UNSIGNED; version BIGINT UNSIGNED; name; price_amount DECIMAL(36,12); price_currency VARCHAR(16); fulfillment_spec JSON; active_marker GENERATED U(product_code,active_marker) | ProductStatus DRAFT=1/ON_SALE=2/OFF_SALE=3/RETIRED=4；ProductType COIN_TOP_UP=1 |
+| `order`（保留字，反引号） | `OrderModel` | user_id FK; product_id FK; payment_channel_id FK; order_key CHAR(36) U; provider_order_key VARCHAR(160) U(payment_channel_id,provider_order_key); payment_currency VARCHAR(16); requested_amount DECIMAL(36,12); actual_amount DECIMAL(36,12) NULL; actual_cny_cents BIGINT NULL; extra JSON; asset_operation_id FK NULL U; expires_at; paid_at NULL; fulfilled_at NULL | OrderStatus CREATED=1/PAYING=2/PAID=3/FULFILLED=4/EXPIRED=5/EXCEPTION=6/CANCELLED=7 |
+| `payment_event`（不可变） | `PaymentEventModel` | payment_provider_id FK; order_id NULL; payout_attempt_id NULL; coin_market_trade_id NULL; event_key VARCHAR(160); event_type SMALLINT UNSIGNED; verification_result SMALLINT UNSIGNED; payload_hash BINARY(32); payload_ciphertext MEDIUMBLOB; occurred_at; received_at | RecordStatus RECORDED=1；EventType CALLBACK=1/QUERY=2/RECONCILIATION=3；Verification VERIFIED=1/REJECTED=2；U(payment_provider_id,event_key)；CHECK 三目标恰一非空 |
+| `external_settlement` | `ExternalSettlementModel` | payment_provider_id NULL; order_id NULL; payout_attempt_id NULL; coin_market_trade_id NULL; related_external_settlement_id NULL; asset_operation_id NULL; settlement_key VARCHAR(160) U; external_transaction_key VARCHAR(160); flow_type SMALLINT UNSIGNED; original_currency VARCHAR(16); original_amount DECIMAL(36,12); gross_cny_cents BIGINT; fee_cny_cents BIGINT DEFAULT 0; net_cny_cents BIGINT; valuation_snapshot JSON; settled_at NULL | ExternalStatus OPEN=1/RECONCILED=2/DISPUTED=3/REVERSED=4；ExternalFlowType IN=1/OUT=2/FEE_ADJUSTMENT=3/FUNDING=4；CHECK net=gross-fee |
+| `payout_account` | `PayoutAccountModel` | user_id FK; account_key CHAR(36) U(account_key,version); version BIGINT UNSIGNED; method_type SMALLINT UNSIGNED; account_ciphertext VARBINARY(8192); lookup_hash BINARY(32) U; masked_label VARCHAR(128) | ActiveStatus |
+| `withdrawal` | `WithdrawalModel` | user_id FK; payout_account_id FK; asset_operation_id FK U; asset_hold_id FK U; withdrawal_key CHAR(36) U; cash_cents BIGINT; fee_cents BIGINT DEFAULT 0; coin_equivalent DECIMAL(38,12); minimum_coins BIGINT; policy_snapshot JSON; payout_not_before_at; approval_key CHAR(36) NULL U; approved_at NULL; completed_at NULL; failure_reason VARCHAR(500) NULL | WithdrawalStatus REQUESTED=1/REVIEWING=2/APPROVED=3/PAYING=4/SUCCEEDED=5/REJECTED=6/CANCELLED=7/UNKNOWN=8/FAILED=9 |
+| `payout_attempt` | `PayoutAttemptModel` | withdrawal_id FK U(withdrawal_id,attempt_no); payment_channel_id NULL; attempt_no INT UNSIGNED; payout_key VARCHAR(160) U; provider_payout_key VARCHAR(160) NULL; request_hash BINARY(32); requested_at NULL; resolved_at NULL; active_marker GENERATED | PayoutStatus PREPARED=1/SENDING=2/UNKNOWN=3/SUCCEEDED=4/FAILED=5；U(withdrawal_id,active_marker) |
+| `chain_address` | `ChainAddressModel` | user_id FK; order_id FK U; chain_code VARCHAR(32); address VARCHAR(128) U(chain_code,address); signer_reference VARCHAR(255) NULL; assigned_at | ActiveStatus |
+| `chain_deposit_event` | `ChainDepositEventModel` | chain_address_id FK; order_id NULL; chain_code; tx_hash VARCHAR(128); event_index INT UNSIGNED; contract_address VARCHAR(128); sender_address VARCHAR(128); amount_atomic DECIMAL(36,0); token_decimals SMALLINT UNSIGNED; block_height BIGINT UNSIGNED; block_hash VARCHAR(128); confirmed_at NULL; confirmation_snapshot JSON NULL | ChainDepositStatus SEEN=1/CONFIRMING=2/CONFIRMED=3/MATCHED=4/UNMATCHED=5/FAILED=6/REORGED=7；U(chain_code,tx_hash,event_index) |
+| `chain_scan_cursor` | `ChainScanCursorModel` | chain_code VARCHAR(32); scanner_key VARCHAR(64); last_finalized_height BIGINT UNSIGNED DEFAULT 0; last_block_hash VARCHAR(128) NULL; owner_key VARCHAR(128) NULL; fencing_token BIGINT UNSIGNED DEFAULT 0; lease_until NULL | ActiveStatus；U(chain_code,scanner_key) |
+
+### A.5 referral（0012）
+
+**Model 文件：`models/referral.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `referral_binding` | `ReferralBindingModel` | user_id FK U; parent_1_user_id FK 非空; parent_2/3/4_user_id NULL; parent_1..4_benefit_cents BIGINT UNSIGNED DEFAULT 0; bound_at; binding_source SMALLINT UNSIGNED | ActiveStatus；BindingSource IP_ATTRIBUTION=1/INVITE_CODE=2/ADMIN=3；CHECK 链连续（parent_2 非空 ⇒ parent_1 非空，依此类推）；4 个覆盖索引 (parent_n_user_id,parent_n_benefit_cents,user_id) |
+| `referral_binding_event`（不可变） | `ReferralBindingEventModel` | user_id FK; previous_parent_1_user_id NULL; new_parent_1_user_id FK; admin_user_id NULL; binding_key VARCHAR(160) U; request_key VARCHAR(160); source_type SMALLINT UNSIGNED; invite_code_used VARCHAR(32) NULL; ip_lookup_hash BINARY(32) NULL; attribution_version VARCHAR(64) NULL; relation_snapshot JSON; reason VARCHAR(500) | RecordStatus RECORDED=1；U(binding_key) |
+| `referral_reward_allocation`（不可变） | `ReferralRewardAllocationModel` | user_id FK（领取上级）; ancestry_snapshot JSON; order_id FK; asset_operation_id FK; asset_hold_id NULL U; reward_type SMALLINT UNSIGNED; ancestor_depth SMALLINT UNSIGNED (1~4); rate_bps INT UNSIGNED; basis_subcents DECIMAL(38,12); exact_reward_subcents DECIMAL(38,12); reward_cents BIGINT; rounding_snapshot JSON; unlock_at NULL; skip_reason VARCHAR(255) NULL | RewardStatus POSTED=1/SKIPPED=2；U(order_id,user_id)；U(asset_hold_id) |
+
+### A.6 social（0014，9 表）
+
+**Model 文件：`models/social.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `social_topic` | `SocialTopicModel` | agent_domain_id NULL; topic_key VARCHAR(64) U(COALESCE(agent_domain_id,0),topic_key); name; description VARCHAR(1000) NULL; cover_asset_id NULL; sort_order INT DEFAULT 0 | ActiveStatus |
+| `social_post` | `SocialPostModel` | agent_domain_id NULL; social_topic_id FK; user_id FK; post_key VARCHAR(160) U; title VARCHAR(160) NULL; body_text MEDIUMTEXT NULL; asset_ids JSON（ID 数组，写时校验归属/READY/图片 MIME）; pinned_until NULL; pinned_by_user_id NULL; moderated_by_user_id/moderated_at/moderation_note NULL | SocialPostStatus PENDING_REVIEW=1/PUBLISHED=2/HIDDEN=3/REDACTED=4；U(post_key)；status=4 清正文 |
+| `social_post_reply` | `SocialPostReplyModel` | social_post_id FK; parent_social_post_reply_id NULL; user_id FK; reply_key VARCHAR(160) U; body_text TEXT NULL; moderated_* 同上 | SocialPostReplyStatus PENDING_REVIEW=1/PUBLISHED=2/HIDDEN=3/REDACTED=4；最多一层嵌套 |
+| `social_friendship` | `SocialFriendshipModel` | agent_domain_id NULL; low_user_id/high_user_id FK U(low_user_id,high_user_id); requester_user_id; responded_at NULL; ended_at NULL | SocialFriendshipStatus PENDING=1/ACCEPTED=2/REJECTED=3/REMOVED=4；CHECK low<high，requester ∈ pair |
+| `social_conversation` | `SocialConversationModel` | agent_domain_id NULL; low_user_id/high_user_id FK U(low_user_id,high_user_id); last_message_no BIGINT UNSIGNED DEFAULT 0; user_low_read_through_no / user_high_read_through_no BIGINT UNSIGNED DEFAULT 0; last_message_at NULL; pending_first_message_user_id NULL; open_messaging_day DATE NULL | SocialConversationStatus ACTIVE=1/READ_ONLY=2/CLOSED=3；游标单调递增且 ≤ 高水位 |
+| `social_message` | `SocialMessageModel` | social_conversation_id FK; message_no BIGINT UNSIGNED; sender_user_id FK; client_message_id VARCHAR(160); message_type SMALLINT UNSIGNED; body_text TEXT NULL; asset_id NULL; redacted_by_user_id NULL; redacted_at NULL | SocialMessageStatus SENT=1/REDACTED=2；MessageType TEXT=1/IMAGE=2；U(social_conversation_id,message_no)；U(sender_user_id,client_message_id) |
+| `social_content_interaction` | `SocialContentInteractionModel` | user_id FK; target_type SMALLINT UNSIGNED; target_id BIGINT UNSIGNED; interaction_type SMALLINT UNSIGNED | SocialContentInteractionStatus；U(user_id,target_type,target_id,interaction_type) |
+| `social_block` | `SocialBlockModel` | agent_domain_id NULL; user_id FK; blocked_user_id FK | SocialBlockStatus；U(user_id,blocked_user_id) |
+| `social_report` | `SocialReportModel` | reporter_user_id FK; target_type SMALLINT UNSIGNED; target_id BIGINT UNSIGNED; report_reason SMALLINT UNSIGNED; report_note VARCHAR(500) NULL; handled_by_user_id NULL; handled_at NULL | SocialReportStatus PENDING=1/RESOLVED=2/DISMISSED=3；处理留痕不复制正文 |
+
+> 社交 `status` 枚举中 0 均不出现；`last_message_no`/游标是普通计数（允许 0），不属于业务常量。
+
+### A.7 support（0015）
+
+**Model 文件：`models/support.ts`**（DTO 契约见 `packages/contracts/src/support.ts`）
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `support_conversation` | `SupportConversationModel` | user_id FK; assigned_admin_user_id NULL; category_type SMALLINT UNSIGNED; subject VARCHAR(160); order_id NULL; withdrawal_id NULL; last_message_at NULL; user_unread_count INT UNSIGNED DEFAULT 0; support_unread_count INT UNSIGNED DEFAULT 0; closed_at NULL | SupportConversationStatus WAITING_SUPPORT=1/WAITING_USER=2/CLOSED=3；CategoryType ACCOUNT=1/PAYMENT=2/WITHDRAWAL=3/GAME=4/OTHER=5 |
+| `support_message` | `SupportMessageModel` | support_conversation_id FK; message_key CHAR(36) U; sender_user_id NULL; sender_type SMALLINT UNSIGNED; message_type SMALLINT UNSIGNED; body_text TEXT NULL; asset_id NULL; redacted_by_user_id NULL; redacted_at NULL | SupportMessageStatus VISIBLE=1/REDACTED=2；SenderType CUSTOMER=1/ADMIN=2/SYSTEM=3；MessageType TEXT=1/IMAGE=2/ATTACHMENT=3/SYSTEM_NOTICE=4；CHECK SYSTEM⇒sender_user_id NULL，CUSTOMER/ADMIN⇒非空 |
+
+### A.8 admin（0009）
+
+**Model 文件：`models/admin.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `agent_domain` | `AgentDomainModel` | user_id FK U; capabilities JSON DEFAULT []; approved_at/suspended_at/revoked_at NULL | AgentDomainStatus PENDING_REVIEW=1/ACTIVE=2/SUSPENDED=3/REVOKED=4/WITHDRAWN=5；审批同事务置 user.role_type AGENT 位 |
+| `admin_permission` | `AdminPermissionModel` | permission_code VARCHAR(128) U; name VARCHAR(100); http_method VARCHAR(12); path_pattern VARCHAR(255) | ActiveStatus；U(http_method,path_pattern) |
+| `admin_audit_event`（不可变） | `AdminAuditEventModel` | admin_user_id FK; admin_session_key CHAR(36) NULL; user_id NULL; target_admin_user_id NULL; asset_operation_id/withdrawal_id/system_config_id/game_config_id/agent_domain_id/referral_binding_event_id/support_conversation_id/coin_market_trade_id 各 NULL; request_key VARCHAR(160); action_code VARCHAR(128); result_type SMALLINT UNSIGNED; reason VARCHAR(500); snapshot JSON; ip_hash BINARY(32) | RecordStatus RECORDED=1；ResultType SUCCESS=1/DENIED=2/FAILED=3；CHECK(system_config_id IS NULL OR game_config_id IS NULL) |
+| `agent_audit_event`（不可变） | `AgentAuditEventModel` | agent_domain_id FK; user_id FK; action_code VARCHAR(128); resource_type VARCHAR(64); resource_key VARCHAR(160); purpose VARCHAR(255); request_key VARCHAR(160) U; result_type SMALLINT UNSIGNED; snapshot JSON; ip_hash BINARY(32) | RecordStatus RECORDED=1；U(request_key) |
+
+### A.9 ai-assets / 文件资产（0017）
+
+**Model 文件：`models/assets.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `asset` | `AssetModel` | asset_type SMALLINT UNSIGNED; storage_provider SMALLINT UNSIGNED; bucket_name VARCHAR(128); object_key VARCHAR(512); content_hash BINARY(32); mime_type VARCHAR(128); byte_size BIGINT UNSIGNED; width/height INT UNSIGNED NULL; duration_ms BIGINT UNSIGNED NULL; codec VARCHAR(64) NULL; visibility SMALLINT UNSIGNED; storage_metadata JSON NULL | AssetStatus STORED=1/READY=2/QUARANTINED=3/RETIRED=4；AssetType IMAGE=1/ANIMATED_IMAGE=2/VIDEO=3/ATLAS=4/MANIFEST=5/BINARY=6；StorageProvider S3_COMPATIBLE=1/LOCAL_DEV=2；Visibility PRIVATE=1/PUBLIC=2；U(storage_provider,bucket_name,object_key)；U(content_hash,byte_size) |
+| `asset_release` | `AssetReleaseModel` | release_key VARCHAR(128) U; release_type SMALLINT UNSIGNED; manifest_hash BINARY(32); published_at NULL | ReleaseStatus DRAFT=1/REVIEW=2/PUBLISHED=3/RETIRED=4 |
+| `asset_release_item` | `AssetReleaseItemModel` | asset_release_id FK; asset_id FK; item_type SMALLINT UNSIGNED; order_no INT UNSIGNED | RecordStatus；U(asset_release_id,asset_id) |
+| `ai_asset_job` | `AiAssetJobModel` | job_key CHAR(36) U; asset_key VARCHAR(128); asset_kind SMALLINT UNSIGNED; provider_code VARCHAR(32); main_model_code/image_model_code VARCHAR(128); api_mode SMALLINT UNSIGNED; prompt MEDIUMTEXT; prompt_hash BINARY(32); style_version VARCHAR(64); generation_config JSON; provider_request_key VARCHAR(160) NULL; usage_snapshot JSON NULL; cost_micro_usd BIGINT NULL; attempts INT UNSIGNED DEFAULT 0; completed_at NULL | AiJobStatus QUEUED=1/RUNNING=2/SUCCEEDED=3/FAILED=4/CANCELLED=5/REVIEW_REQUIRED=6；ApiMode RESPONSES_IMAGE_TOOL=1/IMAGES=2；AssetKind BACKGROUND=1/CHARACTER=2/CARD=3/ICON=4/EFFECT=5 |
+| `ai_asset_artifact` | `AiAssetArtifactModel` | ai_asset_job_id FK; asset_id FK U; artifact_type SMALLINT UNSIGNED; license_snapshot JSON; review_note VARCHAR(1000) NULL | ArtifactStatus GENERATED=1/APPROVED=2/REJECTED=3；ArtifactType ORIGINAL=1/WEBP=2/AVIF=3/ATLAS=4/METADATA=5 |
+| `ai_asset_reference`（不可变） | `AiAssetReferenceModel` | ai_asset_job_id FK; asset_id FK; reference_role SMALLINT UNSIGNED; sort_order INT UNSIGNED DEFAULT 0 | RecordStatus RECORDED=1；ReferenceRole STYLE=1/CHARACTER=2/EDIT_TARGET=3；U(ai_asset_job_id,asset_id,reference_role) |
+
+### A.10 platform-events / outbox（0018）与迁移历史
+
+**Model 文件：`models/events.ts`**（`GameEventInstanceModel` 若与 game 模块共用可放 `models/game.ts`，本处登记归属 platform-events）
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `outbox` | `OutboxModel` | event_key VARCHAR(160) U; topic VARCHAR(128); user_id NULL; asset_operation_id NULL; round_id NULL; payload JSON; payload_version INT UNSIGNED DEFAULT 1; available_at; attempts INT UNSIGNED DEFAULT 0; locked_by VARCHAR(128) NULL; lease_until NULL; sent_at NULL; last_error_code VARCHAR(64) NULL | OutboxStatus PENDING=1/PROCESSING=2/SENT=3/DEAD=4；U(event_key)；I(status,available_at,id)；I(lease_until,id) |
+| `migration_history`（0001 已有） | `MigrationHistoryModel` | name VARCHAR(255); checksum CHAR(64); action_type SMALLINT UNSIGNED; execution_no BIGINT UNSIGNED; started_at; finished_at NULL; executor_key VARCHAR(128); error_code VARCHAR(64) NULL；U(name,execution_no) | MigrationStatus RUNNING=1/SUCCEEDED=2/FAILED=3；Umzug 自定义存储（已实现于 `apps/server`，迁入 backend 后原样保留，DDL 不再动） |
+
+### A.11 coin-market（0016）
+
+**Model 文件：`models/coin-market.ts`**
+
+| 表 | Model 类 | 关键字段（类型） | 常量/约束 |
+| --- | --- | --- | --- |
+| `coin_market_listing` | `CoinMarketListingModel` | seller_user_id FK; listing_key VARCHAR(160) U; asset_hold_id FK U; listed_coins BIGINT; available_coins BIGINT; reserved_coins/filled_coins/cancelled_coins BIGINT DEFAULT 0; price_cents_per_1000_coins BIGINT UNSIGNED; receive_method SMALLINT UNSIGNED; receive_snapshot JSON NULL; platform_payment_opt_in TINYINT UNSIGNED DEFAULT 0（布尔）; cancelled_at NULL; suspended_by_user_id NULL | CoinMarketListingStatus ACTIVE=1/PAUSED=2/COMPLETED=3/CANCELLED=4/SUSPENDED=5；CHECK listed=available+reserved+filled+cancelled 且各非负、listed>0 |
+| `coin_market_trade` | `CoinMarketTradeModel` | coin_market_listing_id FK; buyer_user_id FK; trade_key VARCHAR(160) U; coins BIGINT; gross_cents BIGINT; payment_mode SMALLINT UNSIGNED; payment_channel_id NULL; fee_rate_bps INT UNSIGNED DEFAULT 0; fee_cents BIGINT DEFAULT 0; seller_net_cents BIGINT DEFAULT 0; payment_proof_asset_id NULL; chain_tx_id VARCHAR(160) NULL U; usdt_rate_snapshot DECIMAL(20,8) NULL; payment_deadline_at; seller_response/buyer_evidence/seller_evidence/platform_decision 各 deadline_at + asset_id + submitted_at; seller_dispute_note VARCHAR(1000) NULL; paid_at NULL; support_conversation_id NULL; adjudicated_by_user_id NULL; resolution_code SMALLINT UNSIGNED NULL; resolution_note VARCHAR(1000) NULL; adjudicated_at NULL; asset_operation_id NULL U | CoinMarketTradeStatus PAYMENT_PENDING=1/SELLER_CONFIRMATION_PENDING=2/DISPUTED=3/BUYER_EVIDENCE_PENDING=4/SELLER_EVIDENCE_PENDING=5/PLATFORM_REVIEW=6/RELEASED=7/AUTO_RELEASED=8/PAYMENT_EXPIRED=9/RESOLVED_RETURN=10/CANCELLED=11；PaymentMode DIRECT=1/PLATFORM_CHANNEL=2/USDT=3；ResolutionCode RELEASE_TO_BUYER=1/RETURN_TO_SELLER=2；U(trade_key)；U(chain_tx_id)；U(asset_operation_id) |
+
+### A.12 模型注册与装配约定
+
+1. **注册中心**：`packages/backend/src/infrastructure/database/models/index.ts` 导出 `allModels` 数组，`sequelize.addModels(allModels)` 统一注册；各 Model 文件只做 `define`，不自行绑 instance（避免循环依赖）。
+2. **关联声明**：Sequelize `belongsTo/hasOne/hasMany` 只在**读模型查询**需要 join 的模块内声明，`foreignKey` 显式指定、`constraints: false`（外键约束以 DDL 为准，避免 ORM 自动补列/补索引，见[Sequelize 方案 §2](../05_data/数据库设计规范与Sequelize方案.md)）。资金/审计引用列 DDL 建 `RESTRICT` 外键。
+3. **常量单一来源**：本附录列出的全部 status/type 常量在 `packages/contracts`（玩家可见部分）与 `packages/admin-contracts`（Admin 部分）以 `as const` 对象 + 数值断言导出，**Model 文件引用 contracts 常量而非本地再定义**；数据库设计 SDD §3 的枚举草案是权威，发现数值冲突先改 SDD 再改代码。
+4. **row-mapper 归属**：每个 Model 文件的同目录 `*-row-mapper.ts` 负责 Model ↔ DTO（十进制字符串化、`DataTypes.JSON` 解析、BINARY(32) 摘要的 hex 化），禁止在 controller/socket handler 里直接读 Model 实例字段出 wire。
+5. **不可变表钩子**：`asset_operation`/`asset_entry`/`*_event`/`outbox` 等 Model 用 `hooks.afterUpdate` 抛错 + `paranoid: false` + 关闭 `updated_at` 自动写，保证 append-only（与 0004 迁移 DDL 的"不可更新删除"一致）。
+6. **生成列只读**：`system_marker`/`active_marker` 在 Model 里 `field` 映射到原生 STORED 列、`defaultValue` 不设、create/update 时忽略入参（由 DDL 表达式计算），唯一索引在 DDL 层生效。
+7. **保留字**：`OrderModel.tableName = 'order'`，所有 raw SQL 与 Sequelize 查询对该表加反引号；`user` 表同理。
+8. **迁移顺序依赖**：FK 目标表必须先迁移（如 `user.asset_id → asset` 在 0017 建 `asset` 表后补 `ADD CONSTRAINT`；`0002` 已按"只建列不建外键"处理）。批次内表序 = 被引用表在前。
+
+### A.13 与数据库设计 SDD 的对照校验清单（写迁移前逐表过）
+
+- [ ] 每张表 DDL 字段/类型/可空/默认值与数据库设计 SDD §5 逐表一致（本附录 A.1~A.11 为中间映射，发现不一致以数据库设计 SDD 为准并先修订本附录）。
+- [ ] 全表公共 5 字段齐全（`migration_history` 按 0001 既有写法例外：无 `status/deleted_at` 业务语义，保持现状不改旧迁移；Model 按 A.10 登记，DDL 不动）。
+- [ ] 状态列默认值为非零常量；所有 CHECK 约束逐条落到 DDL。
+- [ ] generated 列表达式与 SDD 给出的 `CASE WHEN` 完全一致（`user.system_marker`、`recovery_credential.active_marker`、`product.active_marker`、`game_entry.active_marker`、`room_membership.active_marker`、`payout_attempt.active_marker`）。
+- [ ] 唯一索引含 `COALESCE(...,0)` 归一的（`game_config`、`social_topic`）在 DDL 用函数索引或生成列等价实现，MySQL 9 直接支持表达式索引。
+- [ ] 不可变表 6 张（asset_operation/asset_entry、referral_binding_event、round_event、social_report*、agent_audit_event/admin_audit_event/user_security_event、payment_event、outbox）确认 `updated_at=created_at`、无软删。
+- [ ] `order`/`user` 保留字反引号全覆盖（Sequelize `table` 选项 + raw query）。
+- [ ] 资金 FK（`asset_operation`/`asset_entry`/`withdrawal.asset_operation_id`/`settlement.asset_operation_id`/`coin_market_trade.asset_operation_id`）DDL `ON DELETE RESTRICT`。
+
 ## 变更历史
 
 | 日期 | 变更 |
 | --- | --- |
 | 2026-11-03 | 新建：后端实施 SDD（实体起步）：62 表 model 注册与迁移批次、模块/用例/端口布局、玩家+Admin HTTP 路由与端点清单、Socket.IO 三命名空间与 outbox 投递管线、Admin（Vue3.5+Element Plus）双轨切换映射、Docker 沿用现有 compose、9 步实施顺序与验收红线。 |
 | 2026-11-03 | 校准表数口径：数据库设计 SDD §5 逐表实为 63 张（outbox 后补、开头 62 未更新），本 SDD 按 63 张为准并登记该差异；修 §1/§3.2 链到账子域归属矛盾（payments owns，model 文件独立）与 0008/0017 批次归属（asset/asset_release* 归 ai-assets）。 |
+| 2026-11-03 | 新增附录 A（模型与表结构规划）：63 表按 11 个 model 文件给出 Model 类名、业务字段类型、状态/类型常量、索引与 CHECK 约束；A.12 注册/关联/常量单一来源/row-mapper/不可变钩子/生成列/保留字装配约定；A.13 写迁移前逐表对照数据库设计 SDD §5 的校验清单。 |
