@@ -22,8 +22,9 @@
   - **实体与迁移已落地（2026-11-03）**：`packages/backend` 包脚手架 + 0007~0018 共 12 批次 57 张表（数据库设计 SDD §5 逐表对照、附录 A.13 校验）；`apps/server` 的 0001~0006 迁移基础设施迁入 backend，server 仅保留 Sequelize 实例 + 探针；server 迁移 CLI 与 `MIGRATION_TEST` 委托 backend 全链 0001~0018，63 张表 up→down→up 验证通过。
   - **Model 注册层已落地（2026-11-03）**：`packages/backend/src/infrastructure/database/models/` 13 文件注册全部 63 张表（11 领域文件 + coin-market + index.ts 中央注册器 + _shared.ts 公共支撑）；A.12 装配约定全部落实（中央 `addModels` + `associateAll` 跨文件 FK、不可变表 append-only hooks、outbox/coin-market `paranoid: false` 例外、生成列不进 attributes、保留字反引号、BINARY 近似映射）。container lint/format:check/typecheck 全绿。
   - **identity 模块已落地（2026-11-03，§9 第 1 步）**：`packages/backend/src/infrastructure/redis/`（ioredis 单例 + Redis 会话权威存储 + Lua 原子 refresh 轮换 + 30s 弱网重放窗口 + 限频）、`infrastructure/jwt/`（jose ES256 签发/验签，固定 claims，PEM env 或 dev 内存密钥）、`modules/identity/`（domain 密码/TOTP/联系方式规则 + 8 ports + 4 adapters + 11 用例 + 装配工厂 + public 唯一入口）；`apps/server` 新增 `http/auth.routes.ts`（auth 6 端点 + me/identity 3 端点）与 `infrastructure/auth/player-auth-middleware.ts`（Bearer 验签 + Redis session + auth_version 三重门禁），`main.ts` 装配 identityModule（MySQL/Redis 缺失时降级不挂载 auth 路由）。全量门禁（lint/format/typecheck/test/build）容器内全绿。
+  - **Socket 握手鉴权基座已落地（2026-11-03，§6.1）**：`apps/server/src/socket/socket-auth.ts`（/platform 命名空间，握手三重门禁，session.reauthorize 原地更新，disconnectUser 按 user 断开）；socket.io ^4.8.1 入 lockfile；优雅关闭顺序 io → redis → sequelize。未闭环：/admin 与 /room/:roomId 命名空间（随 §9 第 4/9 步）、多实例 pub/sub 广播断开。
   - 未闭环登记（identity）：TOTP 密文 KMS 未接入（占位封装）、outbox worker 未建（8 topic 已登记）、WelcomeGiftPort 归 wallet 模块（TODO）、refresh 路由依赖 Cookie 双值（sid + refresh token）。
-  - 下一步（§9 第 2 步）：auth 端点 contract test + Socket.IO 握手鉴权基座。已知差异：contracts `CoinMarketTradeStatus` 9 值 vs DDL 11 值，双轨切换前须对齐。
+  - 下一步（§9 第 2 步）：auth 端点 contract test（把身份流程验收补全）+ 钱包闭环（summary/activity/transfer/exchange 真实 handler，替换 Browser API 为 REMOTE 权威，5% 手续费/分录守恒/流水门槛验收）。已知差异：contracts `CoinMarketTradeStatus` 9 值 vs DDL 11 值，双轨切换前须对齐。
 - 前端生产态：生产构建只注入 `gameExperienceApi`，钱包/社交/客服/邀请在 REMOTE 下缺失（P0-P1 差距项）。
 - Admin：无登录鉴权、无领域 API（19 个工作区全是本地演示数据）。
 - 规划未建：`packages/game-sdk`/`game-host`/`resource-runtime`/`platform-client`、`apps/worker`/`mobile`/`desktop`、`tests/`（e2e/负载/弱网）。
@@ -60,3 +61,4 @@
 | 2026-11-03 | §2 登记《后端实施 SDD》为服务端施工蓝图（63 表实体起步 → 模块 → HTTP/Socket.IO → Admin 双轨切换 → 9 步实施顺序）；代码未开写。 |
 | 2026-11-03 | §1 数据库条目更新为 63 张表（0001~0018）；§2 登记"实体与迁移已落地"——`packages/backend` 脚手架 + 57 张新表迁移 + server 迁移基础设施迁入 backend + CLI/MIGRATION_TEST 委托全链，63 表 up→down→up 容器实测通过；model 注册与模块用例仍属未完成。 |
 | 2026-11-03 | §2 登记"Model 注册层已落地"（13 文件 63 表，A.12 全落实）与"identity 模块已落地"（Redis 会话 + JWT ES256 + 11 用例 + auth 路由 + 认证中间件，全量门禁绿）；未闭环登记 TOTP KMS / outbox worker / WelcomeGiftPort / refresh Cookie 双值。 |
+| 2026-11-03 | §2 登记"Socket 握手鉴权基座已落地"（/platform 命名空间 + session.reauthorize + disconnectUser，socket.io ^4.8.1）；§9 第 1 步收口，下一步 §9 第 2 步钱包闭环。 |
