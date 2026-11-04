@@ -15,6 +15,11 @@
     "./modules/payments/public": "./src/modules/payments/public.ts",
     "./modules/rooms": "./src/modules/rooms/index.ts",
     "./modules/rooms/public": "./src/modules/rooms/public.ts",
+    "./modules/social": "./src/modules/social/index.ts",
+    "./modules/social/public": "./src/modules/social/public.ts",
+    "./modules/support": "./src/modules/support/index.ts",
+    "./modules/support/public": "./src/modules/support/public.ts",
+    "./infrastructure/database/models/events": "./src/infrastructure/database/models/events.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"
   },

@@ -9,7 +9,11 @@ import { createIdentityModule } from '@gameing/backend/modules/identity/public';
 import { createWalletModule } from '@gameing/backend/modules/wallet/public';
 import { createPaymentsModule } from '@gameing/backend/modules/payments/public';
 import { createRoomsModule } from '@gameing/backend/modules/rooms/public';
+import { createSocialModule } from '@gameing/backend/modules/social/public';
+import { createSupportModule } from '@gameing/backend/modules/support/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
+import { OutboxModel } from '@gameing/backend/infrastructure/database/models/events';
+import type { OutboxAppendInput } from '@gameing/backend/modules/social/public';
 import type { Sequelize } from 'sequelize';
 
 /**
@@ -143,10 +147,78 @@ if (walletModule && sequelizeInstance) {
   }
 }
 
+// --- social 模块装配（需 sequelize；社交无资金操作，不依赖 wallet） ---
+let socialModule;
+if (sequelizeInstance) {
+  try {
+    socialModule = createSocialModule({
+      sequelize: sequelizeInstance,
+      outboxPortFactory: ({ transaction }) => ({
+        async append(input: OutboxAppendInput) {
+          await OutboxModel.create(
+            {
+              eventKey: input.eventKey ?? `social:${input.topic}:${Date.now()}`,
+              topic: input.topic,
+              userId: input.userId ?? null,
+              payload: input.payload,
+              payloadVersion: input.payloadVersion ?? 1,
+              availableAt: input.availableAt ?? new Date(),
+              assetOperationId: input.assetOperationId ?? null,
+            } as never,
+            { transaction: transaction ?? undefined } as never,
+          );
+        },
+      }),
+      config: {},
+    });
+    logger.info('social 模块装配完成');
+  } catch (error) {
+    logger.warn('social 模块装配失败（social 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    socialModule = undefined;
+  }
+}
+
+// --- support 模块装配（需 sequelize；客服无资金操作，不依赖 wallet） ---
+let supportModule;
+if (sequelizeInstance) {
+  try {
+    supportModule = createSupportModule({
+      sequelize: sequelizeInstance,
+      outboxPortFactory: ({ transaction }) => ({
+        async append(input: OutboxAppendInput) {
+          await OutboxModel.create(
+            {
+              eventKey: input.eventKey ?? `support:${input.topic}:${Date.now()}`,
+              topic: input.topic,
+              userId: input.userId ?? null,
+              payload: input.payload,
+              payloadVersion: input.payloadVersion ?? 1,
+              availableAt: input.availableAt ?? new Date(),
+              assetOperationId: input.assetOperationId ?? null,
+            } as never,
+            { transaction: transaction ?? undefined } as never,
+          );
+        },
+      }),
+      config: {},
+    });
+    logger.info('support 模块装配完成');
+  } catch (error) {
+    logger.warn('support 模块装配失败（support 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    supportModule = undefined;
+  }
+}
+
 const identityModuleOpt = identityModule ?? undefined;
 const walletModuleOpt = walletModule ?? undefined;
 const paymentsModuleOpt = paymentsModule ?? undefined;
 const roomsModuleOpt = roomsModule ?? undefined;
+const socialModuleOpt = socialModule ?? undefined;
+const supportModuleOpt = supportModule ?? undefined;
 const sequelizeOpt = sequelizeInstance ?? undefined;
 const app = createApp({
   logger,
@@ -155,6 +227,8 @@ const app = createApp({
   ...(walletModuleOpt && sequelizeOpt ? { walletModule: walletModuleOpt, sequelize: sequelizeOpt } : {}),
   ...(paymentsModuleOpt && identityModuleOpt && sequelizeOpt ? { paymentsModule: paymentsModuleOpt } : {}),
   ...(roomsModuleOpt && identityModuleOpt && sequelizeOpt ? { roomsModule: roomsModuleOpt } : {}),
+  ...(socialModuleOpt && identityModuleOpt && sequelizeOpt ? { socialModule: socialModuleOpt } : {}),
+  ...(supportModuleOpt && identityModuleOpt && sequelizeOpt ? { supportModule: supportModuleOpt } : {}),
 });
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });
