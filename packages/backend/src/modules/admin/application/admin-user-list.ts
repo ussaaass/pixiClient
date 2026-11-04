@@ -67,11 +67,7 @@ export class AdminUserListUseCase {
    * 50/页；筛选经 query；脱敏最小负载）。
    * 调用方（路由层）解析 cursor + 筛选参数，传 `noTx`（只读无事务）。
    */
-  async list(input: {
-    cursor: string | null;
-    filters: AdminUserListFilters;
-    tx: Tx;
-  }): Promise<AdminUserPageDto> {
+  async list(input: { cursor: string | null; filters: AdminUserListFilters; tx: Tx }): Promise<AdminUserPageDto> {
     const limit = ADMIN_USER_PAGE_LIMIT;
     const result = await this.userRepo.listUsers({
       cursor: input.cursor,

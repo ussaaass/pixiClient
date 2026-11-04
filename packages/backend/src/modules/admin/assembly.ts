@@ -37,11 +37,7 @@
  */
 
 import type { Sequelize, Transaction } from 'sequelize';
-import {
-  AgentDomainModel,
-  AdminAuditEventModel,
-  AdminPermissionModel,
-} from '../../infrastructure/database/models/admin.js';
+import { AgentDomainModel, AdminAuditEventModel, AdminPermissionModel } from '../../infrastructure/database/models/admin.js';
 import { CoinMarketTradeModel } from '../../infrastructure/database/models/coin-market.js';
 import { WithdrawalModel } from '../../infrastructure/database/models/payments.js';
 import { AiAssetJobModel } from '../../infrastructure/database/models/assets.js';

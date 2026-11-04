@@ -64,8 +64,7 @@ export const AdminUserDetailSection = {
   SOCIAL: 'SOCIAL',
 } as const;
 
-export type AdminUserDetailSectionValue =
-  (typeof AdminUserDetailSection)[keyof typeof AdminUserDetailSection];
+export type AdminUserDetailSectionValue = (typeof AdminUserDetailSection)[keyof typeof AdminUserDetailSection];
 
 /** 合法 section 集合（前置校验；非枚举 → AD_PERMISSION_DENIED）。 */
 const VALID_SECTIONS: readonly AdminUserDetailSectionValue[] = Object.values(AdminUserDetailSection);
@@ -125,10 +124,7 @@ export interface AdminUserPlaceholderSectionDto {
   };
 }
 
-export type AdminUserDetailSectionDto =
-  | AdminUserOverviewSectionDto
-  | AdminUserSecuritySectionDto
-  | AdminUserPlaceholderSectionDto;
+export type AdminUserDetailSectionDto = AdminUserOverviewSectionDto | AdminUserSecuritySectionDto | AdminUserPlaceholderSectionDto;
 
 export class AdminUserDetailUseCase {
   constructor(private readonly userRepo: AdminUserRepo) {}

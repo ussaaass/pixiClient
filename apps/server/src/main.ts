@@ -17,6 +17,7 @@ import { createCoinMarketModule } from '@gameing/backend/modules/coin-market/pub
 import { createAiAssetsModule } from '@gameing/backend/modules/ai-assets/public';
 import { createAdminModule } from '@gameing/backend/modules/admin/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
+import { bootstrapOutboxWorker } from './infrastructure/outbox/outbox-worker-bootstrap.js';
 import { OutboxModel } from '@gameing/backend/infrastructure/database/models/events';
 import type { OutboxAppendInput } from '@gameing/backend/modules/social/public';
 import type { Sequelize } from 'sequelize';
@@ -348,6 +349,25 @@ if (identityModuleOpt) {
   logger.info('Socket.IO /platform 命名空间已挂载', { port });
 }
 
+// --- outbox worker（SDD §6.3 首版进程内 ticker + 租约） ---
+// sequelize + socketAuth（/platform）均就绪时启动；任务处理器经各模块
+// 装配产物注册（缺失模块对应处理器跳过，不阻塞启动）。
+let outboxWorker: ReturnType<typeof bootstrapOutboxWorker>['worker'] | undefined;
+if (sequelizeOpt && socketAuth !== undefined) {
+  const outboxBootstrap = bootstrapOutboxWorker({
+    sequelize: sequelizeOpt,
+    socketAuth,
+    logger,
+    modules: {
+      paymentsModule: paymentsModuleOpt,
+      coinMarketModule: coinMarketModuleOpt,
+      referralModule: referralModuleOpt,
+      walletModule: walletModuleOpt,
+    },
+  });
+  outboxWorker = outboxBootstrap.worker;
+}
+
 async function shutdown(signal: string): Promise<void> {
   logger.info('收到关闭信号，开始优雅关闭', { signal });
   server.close(async (error) => {
@@ -355,6 +375,12 @@ async function shutdown(signal: string): Promise<void> {
       logger.error('关闭时发生错误', { errorCode: error.name, cause: error.stack });
       process.exit(1);
       return;
+    }
+    // 关闭 outbox worker（先停 ticker，避免关闭期继续领取）
+    try {
+      await outboxWorker?.stop();
+    } catch {
+      /* worker 未启动则跳过 */
     }
     // 关闭 Socket.IO（先断开所有连接）
     try {

@@ -45,11 +45,7 @@
 
 import type { AiJobReviewRepo, AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
 import { AdminDomainError, AD } from '../domain/errors.js';
-import {
-  AI_JOB_REVIEW_FROM,
-  AI_JOB_REVIEW_TO_SUCCEEDED,
-  AI_JOB_REVIEW_TO_FAILED,
-} from '../domain/audit-rules.js';
+import { AI_JOB_REVIEW_FROM, AI_JOB_REVIEW_TO_SUCCEEDED, AI_JOB_REVIEW_TO_FAILED } from '../domain/audit-rules.js';
 
 /** 审核结果（wire DTO；status 数值常量 wire；时间戳十进制字符串 wire）。 */
 export interface AiJobReviewedDto {
@@ -103,11 +99,7 @@ export class AiAssetsReviewUseCase {
         jobId: job.id,
         status: job.status,
         completedAt:
-          job.completedAt === null
-            ? null
-            : typeof job.completedAt === 'string'
-              ? job.completedAt
-              : job.completedAt.toISOString(),
+          job.completedAt === null ? null : typeof job.completedAt === 'string' ? job.completedAt : job.completedAt.toISOString(),
         inserted: false,
       };
     }
@@ -134,12 +126,7 @@ export class AiAssetsReviewUseCase {
         return {
           jobId: re.id,
           status: re.status,
-          completedAt:
-            re.completedAt === null
-              ? null
-              : typeof re.completedAt === 'string'
-                ? re.completedAt
-                : re.completedAt.toISOString(),
+          completedAt: re.completedAt === null ? null : typeof re.completedAt === 'string' ? re.completedAt : re.completedAt.toISOString(),
           inserted: false,
         };
       }
@@ -175,11 +162,7 @@ export class AiAssetsReviewUseCase {
       jobId: result.id,
       status: result.status,
       completedAt:
-        result.completedAt === null
-          ? null
-          : typeof result.completedAt === 'string'
-            ? result.completedAt
-            : result.completedAt.toISOString(),
+        result.completedAt === null ? null : typeof result.completedAt === 'string' ? result.completedAt : result.completedAt.toISOString(),
       inserted: true,
     };
   }

@@ -32,7 +32,6 @@
  */
 
 import type { AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
-import { AdminDomainError, AD } from '../domain/errors.js';
 import { validateAuditSnapshot } from '../domain/audit-rules.js';
 
 /** 审计事件写结果（wire DTO；ID 十进制字符串 wire；status 数值常量 wire）。 */

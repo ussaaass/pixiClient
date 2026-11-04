@@ -30,6 +30,8 @@
     "./modules/admin": "./src/modules/admin/index.ts",
     "./modules/admin/public": "./src/modules/admin/public.ts",
     "./infrastructure/database/models/events": "./src/infrastructure/database/models/events.ts",
+    "./infrastructure/database/models/payments": "./src/infrastructure/database/models/payments.ts",
+    "./infrastructure/database/models/coin-market": "./src/infrastructure/database/models/coin-market.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"
   },

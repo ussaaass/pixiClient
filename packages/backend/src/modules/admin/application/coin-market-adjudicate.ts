@@ -59,12 +59,7 @@
 
 import type { TradeAdjudicationRepo, AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
 import { AdminDomainError, AD } from '../domain/errors.js';
-import {
-  canTradeAdjudicate,
-  TRADE_ADJUDICATE_RELEASED,
-  TRADE_ADJUDICATE_RETURN,
-  ResolutionCode,
-} from '../domain/audit-rules.js';
+import { canTradeAdjudicate, TRADE_ADJUDICATE_RELEASED, TRADE_ADJUDICATE_RETURN, ResolutionCode } from '../domain/audit-rules.js';
 
 /** 裁决结果（wire DTO；status 数值常量 wire；时间戳十进制字符串 wire）。 */
 export interface TradeAdjudicatedDto {
@@ -110,10 +105,7 @@ export class CoinMarketAdjudicateUseCase {
         retryable: false,
       });
     }
-    const targetStatus =
-      input.resolutionCode === ResolutionCode.RELEASE_TO_BUYER
-        ? TRADE_ADJUDICATE_RELEASED
-        : TRADE_ADJUDICATE_RETURN;
+    const targetStatus = input.resolutionCode === ResolutionCode.RELEASE_TO_BUYER ? TRADE_ADJUDICATE_RELEASED : TRADE_ADJUDICATE_RETURN;
 
     // 3. 幂等重放：已 RELEASED=7 / RESOLVED_RETURN=10 → 静默返回既有值
     if (trade.status === TRADE_ADJUDICATE_RELEASED || trade.status === TRADE_ADJUDICATE_RETURN) {
@@ -159,11 +151,7 @@ export class CoinMarketAdjudicateUseCase {
           status: re.status,
           resolutionCode: re.resolutionCode,
           adjudicatedAt:
-            re.adjudicatedAt === null
-              ? null
-              : typeof re.adjudicatedAt === 'string'
-                ? re.adjudicatedAt
-                : re.adjudicatedAt.toISOString(),
+            re.adjudicatedAt === null ? null : typeof re.adjudicatedAt === 'string' ? re.adjudicatedAt : re.adjudicatedAt.toISOString(),
           supportConversationId: re.supportConversationId,
           inserted: false,
         };

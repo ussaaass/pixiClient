@@ -40,10 +40,7 @@
 
 import type { AgentDomainRepo, AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
 import { AdminDomainError, AD } from '../domain/errors.js';
-import {
-  AdminAgentDomainStatus5,
-  canAgentDomainTransition,
-} from '../domain/audit-rules.js';
+import { AdminAgentDomainStatus5, canAgentDomainTransition } from '../domain/audit-rules.js';
 
 /** 审批结果（wire DTO；ID / 时间戳十进制字符串 wire；status 数值常量 wire）。 */
 export interface AgentDomainApprovedDto {
@@ -87,11 +84,7 @@ export class AgentDomainApproveUseCase {
         domainId: domain.id,
         status: domain.status,
         approvedAt:
-          domain.approvedAt === null
-            ? null
-            : typeof domain.approvedAt === 'string'
-              ? domain.approvedAt
-              : domain.approvedAt.toISOString(),
+          domain.approvedAt === null ? null : typeof domain.approvedAt === 'string' ? domain.approvedAt : domain.approvedAt.toISOString(),
         inserted: false,
       };
     }
@@ -116,12 +109,7 @@ export class AgentDomainApproveUseCase {
         return {
           domainId: re.id,
           status: re.status,
-          approvedAt:
-            re.approvedAt === null
-              ? null
-              : typeof re.approvedAt === 'string'
-                ? re.approvedAt
-                : re.approvedAt.toISOString(),
+          approvedAt: re.approvedAt === null ? null : typeof re.approvedAt === 'string' ? re.approvedAt : re.approvedAt.toISOString(),
           inserted: false,
         };
       }
@@ -157,11 +145,7 @@ export class AgentDomainApproveUseCase {
       domainId: result.id,
       status: result.status,
       approvedAt:
-        result.approvedAt === null
-          ? null
-          : typeof result.approvedAt === 'string'
-            ? result.approvedAt
-            : result.approvedAt.toISOString(),
+        result.approvedAt === null ? null : typeof result.approvedAt === 'string' ? result.approvedAt : result.approvedAt.toISOString(),
       inserted: true,
     };
   }

@@ -36,30 +36,12 @@
 // ---------------------------------------------------------------------------
 // 用例类（application/；构造注入 ports，不用全局）
 // ---------------------------------------------------------------------------
-export {
-  AgentDomainApproveUseCase,
-  type AgentDomainApprovedDto,
-} from './application/agent-domain-approve.js';
-export {
-  AgentDomainSuspendUseCase,
-  type AgentDomainSuspendedDto,
-} from './application/agent-domain-suspend.js';
-export {
-  AgentDomainRevokeUseCase,
-  type AgentDomainRevokedDto,
-} from './application/agent-domain-revoke.js';
-export {
-  AdminAuditCreateUseCase,
-  type AdminAuditCreatedDto,
-} from './application/admin-audit.js';
-export {
-  CoinMarketAdjudicateUseCase,
-  type TradeAdjudicatedDto,
-} from './application/coin-market-adjudicate.js';
-export {
-  AiAssetsReviewUseCase,
-  type AiJobReviewedDto,
-} from './application/ai-assets-review.js';
+export { AgentDomainApproveUseCase, type AgentDomainApprovedDto } from './application/agent-domain-approve.js';
+export { AgentDomainSuspendUseCase, type AgentDomainSuspendedDto } from './application/agent-domain-suspend.js';
+export { AgentDomainRevokeUseCase, type AgentDomainRevokedDto } from './application/agent-domain-revoke.js';
+export { AdminAuditCreateUseCase, type AdminAuditCreatedDto } from './application/admin-audit.js';
+export { CoinMarketAdjudicateUseCase, type TradeAdjudicatedDto } from './application/coin-market-adjudicate.js';
+export { AiAssetsReviewUseCase, type AiJobReviewedDto } from './application/ai-assets-review.js';
 export {
   AdminUserListUseCase,
   type AdminUserListFilters,
@@ -74,26 +56,13 @@ export {
   type AdminUserDetailSectionDto,
   isValidAdminUserDetailSection,
 } from './application/admin-user-detail.js';
-export {
-  WithdrawalReviewUseCase,
-  type WithdrawalApprovedDto,
-  type WithdrawalRejectedDto,
-} from './application/withdrawal-review.js';
-export {
-  AdminLoginUseCase,
-  type AdminLoginInput,
-  type AdminLoginResultDto,
-} from './application/admin-login.js';
+export { WithdrawalReviewUseCase, type WithdrawalApprovedDto, type WithdrawalRejectedDto } from './application/withdrawal-review.js';
+export { AdminLoginUseCase, type AdminLoginInput, type AdminLoginResultDto } from './application/admin-login.js';
 
 // ---------------------------------------------------------------------------
 // 装配工厂（inject 全部 ports 的 AdminModule 对象，供 server 装配调用一次）
 // ---------------------------------------------------------------------------
-export {
-  createAdminModule,
-  type AdminModule,
-  type AdminModuleDeps,
-  type AdminModuleConfig,
-} from './assembly.js';
+export { createAdminModule, type AdminModule, type AdminModuleDeps, type AdminModuleConfig } from './assembly.js';
 
 // ---------------------------------------------------------------------------
 // ports（供其他模块 / 测试 mock；不直接 import adapters）
@@ -112,13 +81,7 @@ export type {
 // ---------------------------------------------------------------------------
 // 领域纯函数与错误工具（domain/；状态机转换表 / 审计脱敏校验，无 IO）
 // ---------------------------------------------------------------------------
-export {
-  AdminDomainError,
-  AD,
-  isAdminDomainError,
-  isDuplicateKeyError,
-  type AdminErrorCode,
-} from './domain/errors.js';
+export { AdminDomainError, AD, isAdminDomainError, isDuplicateKeyError, type AdminErrorCode } from './domain/errors.js';
 export {
   AdminAgentDomainStatus5,
   AdminWithdrawalStatus9,

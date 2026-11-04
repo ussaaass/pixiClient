@@ -26,10 +26,7 @@
 
 import type { AgentDomainRepo, AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
 import { AdminDomainError, AD } from '../domain/errors.js';
-import {
-  AdminAgentDomainStatus5,
-  canAgentDomainTransition,
-} from '../domain/audit-rules.js';
+import { AdminAgentDomainStatus5, canAgentDomainTransition } from '../domain/audit-rules.js';
 
 /** 暂停结果（wire DTO；status 数值常量 wire）。 */
 export interface AgentDomainSuspendedDto {
@@ -94,12 +91,7 @@ export class AgentDomainSuspendUseCase {
         return {
           domainId: re.id,
           status: re.status,
-          suspendedAt:
-            re.suspendedAt === null
-              ? null
-              : typeof re.suspendedAt === 'string'
-                ? re.suspendedAt
-                : re.suspendedAt.toISOString(),
+          suspendedAt: re.suspendedAt === null ? null : typeof re.suspendedAt === 'string' ? re.suspendedAt : re.suspendedAt.toISOString(),
           inserted: false,
         };
       }
@@ -134,11 +126,7 @@ export class AgentDomainSuspendUseCase {
       domainId: result.id,
       status: result.status,
       suspendedAt:
-        result.suspendedAt === null
-          ? null
-          : typeof result.suspendedAt === 'string'
-            ? result.suspendedAt
-            : result.suspendedAt.toISOString(),
+        result.suspendedAt === null ? null : typeof result.suspendedAt === 'string' ? result.suspendedAt : result.suspendedAt.toISOString(),
       inserted: true,
     };
   }

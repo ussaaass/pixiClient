@@ -67,10 +67,7 @@
 
 import type { WithdrawalReviewRepo, AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
 import { AdminDomainError, AD } from '../domain/errors.js';
-import {
-  AdminWithdrawalStatus9,
-  canWithdrawalApprove,
-} from '../domain/audit-rules.js';
+import { AdminWithdrawalStatus9, canWithdrawalApprove } from '../domain/audit-rules.js';
 import { toNullableIso } from '../domain/iso-utils.js';
 
 /** 审批结果（wire DTO；status 数值常量 wire；时间戳十进制字符串 wire）。 */

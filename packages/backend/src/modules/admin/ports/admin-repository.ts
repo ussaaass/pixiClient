@@ -33,11 +33,7 @@
  *   agent_domain + admin_audit_event，读其他表经端口）。
  */
 
-import type {
-  AgentDomainModel,
-  AdminAuditEventModel,
-  AdminPermissionModel,
-} from '../../../infrastructure/database/models/admin.js';
+import type { AgentDomainModel, AdminAuditEventModel, AdminPermissionModel } from '../../../infrastructure/database/models/admin.js';
 import type { CoinMarketTradeModel } from '../../../infrastructure/database/models/coin-market.js';
 import type { WithdrawalModel } from '../../../infrastructure/database/models/payments.js';
 import type { AiAssetJobModel } from '../../../infrastructure/database/models/assets.js';
@@ -178,23 +174,14 @@ export interface WithdrawalReviewRepo {
    * 登记决策点，本用例只推进状态 + 审计同事务）。
    * @returns 更新后的行（影响行数 0 → null，由用例层映射 STORAGE_UNAVAILABLE）。
    */
-  approveWithdrawal(input: {
-    withdrawalId: string;
-    approvedAt: Date;
-    tx: Tx;
-  }): Promise<WithdrawalModel | null>;
+  approveWithdrawal(input: { withdrawalId: string; approvedAt: Date; tx: Tx }): Promise<WithdrawalModel | null>;
 
   /**
    * 驳回 withdrawal（REQUESTED=1 / REVIEWING=2 → REJECTED=6，
    * failure_reason 回填；幂等重放：已 REJECTED → 静默返回既有值）。
    * @returns 更新后的行（影响行数 0 → null，由用例层映射 STORAGE_UNAVAILABLE）。
    */
-  rejectWithdrawal(input: {
-    withdrawalId: string;
-    rejectedAt: Date;
-    failureReason: string;
-    tx: Tx;
-  }): Promise<WithdrawalModel | null>;
+  rejectWithdrawal(input: { withdrawalId: string; rejectedAt: Date; failureReason: string; tx: Tx }): Promise<WithdrawalModel | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -217,12 +204,7 @@ export interface AiJobReviewRepo {
    * 登记 KMS 未闭环）。
    * @returns 更新后的行（影响行数 0 → null，由用例层映射 STORAGE_UNAVAILABLE）。
    */
-  reviewJob(input: {
-    jobId: string;
-    targetStatus: number;
-    completedAt: Date;
-    tx: Tx;
-  }): Promise<AiAssetJobModel | null>;
+  reviewJob(input: { jobId: string; targetStatus: number; completedAt: Date; tx: Tx }): Promise<AiAssetJobModel | null>;
 }
 
 // ---------------------------------------------------------------------------

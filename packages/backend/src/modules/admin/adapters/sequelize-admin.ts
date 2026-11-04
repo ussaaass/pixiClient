@@ -41,15 +41,8 @@
 
 import type { Transaction } from 'sequelize';
 import { Op } from 'sequelize';
-import type {
-  AgentDomainModel,
-  AdminAuditEventModel,
-  AdminPermissionModel,
-} from '../../../infrastructure/database/models/admin.js';
-import {
-  AgentDomainStatus,
-  RecordStatus,
-} from '../../../infrastructure/database/models/admin.js';
+import type { AgentDomainModel, AdminAuditEventModel, AdminPermissionModel } from '../../../infrastructure/database/models/admin.js';
+import { AgentDomainStatus, RecordStatus } from '../../../infrastructure/database/models/admin.js';
 import type { CoinMarketTradeModel } from '../../../infrastructure/database/models/coin-market.js';
 import type { WithdrawalModel } from '../../../infrastructure/database/models/payments.js';
 import { WithdrawalStatus } from '../../../infrastructure/database/models/payments.js';
@@ -367,12 +360,7 @@ export class SequelizeAiJobReviewRepo implements AiJobReviewRepo {
     return this.model.findByPk(jobId, { lock: 'FOR UPDATE', transaction: txq } as never);
   }
 
-  async reviewJob(input: {
-    jobId: string;
-    targetStatus: number;
-    completedAt: Date;
-    tx: Tx;
-  }): Promise<AiAssetJobModel | null> {
+  async reviewJob(input: { jobId: string; targetStatus: number; completedAt: Date; tx: Tx }): Promise<AiAssetJobModel | null> {
     const txq = txOf(input.tx);
     const [affected] = await this.model.update(
       {
@@ -432,7 +420,10 @@ export class SequelizeAdminUserRepo implements AdminUserRepo {
 
     const items = await this.model.findAll({
       where: where as never,
-      order: [['createdAt', 'DESC'], ['id', 'DESC']],
+      order: [
+        ['createdAt', 'DESC'],
+        ['id', 'DESC'],
+      ],
       limit: input.limit,
       transaction: txq,
     } as never);

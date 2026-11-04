@@ -26,10 +26,7 @@
 
 import type { AgentDomainRepo, AdminAuditEventRepo, Tx } from '../ports/admin-repository.js';
 import { AdminDomainError, AD } from '../domain/errors.js';
-import {
-  AdminAgentDomainStatus5,
-  canAgentDomainTransition,
-} from '../domain/audit-rules.js';
+import { AdminAgentDomainStatus5, canAgentDomainTransition } from '../domain/audit-rules.js';
 
 /** 撤销结果（wire DTO；status 数值常量 wire）。 */
 export interface AgentDomainRevokedDto {
@@ -66,11 +63,7 @@ export class AgentDomainRevokeUseCase {
         domainId: domain.id,
         status: domain.status,
         revokedAt:
-          domain.revokedAt === null
-            ? null
-            : typeof domain.revokedAt === 'string'
-              ? domain.revokedAt
-              : domain.revokedAt.toISOString(),
+          domain.revokedAt === null ? null : typeof domain.revokedAt === 'string' ? domain.revokedAt : domain.revokedAt.toISOString(),
         inserted: false,
       };
     }
@@ -94,12 +87,7 @@ export class AgentDomainRevokeUseCase {
         return {
           domainId: re.id,
           status: re.status,
-          revokedAt:
-            re.revokedAt === null
-              ? null
-              : typeof re.revokedAt === 'string'
-                ? re.revokedAt
-                : re.revokedAt.toISOString(),
+          revokedAt: re.revokedAt === null ? null : typeof re.revokedAt === 'string' ? re.revokedAt : re.revokedAt.toISOString(),
           inserted: false,
         };
       }
@@ -134,11 +122,7 @@ export class AgentDomainRevokeUseCase {
       domainId: result.id,
       status: result.status,
       revokedAt:
-        result.revokedAt === null
-          ? null
-          : typeof result.revokedAt === 'string'
-            ? result.revokedAt
-            : result.revokedAt.toISOString(),
+        result.revokedAt === null ? null : typeof result.revokedAt === 'string' ? result.revokedAt : result.revokedAt.toISOString(),
       inserted: true,
     };
   }

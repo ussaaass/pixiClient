@@ -35,8 +35,7 @@ export const AdminAgentDomainStatus5 = {
   WITHDRAWN: 5,
 } as const;
 
-export type AdminAgentDomainStatus5Value =
-  (typeof AdminAgentDomainStatus5)[keyof typeof AdminAgentDomainStatus5];
+export type AdminAgentDomainStatus5Value = (typeof AdminAgentDomainStatus5)[keyof typeof AdminAgentDomainStatus5];
 
 /** WithdrawalStatus：withdrawal 9 态常量（DDL 权威，models/payments.ts）。 */
 export const AdminWithdrawalStatus9 = {
@@ -51,8 +50,7 @@ export const AdminWithdrawalStatus9 = {
   FAILED: 9,
 } as const;
 
-export type AdminWithdrawalStatus9Value =
-  (typeof AdminWithdrawalStatus9)[keyof typeof AdminWithdrawalStatus9];
+export type AdminWithdrawalStatus9Value = (typeof AdminWithdrawalStatus9)[keyof typeof AdminWithdrawalStatus9];
 
 /**
  * agent_domain 状态机转换表（5 态 DDL 权威）：
