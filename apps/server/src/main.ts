@@ -11,6 +11,7 @@ import { createPaymentsModule } from '@gameing/backend/modules/payments/public';
 import { createRoomsModule } from '@gameing/backend/modules/rooms/public';
 import { createSocialModule } from '@gameing/backend/modules/social/public';
 import { createSupportModule } from '@gameing/backend/modules/support/public';
+import { createReferralModule } from '@gameing/backend/modules/referral/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
 import { OutboxModel } from '@gameing/backend/infrastructure/database/models/events';
 import type { OutboxAppendInput } from '@gameing/backend/modules/social/public';
@@ -213,12 +214,30 @@ if (sequelizeInstance) {
   }
 }
 
+// --- referral 模块装配（需 sequelize；归因无资金操作，不依赖 wallet） ---
+let referralModule;
+if (sequelizeInstance) {
+  try {
+    referralModule = createReferralModule({
+      sequelize: sequelizeInstance,
+      config: {},
+    });
+    logger.info('referral 模块装配完成');
+  } catch (error) {
+    logger.warn('referral 模块装配失败（referral 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    referralModule = undefined;
+  }
+}
+
 const identityModuleOpt = identityModule ?? undefined;
 const walletModuleOpt = walletModule ?? undefined;
 const paymentsModuleOpt = paymentsModule ?? undefined;
 const roomsModuleOpt = roomsModule ?? undefined;
 const socialModuleOpt = socialModule ?? undefined;
 const supportModuleOpt = supportModule ?? undefined;
+const referralModuleOpt = referralModule ?? undefined;
 const sequelizeOpt = sequelizeInstance ?? undefined;
 const app = createApp({
   logger,
@@ -229,6 +248,7 @@ const app = createApp({
   ...(roomsModuleOpt && identityModuleOpt && sequelizeOpt ? { roomsModule: roomsModuleOpt } : {}),
   ...(socialModuleOpt && identityModuleOpt && sequelizeOpt ? { socialModule: socialModuleOpt } : {}),
   ...(supportModuleOpt && identityModuleOpt && sequelizeOpt ? { supportModule: supportModuleOpt } : {}),
+  ...(referralModuleOpt && identityModuleOpt && sequelizeOpt ? { referralModule: referralModuleOpt } : {}),
 });
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });

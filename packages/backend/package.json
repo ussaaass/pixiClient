@@ -19,6 +19,8 @@
     "./modules/social/public": "./src/modules/social/public.ts",
     "./modules/support": "./src/modules/support/index.ts",
     "./modules/support/public": "./src/modules/support/public.ts",
+    "./modules/referral": "./src/modules/referral/index.ts",
+    "./modules/referral/public": "./src/modules/referral/public.ts",
     "./infrastructure/database/models/events": "./src/infrastructure/database/models/events.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"

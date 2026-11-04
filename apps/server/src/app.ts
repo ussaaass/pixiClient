@@ -18,6 +18,7 @@ import type { PaymentsModule } from '@gameing/backend/modules/payments/public';
 import type { RoomsModule } from '@gameing/backend/modules/rooms/public';
 import type { SocialModule } from '@gameing/backend/modules/social/public';
 import type { SupportModule } from '@gameing/backend/modules/support/public';
+import type { ReferralModule } from '@gameing/backend/modules/referral/public';
 import { createLogger, type Logger } from './infrastructure/logging/logger.js';
 import { ApiError, NotFoundError } from './infrastructure/http/error-boundary.js';
 import { createErrorBoundaryMiddleware } from './infrastructure/http/error-boundary.js';
@@ -30,6 +31,7 @@ import { createPaymentsRoutes } from './http/payments.routes.js';
 import { createRoomsRoutes } from './http/rooms.routes.js';
 import { createSocialRoutes } from './http/social.routes.js';
 import { createSupportRoutes } from './http/support.routes.js';
+import { createReferralRoutes } from './http/referral.routes.js';
 import type { Sequelize } from 'sequelize';
 
 /**
@@ -85,6 +87,8 @@ export interface CreateAppOptions {
   socialModule?: SocialModule;
   /** support 模块实例（装配后注入；缺省时 support 路由不挂载；与 identityModule + sequelize 共同挂载）。 */
   supportModule?: SupportModule;
+  /** referral 模块实例（装配后注入；缺省时 referral 路由不挂载；与 identityModule + sequelize 共同挂载，归因无资金操作不依赖 wallet）。 */
+  referralModule?: ReferralModule;
   /** Sequelize 实例（wallet 资金用例需开事务；payments 资金用例需开事务；identity 路由不依赖）。 */
   sequelize?: Sequelize;
 }
@@ -98,6 +102,7 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   const roomsModule = options.roomsModule;
   const socialModule = options.socialModule;
   const supportModule = options.supportModule;
+  const referralModule = options.referralModule;
   const sequelize = options.sequelize;
 
   const app = new Koa();
@@ -257,6 +262,12 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   if (identityModule && supportModule && sequelize) {
     const supportRouter = createSupportRoutes(supportModule, identityModule, sequelize);
     router.use(supportRouter.routes(), supportRouter.allowedMethods());
+  }
+
+  // --- referral 路由（identity + referral + sequelize 模块装配后挂载；归因无资金操作，不依赖 wallet） ---
+  if (identityModule && referralModule && sequelize) {
+    const referralRouter = createReferralRoutes(referralModule, identityModule, sequelize);
+    router.use(referralRouter.routes(), referralRouter.allowedMethods());
   }
 
   app.use(router.routes());
