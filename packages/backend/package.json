@@ -25,6 +25,8 @@
     "./modules/platform-events/public": "./src/modules/platform-events/public.ts",
     "./modules/coin-market": "./src/modules/coin-market/index.ts",
     "./modules/coin-market/public": "./src/modules/coin-market/public.ts",
+    "./modules/ai-assets": "./src/modules/ai-assets/index.ts",
+    "./modules/ai-assets/public": "./src/modules/ai-assets/public.ts",
     "./infrastructure/database/models/events": "./src/infrastructure/database/models/events.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"

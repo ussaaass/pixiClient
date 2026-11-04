@@ -14,6 +14,7 @@ import { createSupportModule } from '@gameing/backend/modules/support/public';
 import { createReferralModule } from '@gameing/backend/modules/referral/public';
 import { createPlatformEventsModule } from '@gameing/backend/modules/platform-events/public';
 import { createCoinMarketModule } from '@gameing/backend/modules/coin-market/public';
+import { createAiAssetsModule } from '@gameing/backend/modules/ai-assets/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
 import { OutboxModel } from '@gameing/backend/infrastructure/database/models/events';
 import type { OutboxAppendInput } from '@gameing/backend/modules/social/public';
@@ -268,6 +269,23 @@ if (walletModule && sequelizeInstance) {
   }
 }
 
+// --- ai-assets 模块装配（需 sequelize；AI 素材台账无资金操作，不依赖 wallet） ---
+let aiAssetsModule;
+if (sequelizeInstance) {
+  try {
+    aiAssetsModule = createAiAssetsModule({
+      sequelize: sequelizeInstance,
+      config: {},
+    });
+    logger.info('ai-assets 模块装配完成');
+  } catch (error) {
+    logger.warn('ai-assets 模块装配失败（ai-assets 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    aiAssetsModule = undefined;
+  }
+}
+
 const identityModuleOpt = identityModule ?? undefined;
 const walletModuleOpt = walletModule ?? undefined;
 const paymentsModuleOpt = paymentsModule ?? undefined;
@@ -277,6 +295,7 @@ const supportModuleOpt = supportModule ?? undefined;
 const referralModuleOpt = referralModule ?? undefined;
 const platformEventsModuleOpt = platformEventsModule ?? undefined;
 const coinMarketModuleOpt = coinMarketModule ?? undefined;
+const aiAssetsModuleOpt = aiAssetsModule ?? undefined;
 const sequelizeOpt = sequelizeInstance ?? undefined;
 const app = createApp({
   logger,
@@ -290,6 +309,7 @@ const app = createApp({
   ...(referralModuleOpt && identityModuleOpt && sequelizeOpt ? { referralModule: referralModuleOpt } : {}),
   ...(platformEventsModuleOpt && identityModuleOpt && sequelizeOpt ? { platformEventsModule: platformEventsModuleOpt } : {}),
   ...(coinMarketModuleOpt && identityModuleOpt && walletModuleOpt && sequelizeOpt ? { coinMarketModule: coinMarketModuleOpt } : {}),
+  ...(aiAssetsModuleOpt && identityModuleOpt && sequelizeOpt ? { aiAssetsModule: aiAssetsModuleOpt } : {}),
 });
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });

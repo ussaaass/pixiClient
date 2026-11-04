@@ -21,6 +21,7 @@ import type { SupportModule } from '@gameing/backend/modules/support/public';
 import type { ReferralModule } from '@gameing/backend/modules/referral/public';
 import type { PlatformEventsModule } from '@gameing/backend/modules/platform-events/public';
 import type { CoinMarketModule } from '@gameing/backend/modules/coin-market/public';
+import type { AiAssetsModule } from '@gameing/backend/modules/ai-assets/public';
 import { createLogger, type Logger } from './infrastructure/logging/logger.js';
 import { ApiError, NotFoundError } from './infrastructure/http/error-boundary.js';
 import { createErrorBoundaryMiddleware } from './infrastructure/http/error-boundary.js';
@@ -36,6 +37,7 @@ import { createSupportRoutes } from './http/support.routes.js';
 import { createReferralRoutes } from './http/referral.routes.js';
 import { createPlatformEventsRoutes } from './http/platform-events.routes.js';
 import { createCoinMarketRoutes } from './http/coin-market.routes.js';
+import { createAiAssetsRoutes } from './http/ai-assets.routes.js';
 import type { Sequelize } from 'sequelize';
 
 /**
@@ -97,6 +99,8 @@ export interface CreateAppOptions {
   platformEventsModule?: PlatformEventsModule;
   /** coin-market 模块实例（装配后注入；缺省时 coin-market 路由不挂载；与 identityModule + walletModule + sequelize 共同挂载，挂牌占款 / 成交确认 / 取消释放经 wallet ledger）。 */
   coinMarketModule?: CoinMarketModule;
+  /** ai-assets 模块实例（装配后注入；缺省时 ai-assets 路由不挂载；与 identityModule + sequelize 共同挂载，AI 台账无资金操作不依赖 wallet）。 */
+  aiAssetsModule?: AiAssetsModule;
   /** Sequelize 实例（wallet 资金用例需开事务；payments 资金用例需开事务；identity 路由不依赖）。 */
   sequelize?: Sequelize;
 }
@@ -113,6 +117,7 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   const referralModule = options.referralModule;
   const platformEventsModule = options.platformEventsModule;
   const coinMarketModule = options.coinMarketModule;
+  const aiAssetsModule = options.aiAssetsModule;
   const sequelize = options.sequelize;
 
   const app = new Koa();
@@ -292,6 +297,13 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   if (identityModule && coinMarketModule && walletModule && sequelize) {
     const coinMarketRouter = createCoinMarketRoutes(coinMarketModule, identityModule, sequelize);
     router.use(coinMarketRouter.routes(), coinMarketRouter.allowedMethods());
+  }
+
+  // --- ai-assets 路由（identity + ai-assets + sequelize 模块装配后挂载；
+  //     AI 素材台账无资金操作，不依赖 wallet；KMS / 真实网关推进归 §9 第 9 步） ---
+  if (identityModule && aiAssetsModule && sequelize) {
+    const aiAssetsRouter = createAiAssetsRoutes(aiAssetsModule, identityModule, sequelize);
+    router.use(aiAssetsRouter.routes(), aiAssetsRouter.allowedMethods());
   }
 
   app.use(router.routes());
