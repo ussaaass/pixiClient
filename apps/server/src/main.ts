@@ -8,6 +8,7 @@ import { addModels } from '@gameing/backend/infrastructure/database/models';
 import { createIdentityModule } from '@gameing/backend/modules/identity/public';
 import { createWalletModule } from '@gameing/backend/modules/wallet/public';
 import { createPaymentsModule } from '@gameing/backend/modules/payments/public';
+import { createRoomsModule } from '@gameing/backend/modules/rooms/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
 import type { Sequelize } from 'sequelize';
 
@@ -124,9 +125,28 @@ if (walletModule && sequelizeInstance) {
   }
 }
 
+// --- rooms 模块装配（需 wallet 模块就绪 + sequelize；占款经 walletModule.ledger） ---
+let roomsModule;
+if (walletModule && sequelizeInstance) {
+  try {
+    roomsModule = createRoomsModule({
+      sequelize: sequelizeInstance,
+      walletModule,
+      config: {},
+    });
+    logger.info('rooms 模块装配完成');
+  } catch (error) {
+    logger.warn('rooms 模块装配失败（rooms 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    roomsModule = undefined;
+  }
+}
+
 const identityModuleOpt = identityModule ?? undefined;
 const walletModuleOpt = walletModule ?? undefined;
 const paymentsModuleOpt = paymentsModule ?? undefined;
+const roomsModuleOpt = roomsModule ?? undefined;
 const sequelizeOpt = sequelizeInstance ?? undefined;
 const app = createApp({
   logger,
@@ -134,6 +154,7 @@ const app = createApp({
   ...(identityModuleOpt ? { identityModule: identityModuleOpt } : {}),
   ...(walletModuleOpt && sequelizeOpt ? { walletModule: walletModuleOpt, sequelize: sequelizeOpt } : {}),
   ...(paymentsModuleOpt && identityModuleOpt && sequelizeOpt ? { paymentsModule: paymentsModuleOpt } : {}),
+  ...(roomsModuleOpt && identityModuleOpt && sequelizeOpt ? { roomsModule: roomsModuleOpt } : {}),
 });
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });

@@ -384,6 +384,9 @@ importers:
       '@gameing/domain':
         specifier: workspace:*
         version: link:../domain
+      '@gameing/shisanshui-rules':
+        specifier: workspace:*
+        version: link:../../games/shisanshui/rules
       argon2:
         specifier: ^0.43.0
         version: 0.43.1

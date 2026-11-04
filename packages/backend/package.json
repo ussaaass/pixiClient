@@ -13,6 +13,8 @@
     "./modules/wallet/public": "./src/modules/wallet/public.ts",
     "./modules/payments": "./src/modules/payments/index.ts",
     "./modules/payments/public": "./src/modules/payments/public.ts",
+    "./modules/rooms": "./src/modules/rooms/index.ts",
+    "./modules/rooms/public": "./src/modules/rooms/public.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"
   },
@@ -23,6 +25,7 @@
   "dependencies": {
     "@gameing/contracts": "workspace:*",
     "@gameing/domain": "workspace:*",
+    "@gameing/shisanshui-rules": "workspace:*",
     "argon2": "^0.43.0",
     "ioredis": "^5.6.1",
     "jose": "^6.0.11",
