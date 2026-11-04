@@ -41,7 +41,7 @@
  */
 
 import type { Transaction } from 'sequelize';
-import { Op } from 'sequelize';
+import { Op, Sequelize } from 'sequelize';
 import type {
   ReferralBindingModel,
   ReferralBindingEventModel,
@@ -160,21 +160,22 @@ export class SequelizeReferralBindingRepo implements ReferralBindingRepo {
       where: { parent1UserId: input.parentUserId as never, status: ActiveStatus.ACTIVE },
       transaction: txq,
     } as never);
-    const baseWhere: Record<string, unknown> = {
+    const cur = parseCursor(input.cursor);
+    const where: Record<string, unknown> = {
       parent1UserId: input.parentUserId as never,
       status: ActiveStatus.ACTIVE,
     };
-    const cur = parseCursor(input.cursor);
     if (cur !== null) {
       // 稳定游标：created_at < cursor.createdAt OR (created_at = cursor.createdAt AND id < cursor.id)
-      const andClauses: Record<string, unknown>[] = [
-        { createdAt: { [Op.lt]: cur.createdAt } },
-        { createdAt: cur.createdAt, id: { [Op.lt]: cur.id as never } },
+      // `Op.and` / `Op.lt` 为 unique symbol，不能直接索引 Record（TS2538），
+      // 经 `as unknown as string` 桥接（referral 适配器同款写法）。
+      where[Sequelize.and as unknown as string] = [
+        { createdAt: { [Op.lt as unknown as string]: cur.createdAt } },
+        { createdAt: cur.createdAt, id: { [Op.lt as unknown as string]: cur.id as never } },
       ];
-      baseWhere[Op.and as unknown as string] = andClauses as never;
     }
     const items = await this.model.findAll({
-      where: baseWhere as never,
+      where: where as never,
       order: [
         ['createdAt', 'DESC'],
         ['id', 'DESC'],
@@ -182,8 +183,8 @@ export class SequelizeReferralBindingRepo implements ReferralBindingRepo {
       limit: input.limit,
       transaction: txq,
     } as never);
-    const last = items[items.length - 1];
-    const nextCursor = items.length === input.limit && last !== undefined ? formatCursor(last) : null;
+    const last = items.length === input.limit ? items[items.length - 1] : undefined;
+    const nextCursor = last !== undefined ? formatCursor(last) : null;
     return { items, nextCursor, totalCount: String(totalRow) };
   }
 
@@ -200,7 +201,7 @@ export class SequelizeReferralBindingRepo implements ReferralBindingRepo {
     // 被绑用户行的 parent{depth}UserId === input.parentUserId。
     const rows = await this.model.findAll({
       where: {
-        [Op.or]: [{ parent1UserId: input.parentUserId as never, status: ActiveStatus.ACTIVE }],
+        [Sequelize.or as unknown as string]: [{ parent1UserId: input.parentUserId as never, status: ActiveStatus.ACTIVE }],
       },
       transaction: txq,
       lock: txq ? 'FOR UPDATE' : undefined,
@@ -373,21 +374,20 @@ export class SequelizeRewardAllocationRepo implements RewardAllocationRepo {
     tx: Tx;
   }): Promise<{ items: ReferralRewardAllocationModel[]; nextCursor: string | null }> {
     const txq = txOf(input.tx);
-    const baseWhere: Record<string, unknown> = {
+    const cur = parseCursor(input.cursor);
+    const where: Record<string, unknown> = {
       userId: input.userId as never,
       rewardType: input.rewardType,
       status: ReferralRewardStatus.POSTED,
     };
-    const cur = parseCursor(input.cursor);
     if (cur !== null) {
-      const andClauses: Record<string, unknown>[] = [
-        { createdAt: { [Op.lt]: cur.createdAt } },
-        { createdAt: cur.createdAt, id: { [Op.lt]: cur.id as never } },
+      where[Sequelize.and as unknown as string] = [
+        { createdAt: { [Op.lt as unknown as string]: cur.createdAt } },
+        { createdAt: cur.createdAt, id: { [Op.lt as unknown as string]: cur.id as never } },
       ];
-      baseWhere[Op.and as unknown as string] = andClauses as never;
     }
     const items = await this.model.findAll({
-      where: baseWhere as never,
+      where: where as never,
       order: [
         ['createdAt', 'DESC'],
         ['id', 'DESC'],
@@ -395,8 +395,8 @@ export class SequelizeRewardAllocationRepo implements RewardAllocationRepo {
       limit: input.limit,
       transaction: txq,
     } as never);
-    const last = items[items.length - 1];
-    const nextCursor = items.length === input.limit && last !== undefined ? formatCursor(last) : null;
+    const last = items.length === input.limit ? items[items.length - 1] : undefined;
+    const nextCursor = last !== undefined ? formatCursor(last) : null;
     return { items, nextCursor };
   }
 }

@@ -21,6 +21,10 @@
     "./modules/support/public": "./src/modules/support/public.ts",
     "./modules/referral": "./src/modules/referral/index.ts",
     "./modules/referral/public": "./src/modules/referral/public.ts",
+    "./modules/platform-events": "./src/modules/platform-events/index.ts",
+    "./modules/platform-events/public": "./src/modules/platform-events/public.ts",
+    "./modules/coin-market": "./src/modules/coin-market/index.ts",
+    "./modules/coin-market/public": "./src/modules/coin-market/public.ts",
     "./infrastructure/database/models/events": "./src/infrastructure/database/models/events.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"
