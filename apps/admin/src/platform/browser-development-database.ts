@@ -90,6 +90,17 @@ export interface AdminDevelopmentSchema extends DBSchema {
   agent_announcements: { key: string; value: AgentAnnouncementDto; indexes: { 'by-domain-created': [string, string]; 'by-domain-status': [string, number] } };
 }
 
+/**
+ * Admin 侧 IndexedDB 演练库（LOCAL_DEMO 双轨保留入口）。
+ *
+ * SDD §7.1 双轨切换策略：各工作区 composition.ts 已新增 Remote*Adapter + feature flag
+ * （import.meta.env.VITE_ADMIN_API_BASE 有值时走 REMOTE，否则走本地演练）。
+ * 本文件在 19 个工作区全部 REMOTE 且服务端 /admin-api/v1 端点全部就绪并通过
+ * `pnpm --filter @gameing/admin typecheck` + Admin 视口几何验收后退役；
+ * 退役条件：SDD §9 第 9 步「Admin 全量切换收口」完成后删除本文件及
+ * `indexeddb-*-adapter.ts` / `offline-*-adapter.ts` 演练适配器。
+ * 玩家侧 browser-api 退役条件另见 P1_WORKPLAN §5，不受此步影响。
+ */
 export const ADMIN_DEVELOPMENT_DATABASE = 'gameing_hall_admin_dev';
 export const ADMIN_DEVELOPMENT_DATABASE_VERSION = 14;
 

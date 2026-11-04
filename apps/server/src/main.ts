@@ -15,6 +15,7 @@ import { createReferralModule } from '@gameing/backend/modules/referral/public';
 import { createPlatformEventsModule } from '@gameing/backend/modules/platform-events/public';
 import { createCoinMarketModule } from '@gameing/backend/modules/coin-market/public';
 import { createAiAssetsModule } from '@gameing/backend/modules/ai-assets/public';
+import { createAdminModule } from '@gameing/backend/modules/admin/public';
 import { createSocketAuthServer } from './socket/socket-auth.js';
 import { OutboxModel } from '@gameing/backend/infrastructure/database/models/events';
 import type { OutboxAppendInput } from '@gameing/backend/modules/social/public';
@@ -286,6 +287,24 @@ if (sequelizeInstance) {
   }
 }
 
+// --- admin 模块装配（需 sequelize；审计/审批无资金操作，不依赖 wallet；
+//     出账经 payout worker 闭环，登记决策点） ---
+let adminModule;
+if (sequelizeInstance) {
+  try {
+    adminModule = createAdminModule({
+      sequelize: sequelizeInstance,
+      config: {},
+    });
+    logger.info('admin 模块装配完成');
+  } catch (error) {
+    logger.warn('admin 模块装配失败（/admin-api/v1 路由不挂载）', {
+      errorCode: error instanceof Error ? error.name : 'UnknownError',
+    });
+    adminModule = undefined;
+  }
+}
+
 const identityModuleOpt = identityModule ?? undefined;
 const walletModuleOpt = walletModule ?? undefined;
 const paymentsModuleOpt = paymentsModule ?? undefined;
@@ -296,6 +315,7 @@ const referralModuleOpt = referralModule ?? undefined;
 const platformEventsModuleOpt = platformEventsModule ?? undefined;
 const coinMarketModuleOpt = coinMarketModule ?? undefined;
 const aiAssetsModuleOpt = aiAssetsModule ?? undefined;
+const adminModuleOpt = adminModule ?? undefined;
 const sequelizeOpt = sequelizeInstance ?? undefined;
 const app = createApp({
   logger,
@@ -310,6 +330,7 @@ const app = createApp({
   ...(platformEventsModuleOpt && identityModuleOpt && sequelizeOpt ? { platformEventsModule: platformEventsModuleOpt } : {}),
   ...(coinMarketModuleOpt && identityModuleOpt && walletModuleOpt && sequelizeOpt ? { coinMarketModule: coinMarketModuleOpt } : {}),
   ...(aiAssetsModuleOpt && identityModuleOpt && sequelizeOpt ? { aiAssetsModule: aiAssetsModuleOpt } : {}),
+  ...(adminModuleOpt && identityModuleOpt && sequelizeOpt ? { adminModule: adminModuleOpt } : {}),
 });
 const server = app.listen(port, '0.0.0.0', () => {
   logger.info('服务已启动', { port });

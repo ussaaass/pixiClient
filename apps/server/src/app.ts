@@ -22,6 +22,7 @@ import type { ReferralModule } from '@gameing/backend/modules/referral/public';
 import type { PlatformEventsModule } from '@gameing/backend/modules/platform-events/public';
 import type { CoinMarketModule } from '@gameing/backend/modules/coin-market/public';
 import type { AiAssetsModule } from '@gameing/backend/modules/ai-assets/public';
+import type { AdminModule } from '@gameing/backend/modules/admin/public';
 import { createLogger, type Logger } from './infrastructure/logging/logger.js';
 import { ApiError, NotFoundError } from './infrastructure/http/error-boundary.js';
 import { createErrorBoundaryMiddleware } from './infrastructure/http/error-boundary.js';
@@ -38,6 +39,7 @@ import { createReferralRoutes } from './http/referral.routes.js';
 import { createPlatformEventsRoutes } from './http/platform-events.routes.js';
 import { createCoinMarketRoutes } from './http/coin-market.routes.js';
 import { createAiAssetsRoutes } from './http/ai-assets.routes.js';
+import { createAdminRoutes } from './http/admin.routes.js';
 import type { Sequelize } from 'sequelize';
 
 /**
@@ -101,6 +103,8 @@ export interface CreateAppOptions {
   coinMarketModule?: CoinMarketModule;
   /** ai-assets 模块实例（装配后注入；缺省时 ai-assets 路由不挂载；与 identityModule + sequelize 共同挂载，AI 台账无资金操作不依赖 wallet）。 */
   aiAssetsModule?: AiAssetsModule;
+  /** admin 模块实例（装配后注入；缺省时 /admin-api/v1 路由不挂载；与 identityModule + sequelize 共同挂载，审计/审批无资金操作不依赖 wallet；出账经 payout worker 闭环，登记决策点）。 */
+  adminModule?: AdminModule;
   /** Sequelize 实例（wallet 资金用例需开事务；payments 资金用例需开事务；identity 路由不依赖）。 */
   sequelize?: Sequelize;
 }
@@ -118,6 +122,7 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   const platformEventsModule = options.platformEventsModule;
   const coinMarketModule = options.coinMarketModule;
   const aiAssetsModule = options.aiAssetsModule;
+  const adminModule = options.adminModule;
   const sequelize = options.sequelize;
 
   const app = new Koa();
@@ -304,6 +309,17 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   if (identityModule && aiAssetsModule && sequelize) {
     const aiAssetsRouter = createAiAssetsRoutes(aiAssetsModule, identityModule, sequelize);
     router.use(aiAssetsRouter.routes(), aiAssetsRouter.allowedMethods());
+  }
+
+  // --- admin 路由（identity + admin + sequelize 模块装配后挂载；
+  //     /admin-api/v1 域；审计/审批无资金操作，不依赖 wallet；
+  //     login 路由不挂载鉴权中间件（登录前置），其余端点经
+  //     createAdminAuthMiddleware 三重门禁；出账经 payout worker
+  //     闭环，登记决策点） ---
+  if (identityModule && adminModule && sequelize) {
+    const adminRouters = createAdminRoutes(adminModule, identityModule, sequelize);
+    router.use(adminRouters.login.routes(), adminRouters.login.allowedMethods());
+    router.use(adminRouters.admin.routes(), adminRouters.admin.allowedMethods());
   }
 
   app.use(router.routes());
