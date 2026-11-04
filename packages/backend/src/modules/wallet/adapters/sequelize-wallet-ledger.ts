@@ -35,11 +35,12 @@ import type {
   AssetAccountModel,
   AssetOperationModel,
   AssetEntryModel,
+  AssetHoldModel,
   CoinExchangeModel,
   GiftGrantModel,
   TurnoverStateModel,
 } from '../../../infrastructure/database/models/wallet.js';
-import { RecordStatus, ActiveStatus, TurnoverStatus } from '../../../infrastructure/database/models/wallet.js';
+import { RecordStatus, ActiveStatus, TurnoverStatus, HoldStatus } from '../../../infrastructure/database/models/wallet.js';
 import type { UserModel as IdentityUserModel } from '../../../infrastructure/database/models/identity.js';
 import type { AssetLedger, EntryIntent, LedgerPost, Tx } from '../ports/wallet-repository.js';
 import { WalletDomainError, W, isDuplicateKeyError } from '../domain/errors.js';
@@ -63,6 +64,7 @@ export class SequelizeWalletLedger implements AssetLedger {
       AssetAccountModel: typeof AssetAccountModel;
       AssetOperationModel: typeof AssetOperationModel;
       AssetEntryModel: typeof AssetEntryModel;
+      AssetHoldModel: typeof AssetHoldModel;
       CoinExchangeModel: typeof CoinExchangeModel;
       GiftGrantModel: typeof GiftGrantModel;
       TurnoverStateModel: typeof TurnoverStateModel;
@@ -404,5 +406,94 @@ export class SequelizeWalletLedger implements AssetLedger {
     });
     if (grant === null) return null;
     return { coins: grant.coins, turnoverRequirement: grant.requiredTurnoverCoins };
+  }
+
+  // ------------------------------------------------------------------
+  // 占款（asset_hold；§9 第 3 步 payments 提现占款扩展，任务硬约定 1）
+  // ------------------------------------------------------------------
+
+  async createHold(input: {
+    assetOperationId: string;
+    assetAccountId: string;
+    holdKey: string;
+    holdType: number;
+    amount: string;
+    expiresAt?: Date | null;
+    tx: Tx;
+  }): Promise<{ inserted: boolean; hold: AssetHoldModel }> {
+    const txq = txOf(input.tx);
+    try {
+      const hold = await this.models.AssetHoldModel.create(
+        {
+          assetOperationId: input.assetOperationId,
+          assetAccountId: input.assetAccountId,
+          holdKey: input.holdKey,
+          holdType: input.holdType,
+          amount: input.amount,
+          remainingAmount: input.amount,
+          expiresAt: input.expiresAt ?? null,
+          closedAt: null,
+          status: HoldStatus.OPEN,
+        } as never,
+        { transaction: txq } as never,
+      );
+      return { inserted: true, hold };
+    } catch (err) {
+      // U(hold_key) 兜底（同键重放：返回既有行静默成功，不抛 IDEMPOTENCY_KEY_REUSED，
+      // 与 gift_grant 按账号一次同款语义；占款金额由既有行承载，分录由调用方
+      // postEntries 完成，本方法只推进 hold 行）。
+      if (isDuplicateKeyError(err)) {
+        const existing = await this.models.AssetHoldModel.findOne({
+          where: { holdKey: input.holdKey },
+          transaction: txq,
+        });
+        if (existing !== null) return { inserted: false, hold: existing };
+      }
+      throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'asset_hold create failed');
+    }
+  }
+
+  async releaseHold(holdId: string, tx: Tx): Promise<AssetHoldModel> {
+    const txq = txOf(tx);
+    const hold = await this.models.AssetHoldModel.findByPk(holdId, { lock: 'FOR UPDATE', transaction: txq } as never);
+    if (hold === null) {
+      throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, `asset hold missing: ${holdId}`);
+    }
+    // 幂等：已 RELEASED/CONSUMED 重放静默返回（双资产文档 §4 "拒绝/取消/失败时
+    // 幂等释放"，不重复写分录——分录由 WITHDRAWAL_RELEASE=8 操作承载）。
+    if (hold.status === HoldStatus.RELEASED || hold.status === HoldStatus.CONSUMED) {
+      return hold;
+    }
+    await hold.update(
+      {
+        remainingAmount: '0',
+        closedAt: new Date(),
+        status: HoldStatus.RELEASED,
+      } as never,
+      { transaction: txq } as never,
+    );
+    return hold;
+  }
+
+  async consumeHold(holdId: string, tx: Tx): Promise<AssetHoldModel> {
+    const txq = txOf(tx);
+    const hold = await this.models.AssetHoldModel.findByPk(holdId, { lock: 'FOR UPDATE', transaction: txq } as never);
+    if (hold === null) {
+      throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, `asset hold missing: ${holdId}`);
+    }
+    // 幂等：已 CONSUMED/RELEASED 重放静默返回（双资产文档 §4 "确认支付成功才将
+    // 占款转为完成扣款"；出款成功 worker 未闭环，本方法为消费侧预留）。
+    if (hold.status === HoldStatus.CONSUMED || hold.status === HoldStatus.RELEASED) {
+      return hold;
+    }
+    await hold.update(
+      {
+        remainingAmount: '0',
+        closedAt: new Date(),
+        status: HoldStatus.CONSUMED,
+      } as never,
+      { transaction: txq } as never,
+    );
+    return hold;
   }
 }

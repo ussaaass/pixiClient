@@ -14,6 +14,7 @@ import Koa from 'koa';
 import Router from '@koa/router';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
 import type { WalletModule } from '@gameing/backend/modules/wallet/public';
+import type { PaymentsModule } from '@gameing/backend/modules/payments/public';
 import { createLogger, type Logger } from './infrastructure/logging/logger.js';
 import { ApiError, NotFoundError } from './infrastructure/http/error-boundary.js';
 import { createErrorBoundaryMiddleware } from './infrastructure/http/error-boundary.js';
@@ -22,6 +23,7 @@ import { createRequestLoggingMiddleware } from './infrastructure/http/request-lo
 import { setSuccess } from './infrastructure/http/response.js';
 import { createAuthRoutes, createIdentityRoutes } from './http/auth.routes.js';
 import { createWalletRoutes } from './http/wallet.routes.js';
+import { createPaymentsRoutes } from './http/payments.routes.js';
 import type { Sequelize } from 'sequelize';
 
 /**
@@ -69,7 +71,9 @@ export interface CreateAppOptions {
   identityModule?: IdentityModule;
   /** wallet 模块实例（装配后注入；缺省时 wallet 路由不挂载；与 identityModule 共同挂载）。 */
   walletModule?: WalletModule;
-  /** Sequelize 实例（wallet 资金用例需开事务；identity 路由不依赖）。 */
+  /** payments 模块实例（装配后注入；缺省时 payments 路由不挂载；与 identityModule + sequelize 共同挂载）。 */
+  paymentsModule?: PaymentsModule;
+  /** Sequelize 实例（wallet 资金用例需开事务；payments 资金用例需开事务；identity 路由不依赖）。 */
   sequelize?: Sequelize;
 }
 
@@ -78,6 +82,7 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   const readinessChecks = options.readinessChecks ?? [];
   const identityModule = options.identityModule;
   const walletModule = options.walletModule;
+  const paymentsModule = options.paymentsModule;
   const sequelize = options.sequelize;
 
   const app = new Koa();
@@ -213,6 +218,12 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   if (identityModule && walletModule && sequelize) {
     const walletRouter = createWalletRoutes(walletModule, identityModule, sequelize);
     router.use(walletRouter.routes(), walletRouter.allowedMethods());
+  }
+
+  // --- payments 路由（identity + payments + sequelize 模块装配后挂载） ---
+  if (identityModule && paymentsModule && sequelize) {
+    const paymentsRouter = createPaymentsRoutes(paymentsModule, identityModule, sequelize);
+    router.use(paymentsRouter.routes(), paymentsRouter.allowedMethods());
   }
 
   app.use(router.routes());

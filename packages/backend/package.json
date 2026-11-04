@@ -11,6 +11,8 @@
     "./modules/identity/public": "./src/modules/identity/public.ts",
     "./modules/wallet": "./src/modules/wallet/index.ts",
     "./modules/wallet/public": "./src/modules/wallet/public.ts",
+    "./modules/payments": "./src/modules/payments/index.ts",
+    "./modules/payments/public": "./src/modules/payments/public.ts",
     "./infrastructure/redis": "./src/infrastructure/redis/index.ts",
     "./infrastructure/jwt": "./src/infrastructure/jwt/index.ts"
   },

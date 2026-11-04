@@ -27,6 +27,7 @@
 import type {
   AssetAccountModel,
   AssetOperationModel,
+  AssetHoldModel,
   CoinExchangeModel,
   GiftGrantModel,
   TurnoverStateModel,
@@ -47,11 +48,16 @@ export const WalletOperationType = {
   TRANSFER: 1,
   COIN_EXCHANGE: 2,
   GIFT_GRANT: 3,
+  ORDER_FULFILLMENT: 5,
+  WITHDRAWAL_HOLD: 6,
+  WITHDRAWAL_SETTLEMENT: 7,
+  WITHDRAWAL_RELEASE: 8,
 } as const;
 export type WalletOperationTypeValue = (typeof WalletOperationType)[keyof typeof WalletOperationType];
 
-/** 分录类型常量（asset_entry.entry_type：INTERNAL=1/EXTERNAL=2/HOLD=3/COMPENSATION=4）。 */
-export const WalletEntryType = { INTERNAL: 1 } as const;
+/** 分录类型常量（asset_entry.entry_type：INTERNAL=1/EXTERNAL=2/HOLD=3/COMPENSATION=4，
+ * models/wallet.ts EntryType 全量；payments 模块充值履约/提现占款/释放用例经此扩展使用）。 */
+export const WalletEntryType = { INTERNAL: 1, EXTERNAL: 2, HOLD: 3, COMPENSATION: 4 } as const;
 
 /** 舍入模式常量（coin_exchange.rounding_type：CEIL_CHARGE=1/FLOOR_CREDIT=2）。 */
 export const WalletRoundingMode = { CEIL_CHARGE: 1, FLOOR_CREDIT: 2 } as const;
@@ -177,6 +183,45 @@ export interface AssetLedger {
 
   /** 读欢迎赠币快照（gift_grant 按 grant_key = welcome:{userId} 唯一；未赠 = null）。 */
   readWelcomeGift(userId: string, tx?: Tx): Promise<{ coins: string; turnoverRequirement: string } | null>;
+
+  // ------------------------------------------------------------------
+  // 占款（asset_hold；§9 第 3 步 payments 模块提现占款扩展，任务硬约定 1
+  // "AssetLedger 缺方法在 wallet ports 接口加方法"——实现类已有通用
+  // postEntries 但无 hold 专用路径，本扩展补 3 方法，不破坏既有实现）
+  // ------------------------------------------------------------------
+
+  /**
+   * 创建占款行（asset_hold；`U(hold_key)` 幂等兜底——同键重放返回既有行，
+   * 不抛 IDEMPOTENCY_KEY_REUSED，占款与 WITHDRAWAL_HOLD=6 分录同事务调用，
+   * 双资产文档 §4 "申请时原子占款 净到账额 + 手续费"）。
+   * 金额：`amount = remaining = cents`（十进制字符串 wire，CNY 分）。
+   * HoldStatus 默认 OPEN=1；生命周期状态由 releaseHold/consumeHold 推进。
+   */
+  createHold(input: {
+    assetOperationId: string;
+    assetAccountId: string;
+    holdKey: string;
+    holdType: number;
+    amount: string;
+    expiresAt?: Date | null;
+    tx: Tx;
+  }): Promise<{ inserted: boolean; hold: AssetHoldModel }>;
+
+  /**
+   * 释放占款（HoldStatus RELEASED=4；remaining → 0、closed_at 回填；
+   * 幂等：已 RELEASED 行重放静默返回既有行，不重复写分录——分录由
+   * 调用方（WITHDRAWAL_RELEASE=8 反向分录）经 postEntries 完成，
+   * 本方法只推进 hold 行状态，双资产文档 §4 "拒绝/取消/失败幂等释放"）。
+   */
+  releaseHold(holdId: string, tx: Tx): Promise<AssetHoldModel>;
+
+  /**
+   * 消耗占款（出款成功 SUCCEEDED：remaining → 0、HoldStatus CONSUMED=3、
+   * closed_at 回填；幂等同 releaseHold，双资产文档 §4 "确认支付成功才将
+   * 占款转为完成扣款"——WITHDRAWAL_SETTLEMENT=7 分录同事务）。
+   * 首版出款 worker 未闭环，本方法为消费侧预留（登记决策点）。
+   */
+  consumeHold(holdId: string, tx: Tx): Promise<AssetHoldModel>;
 }
 
 /** 分录记账意图（一次资产账户 delta；金额单位：金币枚 / CNY 分；BigInt）。 */

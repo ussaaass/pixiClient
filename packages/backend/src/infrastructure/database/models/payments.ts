@@ -680,7 +680,7 @@ export const WithdrawalStatus = {
   SUCCEEDED: 5,
   REJECTED: 6,
   CANCELLED: 7,
-  UNKNOWN: 8,
+  PAYMENT_UNKNOWN: 8,
   FAILED: 9,
 } as const;
 export type WithdrawalStatusValue = (typeof WithdrawalStatus)[keyof typeof WithdrawalStatus];
