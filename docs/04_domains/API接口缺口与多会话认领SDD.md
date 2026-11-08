@@ -36,6 +36,7 @@
 | API-GAP-015 | P2 / 2（GAP-008 子切片） | Wallet summary/activity Web API client contract 回归 | **已补独立契约测试；生产组合仍缺** | `wallet-api-client.test.ts` 覆盖现有 client 的 GET path/method/Bearer/cursor/envelope/schema；focused Docker Vitest 1 file / 6 tests passed | 不证明生产组合、session 或 wallet module 配置；不得宣称 GAP-008 闭环 | SESSION-API-GAP-2026-11-07-F / DONE / 100%（限此测试子切片） |
 | API-GAP-016 | P2 / 2（GAP-009 子切片） | TurnoverGate 用例状态与错误映射单测 | **单测已补；端到端缺口仍在** | `turnover.test.ts` 覆盖无行、关闭 gate 的正余额、零余额、存储错误映射、既有领域错误透传与 tx 传递；Vitest 1 file / 7 tests passed，精简类型下测试本身不区分 ACTIVE/COMPLETE/REVERSED，adapter 状态映射由独立测试覆盖 | 后端 typecheck 因缺少 `jose`、`ioredis` 依赖未通过；资金事务、锁序、MySQL 对账及完整资格闭环仍待验证，不得宣称 GAP-009 完成 | SESSION-API-GAP-2026-11-07-G / DONE / 100%（限 gate 单测子切片） |
 | API-GAP-017 | P0 / 0（GAP-003 子切片） | `GET /api/v1/me` DTO 字段与隐私边界审查 | **审查完成；endpoint/摘要 DTO 缺失且字段未决** | 无 route/专用 schema；登录 `PlayerUser`、identity-settings、wallet summary 职责不可替代；UserModel 含密码/TOTP/权限/联系方式等敏感数据；HTTP 协议要求 Summary/Profile/AdminDetail DTO 按最小字段拆分 | 审查子任务完成；真正 API 实施须等产品冻结用途、最小字段来源、授权/缓存规则后另行认领，不新增 schema/route、不序列化 UserModel | SESSION-API-GAP-2026-11-07-H / DONE / 100%（限只读契约/隐私审查；产品字段决策待定） |
+| API-GAP-018 | P3 / 5（支撑接口测试） | Support 已有 HTTP 路由 contract regression | **拟增加测试；仅反映已存在 route 行为** | 当前 `/me/support/conversations` 有 router handler；API inventory 尚未独立记录路由覆盖，生产支撑模块是否已装配须单独核验 | 仅新增 GET `/api/v1/me/support/conversations` 路由测试：鉴权、principal userId 转发、success envelope/response；不改业务和契约，不宣称客服生产闭环 | SESSION-API-GAP-2026-11-07-I / CLAIMED / 0%（待 focused route test） |
 
 ## 4. 可并行切片建议
 
@@ -68,4 +69,4 @@
 | 2026-11-07 | API-GAP-005 完成快照查询端点、成员授权与游标分页；contract/use-case/route tests 通过，并提交 `29944ac` 推送至 origin/main，认领标记 DONE。 |
 | 2026-11-07 | 新增 GAP-008、GAP-014、GAP-002 测试子切片 session 认领；明确生产 wallet 依赖身份会话、Admin 审计适配器测试不等于服务端生产路由验证，并记录现有 deviceLogin/refresh client 与请求 schema 不匹配的阻塞。 |
 | 2026-11-07 | 登记 GAP-002 identity request/schema mismatch 的附加回归测试子任务；限定为新文件且不修改 API client/contracts，明确设备凭证与 operationId lifecycle 仍需协调；focused Docker Vitest 1/1 通过。 |
-| 2026-11-07 | 多会话推进：复核并完成 GAP-008 wallet API client contract tests（6 tests）与 GAP-009 TurnoverGate unit tests（7 tests；typecheck 因 jose/ioredis 缺依赖未通过）；记录 GAP-003 摘要 DTO 隐私/契约审查及字段决策阻塞。两个测试子切片均不代表生产钱包接线或资金端到端闭环，并将 GAP-003 从“待核实”更新为已证实缺失/字段待决。后续审查修正 GAP-009 单测标题，避免误称直接覆盖 ACTIVE/COMPLETE/REVERSED 状态。 |
+| 2026-11-07 | 多会话推进：复核并完成 GAP-008 wallet API client contract tests（6 tests）与 GAP-009 TurnoverGate unit tests（7 tests；typecheck 因 jose/ioredis 缺依赖未通过）；记录 GAP-003 摘要 DTO 隐私/契约审查及字段决策阻塞。两个测试子切片均不代表生产钱包接线或资金端到端闭环，并将 GAP-003 从“待核实”更新为已证实缺失/字段待决。后续审查修正 GAP-009 单测标题，避免误称直接覆盖 ACTIVE/COMPLETE/REVERSED 状态；确认并认领 API-GAP-018 Support 路由测试子切片。 |
