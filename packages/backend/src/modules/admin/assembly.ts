@@ -74,6 +74,7 @@ import { AdminUserListUseCase } from './application/admin-user-list.js';
 import { AdminUserDetailUseCase } from './application/admin-user-detail.js';
 import { WithdrawalReviewUseCase } from './application/withdrawal-review.js';
 import { AdminLoginUseCase } from './application/admin-login.js';
+import { SupportAdminCapabilityAuthorizeUseCase } from './application/support-capability-authorize.js';
 
 import type { Clock } from '../wallet/ports/clock.js';
 import { SystemClock } from '../wallet/ports/clock.js';
@@ -114,6 +115,7 @@ export interface AdminModule {
   adminUserDetail: AdminUserDetailUseCase;
   withdrawalReview: WithdrawalReviewUseCase;
   adminLogin: AdminLoginUseCase;
+  supportCapabilityAuthorize: SupportAdminCapabilityAuthorizeUseCase;
 
   /** 时钟（测试可传固定时钟；缺省 SystemClock）。 */
   clock: Clock;
@@ -159,6 +161,7 @@ export function createAdminModule(deps: AdminModuleDeps): AdminModule {
   const adminUserDetail = new AdminUserDetailUseCase(userRepo);
   const withdrawalReview = new WithdrawalReviewUseCase(withdrawalRepo, auditRepo);
   const adminLogin = new AdminLoginUseCase(userRepo);
+  const supportCapabilityAuthorize = new SupportAdminCapabilityAuthorizeUseCase(permissionRepo, userRepo);
 
   const module: AdminModule = {
     agentDomainRepo,
@@ -178,6 +181,7 @@ export function createAdminModule(deps: AdminModuleDeps): AdminModule {
     adminUserDetail,
     withdrawalReview,
     adminLogin,
+    supportCapabilityAuthorize,
     clock,
 
     async withTx<T>(scope: { transaction: Transaction | null }, fn: (tx: Tx) => T | Promise<T>): Promise<T> {

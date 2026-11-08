@@ -24,7 +24,7 @@ import { Type } from '@sinclair/typebox';
 import { Value } from '@gameing/contracts/wallet';
 import type { SupportModule, Tx, OutboxPort } from '@gameing/backend/modules/support/public';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
-import type { AdminModule } from '@gameing/backend/modules/admin/public';
+import type { AdminModule, SupportAdminAction } from '@gameing/backend/modules/admin/public';
 import { createAdminAuthMiddleware, type AdminAuthState } from '../infrastructure/auth/admin-auth-middleware.js';
 import { setSuccess } from '../infrastructure/http/response.js';
 import { ApiError } from '../infrastructure/http/error-boundary.js';
@@ -142,6 +142,14 @@ export function createSupportRoutes(
   const router = new Router({ prefix: '' });
   const auth = createPlayerAuthMiddleware(identityModule);
   const adminAuth = createAdminAuthMiddleware(identityModule, adminModule);
+  const authorizeSupportAction = async (adminUserId: string, action: SupportAdminAction, tx: { transaction?: unknown }): Promise<void> => {
+    const allowed = await adminModule.supportCapabilityAuthorize.run({
+      adminUserId,
+      action,
+      tx: { transaction: tx.transaction as never },
+    });
+    if (!allowed) throw new ApiError('FORBIDDEN', '缺少此客服操作权限。', { status: 403 });
+  };
 
   // POST /me/support/conversations（创建工单，201）
   router.post('/me/support/conversations', auth, async (ctx) => {
@@ -190,6 +198,7 @@ export function createSupportRoutes(
     const conversationId = ctx.params.id;
     if (conversationId === undefined) throw new ApiError('NOT_FOUND', '路径参数缺失。', { status: 404 });
     const result = await submitInTx(module, sequelize, async (tx) => {
+      await authorizeSupportAction(adminUserId, 'claim', tx);
       return module.ticketClaim.run({
         conversationId,
         adminUserId,
@@ -249,6 +258,7 @@ export function createSupportRoutes(
     const conversationId = ctx.params.id;
     if (conversationId === undefined) throw new ApiError('NOT_FOUND', '路径参数缺失。', { status: 404 });
     const result = await submitInTx(module, sequelize, async (tx) => {
+      await authorizeSupportAction(adminUserId, 'resolve', tx);
       return module.ticketResolve.run({
         adminUserId,
         adminRoleType: 4,
