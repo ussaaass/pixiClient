@@ -35,7 +35,7 @@
 | API-GAP-014 | P3 / 5 | Admin 生产客户端与财务运营/审计端到端接线 | **部分后端路由已存在，生产 Admin 未证实** | server admin routes 有部分审核；后台当前完整业务/权限/审计集成未按生产验收证明 | 逐工作区验证客户端、Admin audience/capability、审计及双人复核；当前子切片仅核验审计远端适配器，不代表服务端 GET 路由存在或生产审计闭环 | SESSION-GAP-2026-11-07-C / CLAIMED / 25%（新增远端 adapter 单测；server GET 路由及 production 验收仍待确认） |
 | API-GAP-015 | P2 / 2（GAP-008 子切片） | Wallet summary/activity Web API client contract 回归 | **已补独立契约测试；生产组合仍缺** | `wallet-api-client.test.ts` 覆盖现有 client 的 GET path/method/Bearer/cursor/envelope/schema；focused Docker Vitest 1 file / 6 tests passed | 不证明生产组合、session 或 wallet module 配置；不得宣称 GAP-008 闭环 | SESSION-API-GAP-2026-11-07-F / DONE / 100%（限此测试子切片） |
 | API-GAP-016 | P2 / 2（GAP-009 子切片） | TurnoverGate 用例状态与错误映射单测 | **单测已补；端到端缺口仍在** | `turnover.test.ts` 覆盖无行、ACTIVE 正余额、COMPLETE/0、REVERSED 正值、存储错误映射、既有领域错误透传与 tx 传递；Vitest 1 file / 7 tests passed，scoped ESLint/Prettier passed | 后端 typecheck 因缺少 `jose`、`ioredis` 依赖未通过；资金事务、锁序、MySQL 对账及完整资格闭环仍待验证，不得宣称 GAP-009 完成 | SESSION-API-GAP-2026-11-07-G / DONE / 100%（限 gate 单测子切片） |
-| API-GAP-017 | P0 / 0（GAP-003 子切片） | `GET /api/v1/me` DTO 字段与隐私边界审查 | **endpoint/摘要 DTO 缺失且字段未决** | 无 route/专用 schema；登录 `PlayerUser`、identity-settings、wallet summary 职责不可替代；UserModel 含密码/TOTP/权限/联系方式等敏感数据 | 只记录审查/决策请求；需产品冻结用途、最小字段、来源与授权前，不新增 schema/route、不序列化 Model | SESSION-API-GAP-2026-11-07-H / CLAIMED / 25%（完成只读代码与协议审查，未改合同/路由） |
+| API-GAP-017 | P0 / 0（GAP-003 子切片） | `GET /api/v1/me` DTO 字段与隐私边界审查 | **审查完成；endpoint/摘要 DTO 缺失且字段未决** | 无 route/专用 schema；登录 `PlayerUser`、identity-settings、wallet summary 职责不可替代；UserModel 含密码/TOTP/权限/联系方式等敏感数据；HTTP 协议要求 Summary/Profile/AdminDetail DTO 按最小字段拆分 | 审查子任务完成；真正 API 实施须等产品冻结用途、最小字段来源、授权/缓存规则后另行认领，不新增 schema/route、不序列化 UserModel | SESSION-API-GAP-2026-11-07-H / DONE / 100%（限只读契约/隐私审查；产品字段决策待定） |
 
 ## 4. 可并行切片建议
 
@@ -58,7 +58,7 @@
 
 - `SESSION-API-CONTRACT-2026-11-07-E`：对 GAP-002 中记录的 `deviceLogin` / `refresh` 请求体与契约 mismatch 增加独立回归测试；范围仅 `apps/web/src/platform/http/identity-request-contract.test.ts`，验证现有客户端调用与 `IdentityEndpoint` 请求 schema 的符合性。测试只揭示当前调用不符合契约，不修改 client/schema，不代表生产身份闭环完成；修复需另行协调设备凭证来源与 refresh operationId 生命周期。focused Docker test 通过：1 file / 1 test。
 - `SESSION-API-GAP-2026-11-07-G`（API-GAP-009）已完成：仅新增 `packages/backend/src/modules/wallet/application/turnover.test.ts`，覆盖统一 turnover gate 状态/错误/事务透传；不改 gate/ledger/settlement 生产代码，不宣称端到端资金/并发/回滚闭环。focused Docker Vitest 1 file / 7 tests passed；backend typecheck 受 `jose`、`ioredis` 缺少依赖阻塞。
-- `SESSION-API-GAP-2026-11-07-H`（API-GAP-003）：仅在本 SDD 增补只读契约审查结论，确认当前无 `/api/v1/me` DTO/route，列出字段冻结前的隐私边界与待决字段需求；不改 contracts/routes，不推断产品字段。
+- `SESSION-API-GAP-2026-11-07-H`（API-GAP-003）已完成只读契约/隐私审查并更新缺口描述；确认当前无 `/api/v1/me` DTO/route，UserModel 不可直接序列化，需产品冻结用途/必要字段/来源/授权与缓存规则后另行认领实施。不改 contracts/routes，不推断产品字段。
 
 ## 6. 变更历史
 
