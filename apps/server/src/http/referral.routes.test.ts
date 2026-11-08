@@ -1,6 +1,10 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createApp } from '../app.js';
+import Koa from 'koa';
+import Router from '@koa/router';
+import { createReferralRoutes } from './referral.routes.js';
+import { createErrorBoundaryMiddleware } from '../infrastructure/http/error-boundary.js';
+import { requestIdMiddleware } from '../infrastructure/http/request-context.js';
 import { createLogger, createMemorySink } from '../infrastructure/logging/logger.js';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
 import type { ReferralModule } from '@gameing/backend/modules/referral/public';
@@ -8,11 +12,24 @@ import type { Sequelize } from 'sequelize';
 
 test('public referral attribution candidate enforces its shared request schema', async () => {
   const logger = createLogger({ level: 'debug', sink: createMemorySink().sink, base: { service: 'gameing-hall-api' } });
-  const identityModule = {
-    jwtIssuer: { verifyAccessToken: async () => ({ userId: '42', sid: 'sid-1', deviceId: 'device-1', authVersion: '1' }) },
-    sessionPort: { getSession: async () => ({ authVersion: '1' }) },
-  } as unknown as IdentityModule;
-  const app = createApp({ logger, identityModule, referralModule: {} as ReferralModule, sequelize: {} as Sequelize });
+  const identityModule = {} as IdentityModule;
+  const referralRouter = createReferralRoutes({} as ReferralModule, identityModule, {} as Sequelize);
+  const apiRouter = new Router({ prefix: '/api/v1' });
+  apiRouter.use(referralRouter.routes(), referralRouter.allowedMethods());
+  const app = new Koa();
+  app.use(async (ctx, next) => {
+    if (ctx.is('application/json')) {
+      const chunks: Buffer[] = [];
+      for await (const chunk of ctx.req) chunks.push(chunk as Buffer);
+      const raw = Buffer.concat(chunks).toString('utf8');
+      (ctx as unknown as { request: { body?: unknown } }).request.body = raw ? JSON.parse(raw) : {};
+    }
+    await next();
+  });
+  app.use(requestIdMiddleware);
+  app.use(createErrorBoundaryMiddleware(logger));
+  app.use(apiRouter.routes());
+  app.use(apiRouter.allowedMethods());
   const testServer = app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => testServer.once('listening', resolve));
   const address = testServer.address();
