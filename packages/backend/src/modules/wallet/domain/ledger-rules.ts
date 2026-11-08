@@ -56,7 +56,7 @@ export function requestHashOf(payload: unknown): Uint8Array {
  */
 export function parseCnyToCoinRatio(raw: string | null | undefined): ExchangeRate | null {
   if (typeof raw !== 'string') return null;
-  const match = /^[1-9][0-9]{0,8}:[1-9][0-9]{0,8}$/.exec(raw.trim());
+  const match = /^([1-9][0-9]{0,8}):([1-9][0-9]{0,8})$/.exec(raw.trim());
   if (match === null) return null;
   const cashYuan = BigInt(match[1] ?? '0');
   const coins = BigInt(match[2] ?? '0');

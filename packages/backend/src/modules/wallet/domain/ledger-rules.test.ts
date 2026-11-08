@@ -44,9 +44,9 @@ function exchangeQuote(overrides: Partial<WalletExchangeQuoteDto> = {}): WalletE
 }
 
 describe('wallet ledger rules', () => {
-  it('rejects only non-capturing numeric ratio formats and malformed inputs', () => {
-    expect(parseCnyToCoinRatio('1:10')).toBeNull();
-    expect(parseCnyToCoinRatio('12:345')).toBeNull();
+  it('parses positive integer CNY-to-coin ratios and rejects malformed inputs', () => {
+    expect(parseCnyToCoinRatio('1:10')).toEqual({ rateCoinUnits: 10n, rateCashFen: 100n });
+    expect(parseCnyToCoinRatio('12:345')).toEqual({ rateCoinUnits: 345n, rateCashFen: 1200n });
     expect(parseCnyToCoinRatio('0:10')).toBeNull();
     for (const invalid of [null, undefined, '', '1:0', '01:10', '1:010', '1.5:10', '-1:10', '1234567890:1', '1:1234567890']) {
       expect(parseCnyToCoinRatio(invalid)).toBeNull();
