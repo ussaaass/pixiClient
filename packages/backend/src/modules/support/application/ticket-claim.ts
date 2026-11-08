@@ -50,6 +50,12 @@ export class TicketClaimUseCase {
    */
   async run(input: { conversationId: string; adminUserId: string; adminRoleType: number; tx: Tx }): Promise<ClaimResultDto> {
     void supportClaimKeyOf(input.conversationId, input.adminUserId); // 幂等键生成（U 约束兜底）
+    // Claim is an admin-only command. Enforce the ADMIN bit at the application
+    // boundary as well as any HTTP boundary, so a misconfigured caller cannot
+    // turn a player/agent role into a support assignment.
+    if ((input.adminRoleType & 4) === 0) {
+      throw new SupportDomainError(SUP.SUPPORT_NOT_ASSIGNED, '无坐席权限（需 ADMIN role bit）。');
+    }
 
     // 1. 锁读会话（缺行 → 可重试）
     const conversation = await this.ticketRepo.lockConversation(input.conversationId, input.tx);
