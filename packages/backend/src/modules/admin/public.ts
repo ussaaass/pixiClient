@@ -58,6 +58,12 @@ export {
 } from './application/admin-user-detail.js';
 export { WithdrawalReviewUseCase, type WithdrawalApprovedDto, type WithdrawalRejectedDto } from './application/withdrawal-review.js';
 export { AdminLoginUseCase, type AdminLoginInput, type AdminLoginResultDto } from './application/admin-login.js';
+export {
+  SupportAdminCapabilityAuthorizeUseCase,
+  SUPPORT_ADMIN_PERMISSION_CODES,
+  supportAdminRouteOf,
+  type SupportAdminAction,
+} from './application/support-capability-authorize.js';
 
 // ---------------------------------------------------------------------------
 // 装配工厂（inject 全部 ports 的 AdminModule 对象，供 server 装配调用一次）

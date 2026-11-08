@@ -119,6 +119,9 @@ export interface AdminAuditEventRepo {
 export interface AdminPermissionRepo {
   /** 按 permission_code 读权限行（只读无锁；缺失返回 null）。 */
   findPermissionByCode(permissionCode: string, tx: Tx): Promise<AdminPermissionModel | null>;
+
+  /** Resolve an active permission directory entry by exact method and canonical path template. */
+  findPermissionByRoute(httpMethod: string, pathPattern: string, tx: Tx): Promise<AdminPermissionModel | null>;
 }
 
 // ---------------------------------------------------------------------------

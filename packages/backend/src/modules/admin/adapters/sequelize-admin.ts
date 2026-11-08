@@ -243,6 +243,14 @@ export class SequelizeAdminPermissionRepo implements AdminPermissionRepo {
       transaction: txq,
     } as never);
   }
+
+  async findPermissionByRoute(httpMethod: string, pathPattern: string, tx: Tx): Promise<AdminPermissionModel | null> {
+    const txq = txOf(tx);
+    return this.model.findOne({
+      where: { httpMethod, pathPattern } as never,
+      transaction: txq,
+    } as never);
+  }
 }
 
 // ---------------------------------------------------------------------------

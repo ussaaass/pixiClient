@@ -21,6 +21,7 @@ import * as createSupport from './migrations/0015-create-support.js';
 import * as createCoinMarket from './migrations/0016-create-coin-market.js';
 import * as createAssets from './migrations/0017-create-assets.js';
 import * as createOutbox from './migrations/0018-create-outbox.js';
+import * as seedSupportAdminPermissions from './migrations/0019-seed-support-admin-permissions.js';
 import { getSequelize } from './sequelize.js';
 
 /**
@@ -63,6 +64,11 @@ const MIGRATIONS = [
   { name: '0016-create-coin-market', up: createCoinMarket.up, down: createCoinMarket.down },
   { name: '0017-create-assets', up: createAssets.up, down: createAssets.down },
   { name: '0018-create-outbox', up: createOutbox.up, down: createOutbox.down },
+  {
+    name: '0019-seed-support-admin-permissions',
+    up: seedSupportAdminPermissions.up,
+    down: seedSupportAdminPermissions.down,
+  },
 ];
 
 export interface MigratorOptions {

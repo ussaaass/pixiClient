@@ -70,7 +70,7 @@ PlayerSupportWorkspace
 
 Admin 坐席工作区已增加 LOCAL_DEMO 离线流程：用共享 `SupportConversationDto`/`SupportMessageDto` 投影队列，按状态/主题/脱敏用户摘要过滤、游标分页、读取文本历史、领取未分派会话、发送客服文本、结束与重新打开。客服回复沿用全局唯一 `messageKey`；相同 key 和内容重试返回现有会话快照，key 被不同消息复用则拒绝。领取/结束/重开动作使用 command requestKey 去重，复用 key 对应不同动作或会话会被拒绝。领取后才能回复或结束；其他客服已领取的会话在本机演练中只读。关闭保留历史，关闭记录可筛选后重新打开。会话/消息写入 Admin 专用 IndexedDB 的 `support_desk_conversations` / `support_desk_messages` adapter stores，操作幂等回执写入 `support_desk_command_receipts` adapter store，模拟现有会话、消息及 Admin 审计幂等边界；不读取或修改玩家端 Browser DB，也不代表真实用户工单。
 
-客服坐席本地 application 通过共享 `SupportDeskEndpoint` DTO 清单预留 list/detail/claim/reply/resolve/reopen HTTP 契约；Admin UI 不直接操作 IndexedDB。当前 actor `90001`、三条样例会话及客服队列均为 LOCAL_DEMO fixtures。生产必须以 JWT 的 `user` 与 `support.*` capability 校验会话权限和当前指派人，Admin command 与 `admin_audit_event` 同事务提交；客服不能重置 TOTP、不能跨私聊域读取，也不能把客户端筛选作为授权依据。账号安全工单只提供转人工核验与关联入口，不执行凭证重置。
+客服坐席本地 application 通过共享 `SupportDeskEndpoint` DTO 清单预留 list/detail/claim/reply/resolve/reopen HTTP 契约；Admin UI 不直接操作 IndexedDB。当前 actor `90001`、三条样例会话及客服队列均为 LOCAL_DEMO fixtures。生产必须以 JWT 的 `user` 与 `support.*` capability 校验会话权限和当前指派人，Admin command 与 `admin_audit_event` 同事务提交；Support claim/resolve 已开始在当前 DB user `role_type`、`permissions` 与 active `admin_permission` route entry 上做服务端授权（`admin.support.claim` / `admin.support.resolve`）；同事务 Admin audit 仍未实现。客服不能重置 TOTP、不能跨私聊域读取，也不能把客户端筛选作为授权依据。账号安全工单只提供转人工核验与关联入口，不执行凭证重置。
 
 生产消息先持久化 MySQL 并写 outbox，再 ACK/Socket.IO 投递；断线用 HTTP 按 message id 补拉。LOCAL_BROWSER_SERVER 与 Admin LOCAL_DEMO 均使用 HTTP 顺序请求，不伪造 Socket 事件、真实坐席在线状态或玩家端实时收到客服回复。现阶段附件、Asset 密钥交付、授权解密、审计回执与上传失败续传仍未闭环，界面不展示无效附件按钮；生产坐席消息命令和实时送达仍待服务端实现。
 
@@ -97,5 +97,6 @@ Admin 坐席工作区已增加 LOCAL_DEMO 离线流程：用共享 `SupportConve
 | 2026-10-15 | 记录客户端分块加密原语的实现边界与测试状态；Asset 上传、密钥托管、客服授权查看仍未闭环。 |
 | 2026-10-15 | 增加 Admin 坐席本机 DDD 演练流程与共享队列 DTO；标记生产 capability、事务审计、附件解密及 Socket 投递待服务端实现。 |
 | 2026-10-15 | 补齐坐席流程的状态筛选、动作幂等回执、实际浏览器桌面队列/会话几何与 62 项测试验收；移动实机与服务端授权仍待完成。 |
+| 2026-11-08 | Support claim/resolve 运行时开始按 `admin.support.claim` / `admin.support.resolve`、Admin active role 与当前 DB grants fail-closed；生产 admin_audit_event 同事务仍待实现。 |
 | 2026-10-15 | 补充坐席游标分页、未领取回复的明确下一步提示，并让失败后的动作重试保留原 requestKey。 |
 | 2026-10-15 | Admin 测试增至 63 项，覆盖工单游标分页的无重复读取。 |

@@ -952,7 +952,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | path_pattern | VARCHAR(255) | 否 | 无 | 后台 API 路由模板，如 /api/admin/users/:user_id；不含 query string |
 
 **索引/约束：** U(permission_code)；U(http_method,path_pattern)
-**实体规则：** 后台路由的权限目录；请求需同时匹配方法和规范化路由模板，再检查当前 `user.role_type` 含 ADMIN 位且 `user.permissions` 包含该 permission_code。路由自身显式声明权限码，路径表用于校验配置与提供 Admin 管理/展示信息；不能仅用未经规范化的原始 URL 前缀授权。权限 JSON 保存代码而非复制路径，代码在权限目录中不存在或已停用时一律拒绝访问。首版不建 Role 和多对多关联表；出现批量权限模板需求后可以再添加角色层。
+**实体规则：** 后台路由的权限目录；请求需同时匹配方法和规范化路由模板，再检查当前 `user.role_type` 含 ADMIN 位且 `user.permissions` 包含该 permission_code。路由自身显式声明权限码，路径表用于校验配置与提供 Admin 管理/展示信息；不能仅用未经规范化的原始 URL 前缀授权。权限 JSON 保存代码而非复制路径，代码在权限目录中不存在或已停用时一律拒绝访问。首版不建 Role 和多对多关联表；出现批量权限模板需求后可以再添加角色层。Support claim/resolve 使用 `admin.support.claim` / `admin.support.resolve`，canonical method/path 见 migration 0019；其余 Support desk 权限仍待登记。
 
 #### agent_audit_event
 
@@ -1728,6 +1728,7 @@ Redis 租约负责短期房间进程所有权；每次接管先递增 `room.fenc
 
 | 日期 | 变更 |
 | --- | --- |
+| 2026-11-08 | Support `admin_permission` 目录登记 claim/resolve 两项明确权限码及 canonical POST route，并要求运行时匹配当前 user grants；migration 0019 负责登记。 |
 | 2026-10-10 | 按用户确认将奖励积分生命周期定义为单次房间 membership；增加 membership 加密状态/版本及 round_player 来源关联，明确离房清空、重进重置和并发结算边界，不新增积分表。 |
 | 2026-10-10 | 与奖励轮/派奖倍数机制 SDD 对齐：免费轮及翻倍轮复用 round、round_event 和 settlement.result_snapshot，不新增奖励专属表；实际下注及有效流水只计付费投入。 |
 | 2026-10-10 | 补齐代理域 game_config 发布与 agent_audit_event 的原子审计细节，明确不新增草稿/配置版本/模拟结果表。 |
