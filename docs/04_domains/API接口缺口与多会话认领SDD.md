@@ -9,7 +9,7 @@
 ## 2. 跨会话认领协议
 
 - 每个可施工项使用稳定 ID `API-GAP-NNN`。本文件的 `认领 session` 是人工填写的唯一会话标记（建议由用户给每个并行 session 指定短 ID，如 `S-A`、`S-B`）；未分配前状态为 `OPEN`。
-- 认领前必须拉取/同步最新 `main`，检查本表状态及 Git 工作树；在该任务行更新 `session=<ID>; status=CLAIMED; progress=0%` 并先提交认领记录，才可改代码。用户在多个 session 间复制该表时，提交哈希是认领先后依据；遇到同项已有有效认领，必须选别项或先协调释放。
+- 认领前必须拉取/同步最新 `main`，检查本表状态及 Git 工作树；在本任务行更新 `session=<ID>; status=CLAIMED; progress=0%` 并先提交认领记录，才可改代码。用户在多个 session 间复制该表时，提交哈希是认领先后依据；遇到同项已有有效认领，必须选别项或先协调释放。
 - 每次阶段提交更新进度为 0/25/50/75/100%，并记录代码/契约/测试文件、最近提交哈希和阻塞。进度表示可复核交付，不是工时估算。
 - 任务完成条件：实现、相关契约/单测/集成测试、运行验证、SDD/状态更新均完成；之后标 `DONE`、100%、commit。需要产品/法务/财务/安全批准或外部密钥的任务标 `BLOCKED_DECISION` / `BLOCKED_EXTERNAL`，不得先造默认值。
 - 同一 session 可以认领多个文件互不重叠的任务；不同 session 不得同时编辑同一行/文件范围。任务拆分后新增子 ID，不能通过改标题绕过冲突。
@@ -30,14 +30,15 @@
 | API-GAP-009 | P2 / 2 | 有效下注 turnover 与提现/转出资格端到端闭环 | **局部用例/adapter 存在，生产验收未证实** | round settlement 有 turnover 消费；需验证全链余额、hold、turnover 聚合与提现规则 | 依赖阶段 1 权威结果和有效 wager 决策；财务集成测试 | — / OPEN / 0% |
 | API-GAP-010 | P2 / 2 | 充值订单到支付渠道验签/查询/履约 | **Mock/通道处理缺失** | order-create 使用 mock 标识；支付事件按 mock/verified 路径，未建立真实渠道回调/checkout 全链 | 渠道商户凭证、验签和冲正决策，真实启用 BLOCKED_EXTERNAL | — / BLOCKED_EXTERNAL / 0% |
 | API-GAP-011 | P2 / 3 | 提现 outbox：`payout_attempt`、provider submit/query、UNKNOWN recovery、对账 | **关键处理器缺失** | `apps/server/src/infrastructure/outbox/outbox-task-handlers.ts` 明确未实现财务 task handlers；dispatcher fail closed | Provider 契约/凭证、KMS、UNKNOWN 和人工对账政策；BLOCKED_EXTERNAL/DECISION | — / BLOCKED_EXTERNAL / 0% |
-| API-GAP-012 | P2 / 3 | 返佣 allocation 冻结释放与账本写入 | **资金事实/worker 未闭环** | referral 读接口存在；奖励写入/释放任务 handler 未实现或不能证明闭环 | 比例舍入、零奖励、chargeback、祖先快照时点需财务裁决 | — / BLOCKED_DECISION / 0% |
-| API-GAP-013 | P2 / 4 | 邀请候选采集与注册/login 原子消费 | **候选业务集成缺失/不完整** | referral candidate route 存在；尚无证据证明 auth 注册/login 路径原子消费候选；信任代理/IP 边界未定 | 多账号消费、失败回退、代理信任政策需裁决 | — / BLOCKED_DECISION / 0% |
+| API-GAP-012 | P2 / 2 | 返佣 allocation 冻结释放与账本写入 | **资金事实/worker 未闭环** | referral 读接口存在；奖励写入/释放任务 handler 未实现或不能证明闭环 | 比例舍入、零奖励、chargeback、祖先快照时点需财务裁决 | — / BLOCKED_DECISION / 0% |
+| API-GAP-013 | P2 / 3 | 邀请候选采集与注册/login 原子消费 | **候选业务集成缺失/不完整** | referral candidate route 存在；尚无证据证明 auth 注册/login 路径原子消费候选；信任代理/IP 边界未定 | 多账号消费、失败回退、代理信任政策需裁决 | — / BLOCKED_DECISION / 0% |
 | API-GAP-014 | P3 / 5 | Admin 生产客户端与财务运营/审计端到端接线 | **部分后端路由已存在，生产 Admin 未证实** | server admin routes 有部分审核；后台当前完整业务/权限/审计集成未按生产验收证明 | 逐工作区验证客户端、Admin audience/capability、审计及双人复核；当前子切片仅核验审计远端适配器，不代表服务端 GET 路由存在或生产审计闭环 | SESSION-GAP-2026-11-07-C / CLAIMED / 25%（新增远端 adapter 单测；server GET 路由及 production 验收仍待确认） |
 | API-GAP-015 | P2 / 2（GAP-008 子切片） | Wallet summary/activity Web API client contract 回归 | **已补独立契约测试；生产组合仍缺** | `wallet-api-client.test.ts` 覆盖现有 client 的 GET path/method/Bearer/cursor/envelope/schema；focused Docker Vitest 1 file / 6 tests passed | 不证明生产组合、session 或 wallet module 配置；不得宣称 GAP-008 闭环 | SESSION-API-GAP-2026-11-07-F / DONE / 100%（限此测试子切片） |
 | API-GAP-016 | P2 / 2（GAP-009 子切片） | TurnoverGate 用例状态与错误映射单测 | **单测已补；端到端缺口仍在** | `turnover.test.ts` 覆盖无行、关闭 gate 的正余额、零余额、存储错误映射、既有领域错误透传与 tx 传递；Vitest 1 file / 7 tests passed，精简类型下测试本身不区分 ACTIVE/COMPLETE/REVERSED，adapter 状态映射由独立测试覆盖 | 后端 typecheck 因缺少 `jose`、`ioredis` 依赖未通过；资金事务、锁序、MySQL 对账及完整资格闭环仍待验证，不得宣称 GAP-009 完成 | SESSION-API-GAP-2026-11-07-G / DONE / 100%（限 gate 单测子切片） |
 | API-GAP-017 | P0 / 0（GAP-003 子切片） | `GET /api/v1/me` DTO 字段与隐私边界审查 | **审查完成；endpoint/摘要 DTO 缺失且字段未决** | 无 route/专用 schema；登录 `PlayerUser`、identity-settings、wallet summary 职责不可替代；UserModel 含密码/TOTP/权限/联系方式等敏感数据；HTTP 协议要求 Summary/Profile/AdminDetail DTO 按最小字段拆分 | 审查子任务完成；真正 API 实施须等产品冻结用途、最小字段来源、授权/缓存规则后另行认领，不新增 schema/route、不序列化 UserModel | SESSION-API-GAP-2026-11-07-H / DONE / 100%（限只读契约/隐私审查；产品字段决策待定） |
 | API-GAP-018 | P3 / 5（支撑接口测试） | Support 已有 HTTP 路由 contract regression | **路由切片已测试；生产支撑闭环仍未验** | 当前 `/me/support/conversations` 有 router handler；新增测试验证 GET `/api/v1/me/support/conversations` 的鉴权、principal userId 转发与 success envelope/response；生产支撑模块配置、服务端鉴权安全/客服闭环须单独验收 | 不改业务与契约、不宣称客服生产闭环 | SESSION-API-GAP-2026-11-07-I / DONE / 100%（限此 route contract test） |
-| API-GAP-019 | P2 / 2（wallet 纯规则测试） | wallet ledger-rules 纯函数契约回归 | **已补直接单测；不改变规则实现** | `ledger-rules.test.ts` 覆盖 ratio parser 对 `1:10` 现有拒绝行为、请求哈希、报价时效/匹配、守恒、版本冲突、余额门禁、兑换正额和流水门禁；focused Docker Vitest 1 file / 8 tests passed，backend typecheck passed | 测试记录现状，不代表 ratio parser 行为符合文档/生产期望；若需允许 `1:10`，需另行澄清规则并协调实现 owner；不宣称资金事务或端到端 GAP-009 完成 | SESSION-API-GAP-2026-11-07-J / DONE / 100%（限纯规则测试） |
+| API-GAP-019 | P2 / 2（wallet 纯规则测试） | wallet ledger-rules 纯函数契约回归 | **已补直接单测；不改变规则实现** | `ledger-rules.test.ts` 覆盖 `1:10`、`12:345` 正常比例解析、非法格式、请求哈希、报价时效/匹配、守恒、版本冲突、余额门禁、兑换正额和流水门禁；focused Docker Vitest 1 file / 8 tests passed，backend typecheck passed | 测试仅锁定当前纯规则行为；不代表资金事务或端到端 GAP-009 完成 | SESSION-API-GAP-2026-11-07-J / DONE / 100%（限纯规则测试） |
+| API-GAP-020 | P3 / 5（社交接口测试） | Social message-history HTTP contract regression | **拟新增测试；仅反映已存在 route 行为** | `social.routes.ts` 已实现游标补拉 GET `/api/v1/me/social/conversations/:id/messages`，可验证认证、principal/cursor 参数及 response envelope；生产模块/数据库与成员权限仍需单独验收 | 仅新增 route contract test，不改 handler/use case/contracts；不宣称生产社交授权或实时消息闭环 | SESSION-API-GAP-2026-11-07-K / CLAIMED / 0%（待 focused route test） |
 
 ## 4. 可并行切片建议
 
@@ -61,6 +62,9 @@
 - `SESSION-API-CONTRACT-2026-11-07-E`：对 GAP-002 中记录的 `deviceLogin` / `refresh` 请求体与契约 mismatch 增加独立回归测试；范围仅 `apps/web/src/platform/http/identity-request-contract.test.ts`，验证现有客户端调用与 `IdentityEndpoint` 请求 schema 的符合性。测试只揭示当前调用不符合契约，不修改 client/schema，不代表生产身份闭环完成；修复需另行协调设备凭证来源与 refresh operationId 生命周期。focused Docker test 通过：1 file / 1 test。
 - `SESSION-API-GAP-2026-11-07-G`（API-GAP-009）已完成：仅保留 `packages/backend/src/modules/wallet/application/turnover.test.ts` 为测试子切片；wallet teammate 确认未创建，作者未知，Lead 校对并修正文案以去除测试不直接验证 status 的标签。覆盖无行、关闭 gate 正余额、零余额、错误映射及 tx 透传；Docker Vitest 1 file / 7 tests passed。backend typecheck 受 `jose`、`ioredis` 缺少依赖阻塞；不宣称资金端到端闭环。
 - `SESSION-API-GAP-2026-11-07-H`（API-GAP-003）已完成只读契约/隐私审查并更新缺口描述；确认当前无 `/api/v1/me` DTO/route，UserModel 不可直接序列化，需产品冻结用途/必要字段/来源/授权与缓存规则后另行认领实施。不改 contracts/routes，不推断产品字段。
+- `SESSION-API-GAP-2026-11-07-I`（API-GAP-018）已完成新增 `apps/server/src/http/support.routes.test.ts`：验证未认证请求拒绝、认证 principal userId 转发、`transaction:null` 与成功 envelope/schema。Focused Docker node:test 1/1、Prettier、ESLint、server typecheck 通过。仅是注入 mock 的 route contract，生产装配/数据库/权限仍未证实；读审另指出 roleType/admin audience 与 senderType 授权需独立审查。
+- `SESSION-API-GAP-2026-11-07-J`（API-GAP-019）已完成新增 `packages/backend/src/modules/wallet/domain/ledger-rules.test.ts`，覆盖汇率比例解析、请求哈希、报价匹配/时效、守恒、版本冲突、余额及兑换正额、流水门禁。Focused Docker Vitest 1 file / 8 tests、backend typecheck 通过。后续复核纠正了 `1:10` 正常格式的断言，符合权威双资产 SDD。
+- `SESSION-API-GAP-2026-11-07-K`（API-GAP-020）已认领 `apps/server/src/http/social.routes.test.ts`，只验证现存 social history route；用 fake IdentityModule/SocialModule/Sequelize 覆盖未认证拒绝、认证后 principal、conversationId、cursor、null tx 与响应数据，不证明生产模块装配或成员授权闭环。
 
 ## 6. 变更历史
 
@@ -70,4 +74,4 @@
 | 2026-11-07 | API-GAP-005 完成快照查询端点、成员授权与游标分页；contract/use-case/route tests 通过，并提交 `29944ac` 推送至 origin/main，认领标记 DONE。 |
 | 2026-11-07 | 新增 GAP-008、GAP-014、GAP-002 测试子切片 session 认领；明确生产 wallet 依赖身份会话、Admin 审计适配器测试不等于服务端生产路由验证，并记录现有 deviceLogin/refresh client 与请求 schema 不匹配的阻塞。 |
 | 2026-11-07 | 登记 GAP-002 identity request/schema mismatch 的附加回归测试子任务；限定为新文件且不修改 API client/contracts，明确设备凭证与 operationId lifecycle 仍需协调；focused Docker Vitest 1/1 通过。 |
-| 2026-11-07 | 多会话推进：复核并完成 GAP-008 wallet API client contract tests（6 tests）与 GAP-009 TurnoverGate unit tests（7 tests；typecheck 因 jose/ioredis 缺依赖未通过）；记录 GAP-003 摘要 DTO 隐私/契约审查及字段决策阻塞。两个测试子切片均不代表生产钱包接线或资金端到端闭环，并将 GAP-003 从“待核实”更新为已证实缺失/字段待决。后续审查修正 GAP-009 单测标题，避免误称直接覆盖 ACTIVE/COMPLETE/REVERSED 状态；新增 API-GAP-018 Support 路由 contract regression 并完成 focused 验证；GAP-019 ledger-rules 单测通过 8 tests，发现并记录 parser 对常用 `1:10` 格式拒绝的实现/文档待协调差异。 |
+| 2026-11-07 | 多会话推进：复核并完成 GAP-008 wallet API client contract tests（6 tests）与 GAP-009 TurnoverGate unit tests（7 tests；typecheck 因 jose/ioredis 缺依赖未通过）；记录 GAP-003 摘要 DTO 隐私/契约审查及字段决策阻塞。两个测试子切片均不代表生产钱包接线或资金端到端闭环，并将 GAP-003 从“待核实”更新为已证实缺失/字段待决。后续审查修正 GAP-009 单测标题，避免误称直接覆盖 ACTIVE/COMPLETE/REVERSED 状态；新增 API-GAP-018 Support 路由 contract regression 并完成 focused 验证；GAP-019 wallet ledger-rules 单测通过 8 项，纠正 `1:10` 断言以符合权威比例格式；认领 GAP-020 Social history route contract test。 |
