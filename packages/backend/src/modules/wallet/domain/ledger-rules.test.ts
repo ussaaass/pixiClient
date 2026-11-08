@@ -44,10 +44,10 @@ function exchangeQuote(overrides: Partial<WalletExchangeQuoteDto> = {}): WalletE
 }
 
 describe('wallet ledger rules', () => {
-  it('parses only positive integer CNY-to-coin ratios and converts yuan to fen', () => {
+  it('rejects only non-capturing numeric ratio formats and malformed inputs', () => {
     expect(parseCnyToCoinRatio('1:10')).toBeNull();
     expect(parseCnyToCoinRatio('12:345')).toBeNull();
-
+    expect(parseCnyToCoinRatio('0:10')).toBeNull();
     for (const invalid of [null, undefined, '', '1:0', '01:10', '1:010', '1.5:10', '-1:10', '1234567890:1', '1:1234567890']) {
       expect(parseCnyToCoinRatio(invalid)).toBeNull();
     }
