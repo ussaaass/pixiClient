@@ -1,6 +1,6 @@
 import { Type } from '@sinclair/typebox';
 import type { Static } from '@sinclair/typebox';
-import { RewardType } from './referral';
+import { RewardType } from './referral.js';
 
 const BigIdSchema = Type.String({ pattern: '^[1-9][0-9]{0,19}$' });
 const UtcTimestampSchema = Type.String({ pattern: '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\\.[0-9]{3}Z$' });

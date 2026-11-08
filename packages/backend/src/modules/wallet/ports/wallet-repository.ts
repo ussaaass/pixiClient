@@ -52,6 +52,9 @@ export const WalletOperationType = {
   WITHDRAWAL_HOLD: 6,
   WITHDRAWAL_SETTLEMENT: 7,
   WITHDRAWAL_RELEASE: 8,
+  COIN_MARKET_HOLD: 12,
+  COIN_MARKET_TRADE: 13,
+  COIN_MARKET_RELEASE: 14,
 } as const;
 export type WalletOperationTypeValue = (typeof WalletOperationType)[keyof typeof WalletOperationType];
 
@@ -172,6 +175,9 @@ export interface AssetLedger {
    */
   upsertTurnoverState(userId: string, requiredCoins: bigint, expectedVersion: bigint | null, tx: Tx): Promise<TurnoverStateModel>;
 
+  /** 扣减已结算有效下注额；超出剩余要求部分不结转。 */
+  consumeTurnover(userId: string, wagerCoins: bigint, tx: Tx): Promise<TurnoverStateModel | null>;
+
   /** 读用户昵称（transfer 报价的 recipientDisplayName；缺失返回 null）。 */
   readNickname(userId: string, tx?: Tx): Promise<string | null>;
 
@@ -208,19 +214,30 @@ export interface AssetLedger {
   }): Promise<{ inserted: boolean; hold: AssetHoldModel }>;
 
   /**
-   * 释放占款（HoldStatus RELEASED=4；remaining → 0、closed_at 回填；
-   * 幂等：已 RELEASED 行重放静默返回既有行，不重复写分录——分录由
-   * 调用方（WITHDRAWAL_RELEASE=8 反向分录）经 postEntries 完成，
-   * 本方法只推进 hold 行状态，双资产文档 §4 "拒绝/取消/失败幂等释放"）。
+   * 原子部分/全额释放占款：锁 hold，校验 amount 不超过 remaining，更新 remaining/status，
+   * 并在同一事务内将 intents 入账。调用方定义金额分录策略（包含账户 delta/frozenDelta）；
+   * 至少一个 intent 必须关联此 hold。状态在 remaining>0 时为 PARTIAL，否则 RELEASED。
+   * Idempotency claim 属调用方事务策略，不在此 primitive 内执行。
    */
-  releaseHold(holdId: string, tx: Tx): Promise<AssetHoldModel>;
+  releaseHoldAmount(input: HoldAmountPostInput, tx: Tx): Promise<HoldAmountPostResult>;
 
   /**
-   * 消耗占款（出款成功 SUCCEEDED：remaining → 0、HoldStatus CONSUMED=3、
-   * closed_at 回填；幂等同 releaseHold，双资产文档 §4 "确认支付成功才将
-   * 占款转为完成扣款"——WITHDRAWAL_SETTLEMENT=7 分录同事务）。
-   * 首版出款 worker 未闭环，本方法为消费侧预留（登记决策点）。
+   * 原子部分/全额消耗占款：与 releaseHoldAmount 同样的校验/入账保证；剩余非零时
+   * 状态 PARTIAL，清零时 CONSUMED。调用方提供 operationId 与账本意图；不负责 claim 幂等键。
    */
+  consumeHoldAmount(input: HoldAmountPostInput, tx: Tx): Promise<HoldAmountPostResult>;
+
+  /** Verify shared hold account/type/status/amount within the transaction; caller locks canonical accounts first. */
+  readHoldForOperation(
+    holdId: string,
+    expected: { accountId: string; holdType: number; amount: bigint },
+    tx: Tx,
+  ): Promise<AssetHoldModel | null>;
+
+  /** 原有全额 hold 状态迁移保留原语义：仅更新 hold，不产生分录。 */
+  releaseHold(holdId: string, tx: Tx): Promise<AssetHoldModel>;
+
+  /** 原有全额 hold 状态迁移保留原语义：仅更新 hold，不产生分录。 */
   consumeHold(holdId: string, tx: Tx): Promise<AssetHoldModel>;
 }
 
@@ -236,6 +253,21 @@ export interface EntryIntent {
   entryType: number;
   /** 分录可读说明（memo VARCHAR(500)）。 */
   memo: string;
+  /** HOLD 分录必须关联占款；非 HOLD 分录不得关联。 */
+  assetHoldId?: string | null;
+}
+
+/** 单次 hold 金额变动与关联账本分录。 */
+export interface HoldAmountPostInput {
+  operationId: string;
+  holdId: string;
+  amount: bigint;
+  intents: EntryIntent[];
+}
+
+export interface HoldAmountPostResult {
+  hold: AssetHoldModel;
+  posts: LedgerPost[];
 }
 
 /** 入账结果（账户新版本 + 记账后余额，供用例守恒校验与分录对账）。 */

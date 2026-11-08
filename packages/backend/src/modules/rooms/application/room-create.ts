@@ -34,9 +34,11 @@
  */
 
 import { randomUUID } from 'node:crypto';
-import { isDuplicateKeyError } from '../domain/errors.js';
+import { RoomStatus } from '../../../infrastructure/database/models/game.js';
+import { isDuplicateKeyError, R, RoomDomainError } from '../domain/errors.js';
 import type { RoomRepo, GameEntryRepo, Tx } from '../ports/rooms-repository.js';
 import type { Clock } from '../../wallet/ports/clock.js';
+import { parseShisanshuiStakeConfig } from '../domain/stake-config.js';
 
 /** 入局资格有效期（分钟；首版固定 30，可经配置注入，决策点登记）。 */
 const ENTRY_TTL_MINUTES = 30;
@@ -59,6 +61,7 @@ export interface RoomCreatedDto {
   status: number;
   capacity: number;
   ownerKey: string;
+  replay: boolean;
 }
 
 export class RoomCreateUseCase {
@@ -82,6 +85,31 @@ export class RoomCreateUseCase {
     ownerKey: string;
     tx: Tx;
   }): Promise<RoomCreatedDto> {
+    if (
+      typeof input.userId !== 'string' ||
+      !/^[1-9][0-9]{0,19}$/.test(input.userId) ||
+      typeof input.gameId !== 'string' ||
+      !/^[1-9][0-9]{0,19}$/.test(input.gameId) ||
+      typeof input.gameTierId !== 'string' ||
+      !/^[1-9][0-9]{0,19}$/.test(input.gameTierId) ||
+      !Number.isInteger(input.capacity) ||
+      input.capacity < 1 ||
+      !Number.isInteger(input.roomType) ||
+      input.roomType < 1 ||
+      typeof input.ownerKey !== 'string' ||
+      input.ownerKey.length === 0 ||
+      input.rulesSnapshot === null ||
+      typeof input.rulesSnapshot !== 'object' ||
+      Array.isArray(input.rulesSnapshot)
+    ) {
+      throw new RoomDomainError(R.INVALID_SUBMISSION, 'invalid room creation input');
+    }
+    try {
+      parseShisanshuiStakeConfig(input.rulesSnapshot['shisanshui.stake']);
+    } catch (error) {
+      if (error instanceof RoomDomainError) throw error;
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'published Shisanshui stake policy unavailable');
+    }
     const roomKey = generateRoomCode();
     const entryKey = `entry:${input.userId}:${randomUUID()}`;
 
@@ -100,12 +128,26 @@ export class RoomCreateUseCase {
     // 幂等重放（同 room_key 并发创建 → 返回既有行，不产生第二房）。
     if (!roomResult.inserted) {
       const room = roomResult.room;
+      if (
+        typeof room.id !== 'string' ||
+        !/^[1-9][0-9]{0,19}$/.test(room.id) ||
+        typeof room.roomKey !== 'string' ||
+        !/^[A-Z0-9]{6}$/.test(room.roomKey) ||
+        !Object.values(RoomStatus).includes(room.status as (typeof RoomStatus)[keyof typeof RoomStatus]) ||
+        !Number.isInteger(room.capacity) ||
+        room.capacity < 1 ||
+        typeof room.ownerKey !== 'string' ||
+        room.ownerKey.length === 0
+      ) {
+        throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'persisted room replay snapshot is invalid');
+      }
       return {
         roomId: room.id,
         roomCode: room.roomKey,
         status: room.status,
         capacity: room.capacity,
         ownerKey: room.ownerKey ?? '',
+        replay: true,
       };
     }
 
@@ -137,6 +179,7 @@ export class RoomCreateUseCase {
       status: room.status,
       capacity: room.capacity,
       ownerKey: room.ownerKey ?? '',
+      replay: false,
     };
   }
 }

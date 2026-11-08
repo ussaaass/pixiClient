@@ -183,8 +183,8 @@ export function resultHashOf(result: unknown): Uint8Array {
 export function waterToBigInt(water: number): bigint {
   // water 为 JS 整数（shisanshui-rules 输出），安全范围内直接 BigInt。
   // 超安全范围（|water| > 2^53）→ 抛错（业务上限远小于此，防御性校验）。
-  if (!Number.isInteger(water)) {
-    throw new RangeError(`settlement water must be integer, received ${water}`);
+  if (!Number.isSafeInteger(water)) {
+    throw new RangeError(`settlement water must be a safe integer, received ${water}`);
   }
   return BigInt(water);
 }

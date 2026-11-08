@@ -19,7 +19,7 @@
  *   model hooks 拦截 update/destroy（_shared.ts A.12 第 5 条）；唯一例外
  *   committed_at/result_snapshot 是"提交时点数据"（0004 表注释语义），经
  *   setCommitted 回填，仍属 append 面。
- * - turnover_state 是可写汇总表（非不可变），经 upsert + version 乐观锁。
+ * - turnover_state 是可写汇总表（非不可变），流水增加/结算消费均锁行并递增 version。
  *
  * 错误码映射（contracts `WalletErrorCode`）：
  * - `IDEMPOTENCY_KEY_REUSED`：operation_key 命中且 request_hash 不一致
@@ -42,7 +42,7 @@ import type {
 } from '../../../infrastructure/database/models/wallet.js';
 import { RecordStatus, ActiveStatus, TurnoverStatus, HoldStatus } from '../../../infrastructure/database/models/wallet.js';
 import type { UserModel as IdentityUserModel } from '../../../infrastructure/database/models/identity.js';
-import type { AssetLedger, EntryIntent, LedgerPost, Tx } from '../ports/wallet-repository.js';
+import type { AssetLedger, EntryIntent, HoldAmountPostInput, HoldAmountPostResult, LedgerPost, Tx } from '../ports/wallet-repository.js';
 import { WalletDomainError, W, isDuplicateKeyError } from '../domain/errors.js';
 
 /** 取事务（Sequelize Transaction 鸭子类型；无 tx = 测试/无事务直连）。
@@ -88,12 +88,29 @@ export class SequelizeWalletLedger implements AssetLedger {
     tx: Tx;
   }): Promise<{ inserted: boolean; operation: AssetOperationModel }> {
     const txq = txOf(input.tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null)
+      throw new TypeError('claimOperation requires an active transaction');
     try {
+      const existingOperation = await this.models.AssetOperationModel.findOne({
+        where: { operationKey: input.operationKey },
+        transaction: txq,
+        attributes: ['id', 'operationKey', 'requestHash', 'committedAt', 'resultSnapshot'],
+        raw: true,
+      } as never);
+      if (existingOperation !== null) {
+        if (!this.hashEquals(existingOperation.requestHash, input.requestHash)) {
+          throw new WalletDomainError(W.IDEMPOTENCY_KEY_REUSED, 'operation_key reused with different request');
+        }
+        if (existingOperation.committedAt === null) {
+          throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'operation pending residue', { retryable: true });
+        }
+        return { inserted: false, operation: existingOperation as unknown as AssetOperationModel };
+      }
       const operation = await this.models.AssetOperationModel.create(
         {
           operationKey: input.operationKey,
           operationType: input.operationType,
-          requestHash: input.requestHash,
+          requestHash: Buffer.from(input.requestHash),
           initiatedByUserId: input.initiatedByUserId,
           extra: input.extra,
           reason: input.reason,
@@ -103,6 +120,7 @@ export class SequelizeWalletLedger implements AssetLedger {
       );
       return { inserted: true, operation };
     } catch (err) {
+      if (err instanceof WalletDomainError) throw err;
       if (isDuplicateKeyError(err)) {
         // 键已存在：request_hash 一致 + committed_at 非空 = 已成功，重放原结果；
         // request_hash 不一致 = 同键异内容 → IDEMPOTENCY_KEY_REUSED。
@@ -142,6 +160,8 @@ export class SequelizeWalletLedger implements AssetLedger {
   }
 
   async setCommitted(operationId: string, committedAt: Date, resultSnapshot: Record<string, unknown>, tx: Tx): Promise<void> {
+    const transaction = tx.transaction as { finished?: string | undefined } | null | undefined;
+    if (transaction == null || transaction.finished != null) throw new TypeError('setCommitted requires an active transaction');
     // committed_at 为提交点回填（提交前仍在事务内写入；不可变语义由 0004
     // "提交时可重复返回的结果快照"注释承载，本字段属提交时点数据）。
     await this.models.AssetOperationModel.update(
@@ -161,6 +181,7 @@ export class SequelizeWalletLedger implements AssetLedger {
 
   async lockAccountsByIds(accountIds: string[], tx: Tx): Promise<AssetAccountModel[]> {
     const txq = txOf(tx);
+    if (txq === null) throw new TypeError('lockAccountsByIds requires an active transaction');
     const rows: AssetAccountModel[] = [];
     // 逐条锁（顺序 = 传入顺序 = id 升序，防死锁；批量 FOR UPDATE 无法控制顺序）。
     for (const id of accountIds) {
@@ -187,6 +208,8 @@ export class SequelizeWalletLedger implements AssetLedger {
 
   async postEntries(operationId: string, intents: EntryIntent[], tx: Tx): Promise<LedgerPost[]> {
     const txq = txOf(tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null)
+      throw new TypeError('postEntries requires an active transaction');
     // 按账户聚合意图（用例层 domain 已校验守恒/符号，本方法只做落库）。
     const byAccount = new Map<string, EntryIntent[]>();
     for (const intent of intents) {
@@ -226,7 +249,7 @@ export class SequelizeWalletLedger implements AssetLedger {
           {
             assetOperationId: operationId,
             assetAccountId: row.id,
-            assetHoldId: null,
+            assetHoldId: intent.assetHoldId ?? null,
             entrySeq: seq,
             entryType: intent.entryType,
             delta: intent.delta.toString(),
@@ -375,6 +398,29 @@ export class SequelizeWalletLedger implements AssetLedger {
   // user 只读（昵称 / 状态门禁；不写入 identity 表）
   // ------------------------------------------------------------------
 
+  async consumeTurnover(userId: string, wagerCoins: bigint, tx: Tx): Promise<TurnoverStateModel | null> {
+    if (wagerCoins <= 0n) throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'settled wager must be positive');
+    const txq = txOf(tx);
+    if (txq === null) {
+      throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'turnover consumption requires an active transaction');
+    }
+    const state = await this.models.TurnoverStateModel.findOne({ where: { userId }, lock: 'FOR UPDATE', transaction: txq } as never);
+    if (state === null) return null;
+    if (state.status !== TurnoverStatus.ACTIVE) return state;
+    const remaining = BigInt(state.remainingCoins);
+    const consumed = remaining < wagerCoins ? remaining : wagerCoins;
+    const version = BigInt(state.version);
+    await state.update(
+      {
+        remainingCoins: (remaining - consumed).toString(),
+        version: (version + 1n).toString(),
+        status: remaining === consumed ? TurnoverStatus.COMPLETE : TurnoverStatus.ACTIVE,
+      } as never,
+      { transaction: txq },
+    );
+    return state;
+  }
+
   async readNickname(userId: string, tx?: Tx): Promise<string | null> {
     const user = await this.userModels.UserModel.findByPk(userId, {
       attributes: ['nickname'],
@@ -451,6 +497,83 @@ export class SequelizeWalletLedger implements AssetLedger {
       }
       throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'asset_hold create failed');
     }
+  }
+
+  async releaseHoldAmount(input: HoldAmountPostInput, tx: Tx): Promise<HoldAmountPostResult> {
+    return await this.postHoldAmount(input, HoldStatus.RELEASED, tx);
+  }
+
+  async consumeHoldAmount(input: HoldAmountPostInput, tx: Tx): Promise<HoldAmountPostResult> {
+    return await this.postHoldAmount(input, HoldStatus.CONSUMED, tx);
+  }
+
+  private async postHoldAmount(input: HoldAmountPostInput, terminalStatus: number, tx: Tx): Promise<HoldAmountPostResult> {
+    const txq = txOf(tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null)
+      throw new TypeError('postHoldAmount requires an active transaction');
+    if (
+      input.amount <= 0n ||
+      input.intents.length === 0 ||
+      !input.intents.some((intent) => intent.assetHoldId === input.holdId && intent.entryType === 3)
+    ) {
+      throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'hold amount operation requires positive amount and associated HOLD entry');
+    }
+    // Lock every intent account in numeric order before the hold, matching the
+    // repository-wide account -> hold order. Validate hold ownership under lock below.
+    const accountIds = [...new Set(input.intents.map((intent) => intent.accountId))].sort((a, b) => {
+      const aa = BigInt(a);
+      const bb = BigInt(b);
+      return aa < bb ? -1 : aa > bb ? 1 : 0;
+    });
+    const accounts = await this.lockAccountsByIds(accountIds, tx);
+    const hold = await this.models.AssetHoldModel.findByPk(input.holdId, { lock: 'FOR UPDATE', transaction: txq } as never);
+    if (hold === null) throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, `asset hold missing: ${input.holdId}`);
+    const remaining = BigInt(hold.remainingAmount);
+    const holdIntents = input.intents.filter((intent) => intent.assetHoldId === input.holdId && intent.entryType === 3);
+    if (
+      !accounts.some((account) => account.id === hold.assetAccountId) ||
+      (hold.status !== HoldStatus.OPEN && hold.status !== HoldStatus.PARTIAL) ||
+      input.amount > remaining ||
+      holdIntents.length !== 1 ||
+      holdIntents.some(
+        (intent) =>
+          intent.accountId !== hold.assetAccountId ||
+          intent.delta !== (terminalStatus === HoldStatus.CONSUMED ? -input.amount : 0n) ||
+          intent.frozenDelta !== -input.amount,
+      )
+    ) {
+      throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'hold is closed or amount/frozen ledger entries mismatch');
+    }
+    const nextRemaining = remaining - input.amount;
+    const status = nextRemaining === 0n ? terminalStatus : HoldStatus.PARTIAL;
+    const posts = await this.postEntries(input.operationId, input.intents, tx);
+    await hold.update({ remainingAmount: nextRemaining.toString(), status, closedAt: nextRemaining === 0n ? new Date() : null } as never, {
+      transaction: txq,
+    });
+    return { hold, posts };
+  }
+
+  async readHoldForOperation(
+    holdId: string,
+    expected: { accountId: string; holdType: number; amount: bigint },
+    tx: Tx,
+  ): Promise<AssetHoldModel | null> {
+    const txq = txOf(tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null)
+      throw new TypeError('readHoldForOperation requires an active transaction');
+    // Validate hold linkage and quantity under the same transaction. Mutating operations
+    // acquire account then hold locks inside postHoldAmount.
+    const hold = await this.models.AssetHoldModel.findByPk(holdId, { transaction: txq } as never);
+    if (
+      hold === null ||
+      hold.assetAccountId !== expected.accountId ||
+      hold.holdType !== expected.holdType ||
+      BigInt(hold.remainingAmount) < expected.amount ||
+      (hold.status !== HoldStatus.OPEN && hold.status !== HoldStatus.PARTIAL)
+    ) {
+      return null;
+    }
+    return hold;
   }
 
   async releaseHold(holdId: string, tx: Tx): Promise<AssetHoldModel> {

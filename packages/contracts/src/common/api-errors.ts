@@ -41,11 +41,30 @@ export const GameErrorCode = {
   GAME_DIFFICULTY_NOT_FOUND: 'GAME_DIFFICULTY_NOT_FOUND',
 } as const;
 
+/** rooms 领域稳定错误码。 */
+export const RoomErrorCode = {
+  ROOM_NOT_FOUND: 'ROOM_NOT_FOUND',
+  ROOM_FULL: 'ROOM_FULL',
+  ROOM_CLOSED: 'ROOM_CLOSED',
+  ROUND_NOT_FOUND: 'ROUND_NOT_FOUND',
+  ROUND_NOT_ACTIVE: 'ROUND_NOT_ACTIVE',
+  ROUND_ALREADY_SETTLED: 'ROUND_ALREADY_SETTLED',
+  GAME_ENTRY_NOT_FOUND: 'GAME_ENTRY_NOT_FOUND',
+  GAME_ENTRY_EXPIRED: 'GAME_ENTRY_EXPIRED',
+  WALLET_INSUFFICIENT: 'WALLET_INSUFFICIENT',
+  FENCING_CONFLICT: 'FENCING_CONFLICT',
+  STORAGE_UNAVAILABLE: 'STORAGE_UNAVAILABLE',
+  ROUND_PLAYER_NOT_FOUND: 'ROUND_PLAYER_NOT_FOUND',
+  INVALID_SUBMISSION: 'INVALID_SUBMISSION',
+  ROUND_IN_PROGRESS: 'ROUND_IN_PROGRESS',
+} as const;
+
 /** 全部错误码的并集。新增领域错误码在此登记后才能被 HTTP 边界使用。 */
 export const ApiErrorCode = {
   ...TransportErrorCode,
   ...IdempotencyErrorCode,
   ...GameErrorCode,
+  ...RoomErrorCode,
 } as const;
 
 export type ApiErrorCode = (typeof ApiErrorCode)[keyof typeof ApiErrorCode];
@@ -74,6 +93,20 @@ export const API_ERROR_HTTP_STATUS: Readonly<Record<ApiErrorCode, number>> = {
   [IdempotencyErrorCode.IDEMPOTENCY_KEY_REUSED]: 409,
   [GameErrorCode.GAME_NOT_FOUND]: 404,
   [GameErrorCode.GAME_DIFFICULTY_NOT_FOUND]: 404,
+  [RoomErrorCode.ROOM_NOT_FOUND]: 404,
+  [RoomErrorCode.ROUND_NOT_FOUND]: 404,
+  [RoomErrorCode.GAME_ENTRY_NOT_FOUND]: 404,
+  [RoomErrorCode.ROUND_PLAYER_NOT_FOUND]: 403,
+  [RoomErrorCode.ROOM_FULL]: 409,
+  [RoomErrorCode.ROOM_CLOSED]: 409,
+  [RoomErrorCode.ROUND_NOT_ACTIVE]: 409,
+  [RoomErrorCode.ROUND_ALREADY_SETTLED]: 409,
+  [RoomErrorCode.FENCING_CONFLICT]: 409,
+  [RoomErrorCode.ROUND_IN_PROGRESS]: 409,
+  [RoomErrorCode.GAME_ENTRY_EXPIRED]: 409,
+  [RoomErrorCode.WALLET_INSUFFICIENT]: 422,
+  [RoomErrorCode.INVALID_SUBMISSION]: 422,
+  [RoomErrorCode.STORAGE_UNAVAILABLE]: 503,
 };
 
 /**

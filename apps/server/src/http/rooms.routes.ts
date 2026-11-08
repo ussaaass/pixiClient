@@ -252,12 +252,17 @@ export function createRoomsRoutes(module: RoomsModule, identityModule: IdentityM
     if (!Value.Check(RoundSnapshotRequestSchema, snapshotQuery)) {
       throw new ApiError('REQUEST_VALIDATION_FAILED', '快照游标参数格式非法。', { status: 400 });
     }
-    const result = await submitInTx(module, sequelize, async (tx) => module.roundSnapshot({
-      userId,
-      roundId,
-      ...(typeof ctx.query.afterSeq === 'string' ? { afterSeq: ctx.query.afterSeq } : {}),
-      ...(typeof ctx.query.limit === 'string' ? { limit: Number(ctx.query.limit) } : {}),
-    }, tx));
+    const result = await submitInTx(module, sequelize, async (tx) =>
+      module.roundSnapshot(
+        {
+          userId,
+          roundId,
+          ...(typeof ctx.query.afterSeq === 'string' ? { afterSeq: ctx.query.afterSeq } : {}),
+          ...(typeof ctx.query.limit === 'string' ? { limit: Number(ctx.query.limit) } : {}),
+        },
+        tx,
+      ),
+    );
     setSuccess(ctx, { message: '牌局快照', data: result, schema: RoundSnapshotResponseSchema, status: 200 });
   });
 

@@ -7,6 +7,7 @@
     "./infrastructure/database": "./src/infrastructure/database/index.ts",
     "./infrastructure/database/migrations": "./src/infrastructure/database/migrator.ts",
     "./infrastructure/database/models": "./src/infrastructure/database/models/index.ts",
+    "./infrastructure/database/models/game": "./src/infrastructure/database/models/game.ts",
     "./modules/identity": "./src/modules/identity/index.ts",
     "./modules/identity/public": "./src/modules/identity/public.ts",
     "./modules/wallet": "./src/modules/wallet/index.ts",
