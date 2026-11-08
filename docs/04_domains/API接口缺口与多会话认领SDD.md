@@ -50,6 +50,10 @@
 - `SESSION-GAP-2026-11-07-C` 认领 API-GAP-014 的审计远端适配器测试子切片，范围限定 `apps/admin/src/platform/admin-audit/remote-admin-audit-adapter.test.ts`。测试仅验证当前 adapter 对现有 client 的路径/query/响应及错误传播；server 侧未发现对应 GET 路由，故该测试不是 production endpoint 可用性证明。focused Docker test：1 file / 2 tests passed。
 - `SESSION-GAP-2026-11-07-D` 认领 API-GAP-002 的 API client transport contract test 子切片，范围仅 `apps/web/src/platform/http/api-client.test.ts`；覆盖 malformed request、credentials/request ID、endpoint method/path、envelope 与失败处理。focused Docker test：1 file / 7 tests passed。此测试不证明生产登录/session composition；审计发现现有 `refresh()` / `deviceLogin()` 向客户端 schema validation 传入 `{}`，但契约要求 operationId/设备凭证字段，相关流程因此在发请求前失败，需独立协调后修复，不在本测试子切片中改实现。
 
+## 5.1 附加契约验证任务
+
+- `SESSION-API-CONTRACT-2026-11-07-E`：对 GAP-002 中记录的 `deviceLogin` / `refresh` 请求体与契约 mismatch 增加独立回归测试；范围仅 `apps/web/src/platform/http/identity-request-contract.test.ts`，验证现有客户端调用与 `IdentityEndpoint` 请求 schema 的符合性。测试只揭示当前调用不符合契约，不修改 client/schema，不代表生产身份闭环完成；修复需另行协调设备凭证来源与 refresh operationId 生命周期。
+
 ## 6. 变更历史
 
 | 日期 | 变更 |
@@ -57,3 +61,4 @@
 | 2026-11-07 | 新建接口缺口总账，拆分缺失路由、未接生产客户端、Mock/占位与决策/外部凭证阻塞；建立跨 session 唯一认领、进度、冲突与完成协议。 |
 | 2026-11-07 | API-GAP-005 完成快照查询端点、成员授权与游标分页；contract/use-case/route tests 通过，并提交 `29944ac` 推送至 origin/main，认领标记 DONE。 |
 | 2026-11-07 | 新增 GAP-008、GAP-014、GAP-002 测试子切片 session 认领；明确生产 wallet 依赖身份会话、Admin 审计适配器测试不等于服务端生产路由验证，并记录现有 deviceLogin/refresh client 与请求 schema 不匹配的阻塞。 |
+| 2026-11-07 | 登记 GAP-002 identity request/schema mismatch 的附加回归测试子任务；限定为新文件且不修改 API client/contracts，明确设备凭证与 operationId lifecycle 仍需协调。 |
