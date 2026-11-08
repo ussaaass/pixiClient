@@ -42,6 +42,7 @@
 | API-GAP-021 | P2 / 2（wallet parser 修正） | 修复 `cny_to_coin_ratio` 正整数捕获组解析 | **已修复并通过 focused 验证** | parser 正则未定义 capture groups，导致 match[1]/match[2] 为 undefined，合法 `1:10` 被错误拒绝；权威双资产 SDD §2 要求 `1:10 → 10n/100n`；`ledger-rules.test.ts` 已验证合法和非法值 | 仅修复 pure parser + 该测试，不能改资金业务语义；focused Docker Vitest/backend typecheck 与 Graphify 验证 | SESSION-API-GAP-2026-11-07-L / DONE / 100%（正整数比例 capture groups 已恢复；测试/typecheck 已通过） |
 | API-GAP-022 | P2 / 2（social use-case 测试） | Social message-list 成员鉴权与游标 use-case 回归 | **已补直接单测** | `message-list.test.ts` 覆盖非成员拒绝且不查 messages、成员 cursor/limit/DTO 映射、空与非法 cursor、50 条分页游标；Docker Vitest 1 file / 4 tests、Prettier、ESLint、backend typecheck passed | 仅验证 use-case 行为，不改 route 或 production policy，不宣称实时消息闭环 | SESSION-API-GAP-2026-11-07-M / DONE / 100%（限 use-case test） |
 | API-GAP-023 | P2 / 2（GAP-008 server route 测试） | Wallet summary/activity server route contract regression | **路由测试已通过；生产组合仍未验** | `wallet.routes.test.ts` 通过 fake module 验证 summary/activity 的鉴权、principal userId、cursor、success envelope/schema；Docker node:test 1/1，Prettier、ESLint、server typecheck 通过 | 仅 route contract，不改生产实现，不宣称 production composition/ledger closure | SESSION-API-GAP-2026-11-07-N / DONE / 100%（限 route test） |
+| API-GAP-024 | P2 / 2（GAP-010 安全 HTTP contract 测试） | Payment channels / funding orders route contract regression | **路由已存在；专用测试缺失** | `payments.routes.ts` 已实现 channels、orders list/create；无 `payments.routes.test.ts`。支付 provider/商户凭证仍外部阻塞，路由测试仅验证 HTTP contract | 新增隔离 test file，验证认证、只读数据映射及 funding order schema/状态码；不触碰 dirty 的 `main.ts`/`app.test.ts`，不改路由/支付业务，不触碰 dev simulate 路径，不宣称真实验签/履约 | SESSION-API-GAP-2026-11-07-O / CLAIMED / 0% |
 
 
 ## 4. 可并行切片建议
@@ -72,6 +73,7 @@
 - `SESSION-API-GAP-2026-11-07-L`（API-GAP-021）已修复 wallet ratio parser 正则捕获组，并更新测试验证合法 `1:10` / `12:345` 返回精确比例；Docker Vitest 1 file / 8 tests、ESLint、backend typecheck 通过。
 - `SESSION-API-GAP-2026-11-07-M`（API-GAP-022）已完成 `packages/backend/src/modules/social/application/message-list.test.ts`，覆盖成员校验、查询输入和游标归一，不触碰生产实现。Docker Vitest 1 file / 4 tests、Prettier、ESLint、backend typecheck 通过。
 - `SESSION-API-GAP-2026-11-07-N`（API-GAP-023）已完成 `apps/server/src/http/wallet.routes.test.ts`，用 fake modules 验证未认证拒绝、principal userId/cursor 转发和 summary/activity response schemas；Docker node:test 1/1、Prettier、ESLint、server typecheck 通过。仅 route contract，不证明生产组合或 ledger closure。
+- `SESSION-API-GAP-2026-11-07-O`（API-GAP-024）认领新增 `apps/server/src/http/payments.routes.test.ts`，仅验证 payment channels / funding orders 的 HTTP contract；不触碰 dirty main/app.test，不改生产路由、不启用开发模拟支付，也不解除 GAP-010 外部渠道凭证与验签阻塞。
 
 ## 6. 变更历史
 
@@ -82,3 +84,4 @@
 | 2026-11-07 | 新增 GAP-008、GAP-014、GAP-002 测试子切片 session 认领；明确生产 wallet 依赖身份会话、Admin 审计适配器测试不等于服务端生产路由验证，并记录现有 deviceLogin/refresh client 与请求 schema 不匹配的阻塞。 |
 | 2026-11-07 | 登记 GAP-002 identity request/schema mismatch 的附加回归测试子任务；限定为新文件且不修改 API client/contracts，明确设备凭证与 operationId lifecycle 仍需协调；focused Docker Vitest 1/1 通过。 |
 | 2026-11-07 | 多会话推进：复核并完成 GAP-008 wallet API client contract tests（6 tests）与 GAP-009 TurnoverGate unit tests（7 tests；typecheck 因 jose/ioredis 缺依赖未通过）；记录 GAP-003 摘要 DTO 隐私/契约审查及字段决策阻塞。两个测试子切片均不代表生产钱包接线或资金端到端闭环，并将 GAP-003 从“待核实”更新为已证实缺失/字段待决。后续审查修正 GAP-009 单测标题，避免误称直接覆盖 ACTIVE/COMPLETE/REVERSED 状态；新增 API-GAP-018 Support 路由 contract regression 并完成 focused 验证；GAP-019 wallet ledger-rules 单测 8 项通过；运行时验证发现 parser 的无捕获组正则导致合法比例错误返回 null，先前误以为仅是测试断言问题；修复单列 API-GAP-021。GAP-020 Social history route test 已通过 focused 验证。 |
+| 2026-11-07 | 完成 GAP-022 Social message-list use-case tests 与 GAP-023 wallet summary/activity server route tests；认领 GAP-024 payment channels/funding orders server route contract tests，明确不解除 GAP-010 的外部支付渠道阻塞。 |
