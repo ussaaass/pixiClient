@@ -56,7 +56,7 @@
 
 ## 5.1 附加契约验证任务
 
-- `SESSION-API-CONTRACT-2026-11-07-E`：对 GAP-002 中记录的 `deviceLogin` / `refresh` 请求体与契约 mismatch 增加独立回归测试；范围仅 `apps/web/src/platform/http/identity-request-contract.test.ts`，验证现有客户端调用与 `IdentityEndpoint` 请求 schema 的符合性。测试只揭示当前调用不符合契约，不修改 client/schema，不代表生产身份闭环完成；修复需另行协调设备凭证来源与 refresh operationId 生命周期。
+- `SESSION-API-CONTRACT-2026-11-07-E`：对 GAP-002 中记录的 `deviceLogin` / `refresh` 请求体与契约 mismatch 增加独立回归测试；范围仅 `apps/web/src/platform/http/identity-request-contract.test.ts`，验证现有客户端调用与 `IdentityEndpoint` 请求 schema 的符合性。测试只揭示当前调用不符合契约，不修改 client/schema，不代表生产身份闭环完成；修复需另行协调设备凭证来源与 refresh operationId 生命周期。focused Docker test 通过：1 file / 1 test。
 - `SESSION-API-GAP-2026-11-07-G`（API-GAP-009）已完成：仅新增 `packages/backend/src/modules/wallet/application/turnover.test.ts`，覆盖统一 turnover gate 状态/错误/事务透传；不改 gate/ledger/settlement 生产代码，不宣称端到端资金/并发/回滚闭环。focused Docker Vitest 1 file / 7 tests passed；backend typecheck 受 `jose`、`ioredis` 缺少依赖阻塞。
 - `SESSION-API-GAP-2026-11-07-H`（API-GAP-003）：仅在本 SDD 增补只读契约审查结论，确认当前无 `/api/v1/me` DTO/route，列出字段冻结前的隐私边界与待决字段需求；不改 contracts/routes，不推断产品字段。
 
@@ -67,5 +67,5 @@
 | 2026-11-07 | 新建接口缺口总账，拆分缺失路由、未接生产客户端、Mock/占位与决策/外部凭证阻塞；建立跨 session 唯一认领、进度、冲突与完成协议。 |
 | 2026-11-07 | API-GAP-005 完成快照查询端点、成员授权与游标分页；contract/use-case/route tests 通过，并提交 `29944ac` 推送至 origin/main，认领标记 DONE。 |
 | 2026-11-07 | 新增 GAP-008、GAP-014、GAP-002 测试子切片 session 认领；明确生产 wallet 依赖身份会话、Admin 审计适配器测试不等于服务端生产路由验证，并记录现有 deviceLogin/refresh client 与请求 schema 不匹配的阻塞。 |
-| 2026-11-07 | 登记 GAP-002 identity request/schema mismatch 的附加回归测试子任务；限定为新文件且不修改 API client/contracts，明确设备凭证与 operationId lifecycle 仍需协调。 |
+| 2026-11-07 | 登记 GAP-002 identity request/schema mismatch 的附加回归测试子任务；限定为新文件且不修改 API client/contracts，明确设备凭证与 operationId lifecycle 仍需协调；focused Docker Vitest 1/1 通过。 |
 | 2026-11-07 | 多会话推进：复核并完成 GAP-008 wallet API client contract tests（6 tests）与 GAP-009 TurnoverGate unit tests（7 tests；typecheck 因 jose/ioredis 缺依赖未通过）；记录 GAP-003 摘要 DTO 隐私/契约审查及字段决策阻塞。两个测试子切片均不代表生产钱包接线或资金端到端闭环，并将 GAP-003 从“待核实”更新为已证实缺失/字段待决。 |
