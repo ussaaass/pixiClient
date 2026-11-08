@@ -210,7 +210,13 @@ export function createSupportRoutes(module: SupportModule, identityModule: Ident
     if (!Value.Check(ReplyRequestSchema, body)) {
       throw new ApiError('REQUEST_VALIDATION_FAILED', '请求体 schema 校验失败。', { status: 400 });
     }
-    const senderType = (body.senderType as number) ?? 1; // 默认 CUSTOMER=1
+    // Player-auth endpoint is customer-only: sender kind is server-owned and must not
+    // select the staff/system authorization branch. Admin/SYSTEM messages require a
+    // separately authenticated internal/Admin endpoint (not this player route).
+    if (body.senderType !== undefined && body.senderType !== 1) {
+      throw new ApiError('REQUEST_VALIDATION_FAILED', '用户端不允许指定客服或系统发信人类型。', { status: 400 });
+    }
+    const senderType = 1; // CUSTOMER=1; never trust caller to select another actor
     const result = await submitInTx(module, sequelize, async (tx, outbox) => {
       return module.ticketReply.run({
         userId,
@@ -219,7 +225,7 @@ export function createSupportRoutes(module: SupportModule, identityModule: Ident
         messageKey: `sup:${userId}:${randomUUID()}`,
         messageType: (body.messageType as number) ?? 1,
         senderType,
-        senderUserId: senderType === 3 ? null : userId, // SYSTEM=3 时 sender_user_id NULL
+        senderUserId: userId,
         tx,
         outbox,
       });
