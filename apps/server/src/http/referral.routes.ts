@@ -34,6 +34,7 @@ import type { Sequelize } from 'sequelize';
 import Router from '@koa/router';
 import type { Context } from 'koa';
 import { Type } from '@sinclair/typebox';
+import { CaptureInviteAttributionRequestSchema } from '@gameing/contracts/invite-agent';
 import { Value } from '@gameing/contracts/wallet';
 import type { ReferralModule, Tx } from '@gameing/backend/modules/referral/public';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
@@ -255,9 +256,8 @@ export function createReferralRoutes(module: ReferralModule, identityModule: Ide
   // Redis 暂存 IP 摘要 + 最新有效邀请码 + TTL 经 §9 第 6 步后续运维闭环）。
   router.post('/public/referral-attribution/candidate', async (ctx) => {
     const body = getBody(ctx);
-    const inviteCode = (body.inviteCode as string | undefined) ?? null;
-    if (inviteCode !== null && !/^[A-Z0-9]{8,16}$/.test(inviteCode)) {
-      throw new ApiError('REQUEST_VALIDATION_FAILED', '邀请码格式非法（须 8~16 位 [A-Z0-9]）。', { status: 400 });
+    if (!Value.Check(CaptureInviteAttributionRequestSchema, body)) {
+      throw new ApiError('REQUEST_VALIDATION_FAILED', '邀请码格式非法（须 8~16 位 [A-Z0-9]），且请求体不可包含额外字段。', { status: 400 });
     }
     // 首版：无 Redis 暂存，返回未捕获（客户端登录时经归因用例落库，
     // 候选状态在归因事务内检查，docs 第 1 节"已有上级账号不因再次访问被换绑"）。
