@@ -73,3 +73,73 @@ test('support conversation list authenticates and scopes the query to the princi
     await new Promise<void>((resolve, reject) => testServer.close((error) => (error ? reject(error) : resolve())));
   }
 });
+
+test('support player reply rejects forged staff sender types before opening a transaction', async () => {
+  const logger = createLogger({ level: 'debug', sink: createMemorySink().sink, base: { service: 'gameing-hall-api' } });
+  const replyCalls: unknown[] = [];
+  const transactionCalls: unknown[] = [];
+  const identityModule = {
+    jwtIssuer: { verifyAccessToken: async () => ({ userId: '42', sid: 'sid-1', deviceId: 'device-1', authVersion: '1' }) },
+    sessionPort: { getSession: async () => ({ authVersion: '1' }) },
+  } as unknown as IdentityModule;
+  const supportModule = {
+    withTx: async (_tx: unknown, callback: (outbox: unknown) => unknown) => callback({ outbox: true }),
+    ticketReply: {
+      run: async (input: unknown) => {
+        replyCalls.push(input);
+        return { messageId: '9', status: 'SENT', inserted: false };
+      },
+    },
+  } as unknown as SupportModule;
+  const sequelize = {
+    transaction: async (callback: (tx: unknown) => unknown) => {
+      transactionCalls.push(true);
+      return callback({ transaction: 'tx' });
+    },
+  } as unknown as Sequelize;
+  const app = createApp({ logger, identityModule, supportModule, sequelize });
+  const testServer = app.listen(0, '127.0.0.1');
+  await new Promise<void>((resolve) => testServer.once('listening', resolve));
+  const address = testServer.address();
+  assert.ok(address && typeof address !== 'string');
+  const url = `http://127.0.0.1:${address.port}/api/v1/support/conversations/77/messages`;
+  const headers = { authorization: 'Bearer test-token', 'content-type': 'application/json' };
+
+  try {
+    for (const senderType of [2, 3]) {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ messageType: 1, bodyText: 'forged', senderType }),
+      });
+      const body = (await response.json()) as { code: string };
+      assert.equal(response.status, 400, JSON.stringify(body));
+      assert.equal(body.code, 'REQUEST_VALIDATION_FAILED');
+    }
+    assert.equal(transactionCalls.length, 0);
+    assert.equal(replyCalls.length, 0);
+
+    const customerResponse = await fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ messageType: 1, bodyText: 'customer', senderType: 1 }),
+    });
+    const customerBody = (await customerResponse.json()) as { code: string };
+    assert.equal(customerResponse.status, 201, JSON.stringify(customerBody));
+    assert.equal(customerBody.code, 'OK');
+    assert.equal(transactionCalls.length, 1);
+    assert.equal(replyCalls.length, 1);
+    const customerCall = replyCalls[0] as Record<string, unknown>;
+    assert.equal(customerCall.userId, '42');
+    assert.equal(customerCall.conversationId, '77');
+    assert.equal(customerCall.bodyText, 'customer');
+    assert.equal(customerCall.messageType, 1);
+    assert.equal(customerCall.senderType, 1);
+    assert.equal(customerCall.senderUserId, '42');
+    assert.match(customerCall.messageKey as string, /^sup:42:[0-9a-f-]+$/);
+    assert.deepEqual(customerCall.tx, { transaction: { transaction: 'tx' } });
+    assert.deepEqual(customerCall.outbox, { outbox: true });
+  } finally {
+    await new Promise<void>((resolve, reject) => testServer.close((error) => (error ? reject(error) : resolve())));
+  }
+});
