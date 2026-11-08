@@ -233,7 +233,10 @@ describe('Admin workspace shell', () => {
     await vi.waitFor(() => expect(host.querySelector('.agent-config-editor')).not.toBeNull());
     expect(host.textContent).toContain('LOCAL_DEMO');
     const payout = host.querySelector<HTMLInputElement>('.agent-config-editor input[type="number"]')!;
-    payout.value = '5'; payout.dispatchEvent(new Event('input', { bubbles: true })); payout.dispatchEvent(new Event('change', { bubbles: true })); await nextTick();
+    payout.value = '5';
+    payout.dispatchEvent(new Event('input', { bubbles: true }));
+    payout.dispatchEvent(new Event('change', { bubbles: true }));
+    await nextTick();
     expect(host.querySelector('.agent-config-diff')?.textContent).toContain('3 → 5');
     host.querySelector<HTMLAnchorElement>('.agent-config-actions .agent-config-primary')!.click();
     await vi.waitFor(() => expect(host.querySelector('.agent-simulation-controls')).not.toBeNull());
@@ -245,7 +248,9 @@ describe('Admin workspace shell', () => {
     await nextTick();
     const reason = document.querySelector<HTMLInputElement>('.agent-config-publish-summary + label input');
     expect(reason).not.toBeNull();
-    reason!.value = '验证本机域级配置发布'; reason!.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
+    reason!.value = '验证本机域级配置发布';
+    reason!.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
     document.querySelector<HTMLButtonElement>('.agent-downline-purpose-submit')!.click();
     await vi.waitFor(() => expect(host.textContent).toContain('本机演练发布成功'));
 
@@ -264,13 +269,20 @@ describe('Admin workspace shell', () => {
     await router.push('/agent/announcements');
     await nextTick();
     expect(host.textContent).toContain('LOCAL_DEMO');
-    const createButton = [...host.querySelectorAll<HTMLButtonElement>('.agent-operations-panel-tools button')].find((button) => button.textContent?.includes('新建公告'))!;
+    const createButton = [...host.querySelectorAll<HTMLButtonElement>('.agent-operations-panel-tools button')].find((button) =>
+      button.textContent?.includes('新建公告'),
+    )!;
     createButton.click();
     await nextTick();
-    const fields = host.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>('.agent-announcement-dialog input, .agent-announcement-dialog textarea');
-    fields[0]!.value = '十三张规则提醒'; fields[0]!.dispatchEvent(new Event('input', { bubbles: true }));
-    fields[1]!.value = '进入游戏前请查看本档位的牌型和结算规则。'; fields[1]!.dispatchEvent(new Event('input', { bubbles: true }));
-    fields[2]!.value = '整理大厅规则说明'; fields[2]!.dispatchEvent(new Event('input', { bubbles: true }));
+    const fields = host.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>(
+      '.agent-announcement-dialog input, .agent-announcement-dialog textarea',
+    );
+    fields[0]!.value = '十三张规则提醒';
+    fields[0]!.dispatchEvent(new Event('input', { bubbles: true }));
+    fields[1]!.value = '进入游戏前请查看本档位的牌型和结算规则。';
+    fields[1]!.dispatchEvent(new Event('input', { bubbles: true }));
+    fields[2]!.value = '整理大厅规则说明';
+    fields[2]!.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
     expect(document.body.querySelector('.agent-announcement-live-preview')?.textContent).toContain('十三张规则提醒');
     host.querySelector<HTMLButtonElement>('.agent-announcement-dialog .agent-downline-purpose-submit')!.click();
@@ -283,7 +295,8 @@ describe('Admin workspace shell', () => {
     await chooseAdminOption(host, '.agent-announcement-dialog label:nth-of-type(1) .el-select', '1 小时后展示');
     await chooseAdminOption(host, '.agent-announcement-dialog label:nth-of-type(2) .el-select', '6 小时');
     const publishReason = host.querySelector<HTMLTextAreaElement>('.agent-announcement-dialog textarea')!;
-    publishReason.value = '安排一小时后开始展示'; publishReason.dispatchEvent(new Event('input', { bubbles: true }));
+    publishReason.value = '安排一小时后开始展示';
+    publishReason.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
     host.querySelector<HTMLButtonElement>('.agent-announcement-dialog .agent-downline-purpose-submit')!.click();
     await vi.waitFor(() => expect(host.querySelector('.agent-announcement-status')?.textContent).toBe('定时中'));
@@ -291,7 +304,8 @@ describe('Admin workspace shell', () => {
     host.querySelector<HTMLButtonElement>('.agent-announcement-card .agent-announcement-retract')!.click();
     await nextTick();
     const retractReason = host.querySelector<HTMLTextAreaElement>('.agent-announcement-dialog textarea')!;
-    retractReason.value = '演练撤回流程'; retractReason.dispatchEvent(new Event('input', { bubbles: true }));
+    retractReason.value = '演练撤回流程';
+    retractReason.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
     host.querySelector<HTMLButtonElement>('.agent-announcement-dialog .agent-downline-purpose-submit')!.click();
     await vi.waitFor(() => expect(host.querySelector('.agent-announcement-status')?.textContent).toBe('已撤回'));
@@ -317,7 +331,8 @@ describe('Admin workspace shell', () => {
     host.querySelector<HTMLButtonElement>('.agent-social-moderation-card footer button')!.click();
     await nextTick();
     const moderationReason = document.body.querySelector<HTMLTextAreaElement>('.agent-social-purpose-dialog textarea')!;
-    moderationReason.value = '举报内容确认违反社区规范'; moderationReason.dispatchEvent(new Event('input', { bubbles: true }));
+    moderationReason.value = '举报内容确认违反社区规范';
+    moderationReason.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
     document.body.querySelector<HTMLButtonElement>('.agent-social-purpose-dialog button[type="submit"]')!.click();
     await vi.waitFor(() => expect(host.querySelector('.agent-social-case-status')?.textContent).toBe('已处理'));
@@ -325,15 +340,26 @@ describe('Admin workspace shell', () => {
     await nextTick();
     expect(document.body.querySelector('.agent-social-purpose-dialog')?.textContent).toContain('写入不可变代理审计');
     const reason = document.body.querySelector<HTMLTextAreaElement>('.agent-social-purpose-dialog textarea')!;
-    reason.value = '处理用户申诉工单'; reason.dispatchEvent(new Event('input', { bubbles: true }));
+    reason.value = '处理用户申诉工单';
+    reason.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
     document.body.querySelector<HTMLButtonElement>('.agent-social-purpose-dialog .agent-downline-purpose-submit')!.click();
-    await vi.waitFor(() => expect(document.body.querySelector('.agent-social-message-list')?.textContent).toContain('我想确认一下这周的活动时间'));
+    await vi.waitFor(() =>
+      expect(document.body.querySelector('.agent-social-message-list')?.textContent).toContain('我想确认一下这周的活动时间'),
+    );
     const persisted = await openAdminDevelopmentDatabase();
     const audits = await persisted.getAll('agent_audit_events');
     expect(audits).toHaveLength(2);
-    expect(audits.find((audit) => audit.actionCode === 'PRIVATE_MESSAGE_READ')).toMatchObject({ resourceType: 'SOCIAL_CONVERSATION', resourceKey: '93001', purpose: '处理用户申诉工单', snapshot: { messageCount: 3 } });
-    expect(audits.find((audit) => audit.actionCode === 'SOCIAL_MODERATION_DECISION')).toMatchObject({ resourceType: 'SOCIAL_MODERATION_CASE', resourceKey: '97002' });
+    expect(audits.find((audit) => audit.actionCode === 'PRIVATE_MESSAGE_READ')).toMatchObject({
+      resourceType: 'SOCIAL_CONVERSATION',
+      resourceKey: '93001',
+      purpose: '处理用户申诉工单',
+      snapshot: { messageCount: 3 },
+    });
+    expect(audits.find((audit) => audit.actionCode === 'SOCIAL_MODERATION_DECISION')).toMatchObject({
+      resourceType: 'SOCIAL_MODERATION_CASE',
+      resourceKey: '97002',
+    });
     expect(JSON.stringify(audits)).not.toContain('确认一下这周的活动时间');
     persisted.close();
     document.body.querySelector<HTMLButtonElement>('.agent-social-conversation-drawer footer button')!.click();
@@ -342,24 +368,44 @@ describe('Admin workspace shell', () => {
     expect(host.querySelector('.agent-audit-table')?.textContent).toContain('SOCIAL_MODERATION_DECISION');
     const fixtureDatabase = await openAdminDevelopmentDatabase();
     const moderatedCase = await fixtureDatabase.get('social_moderation_cases', '97002');
-    if (moderatedCase) await fixtureDatabase.put('social_moderation_cases', { ...moderatedCase, contentStatus: SocialContentStatus.PUBLISHED, caseStatus: SocialModerationCaseStatus.OPEN });
+    if (moderatedCase)
+      await fixtureDatabase.put('social_moderation_cases', {
+        ...moderatedCase,
+        contentStatus: SocialContentStatus.PUBLISHED,
+        caseStatus: SocialModerationCaseStatus.OPEN,
+      });
     fixtureDatabase.close();
   }, 20_000);
 
-  it('shows the login design but does not collect or submit credentials before the auth API exists', async () => {
+  it('submits Admin credentials to the login API and stores the session token', async () => {
+    const fetchMock = vi.fn().mockResolvedValue({
+      ok: true,
+      json: async () => ({
+        code: 'OK',
+        data: { adminUserId: '41', accessToken: 'jwt-admin', sessionKey: 'session-1' },
+      }),
+    });
+    vi.stubGlobal('fetch', fetchMock);
     await router.push('/admin/login');
     await nextTick();
 
     expect(host.querySelector('.login-card h2')?.textContent).toBe('管理员登录');
-    host.querySelector<HTMLButtonElement>('.login-card-heading .page-help-trigger')!.click();
-    await nextTick();
-    expect(document.body.querySelector('.page-help-dialog')?.textContent).toContain('不会发送或保存输入凭证');
-    document.body.querySelector<HTMLButtonElement>('.page-help-close')!.click();
-    await nextTick();
-    expect(host.querySelector<HTMLInputElement>('#admin-account')?.disabled).toBe(true);
-    expect(host.querySelector<HTMLInputElement>('#admin-password')?.disabled).toBe(true);
-    expect(host.querySelector<HTMLButtonElement>('.login-submit')?.disabled).toBe(true);
-    expect(host.querySelector('.login-preview-link')).not.toBeNull();
+    host.querySelector<HTMLInputElement>('#admin-account')!.value = 'ops-admin';
+    host.querySelector<HTMLInputElement>('#admin-account')!.dispatchEvent(new Event('input'));
+    host.querySelector<HTMLInputElement>('#admin-password')!.value = 'secret';
+    host.querySelector<HTMLInputElement>('#admin-password')!.dispatchEvent(new Event('input'));
+    host.querySelector<HTMLFormElement>('.login-card form')!.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+    await vi.waitFor(() => expect(fetchMock).toHaveBeenCalled());
+
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/admin-api/v1/auth/login',
+      expect.objectContaining({
+        method: 'POST',
+        credentials: 'include',
+        body: JSON.stringify({ username: 'ops-admin', password: 'secret' }),
+      }),
+    );
+    await vi.waitFor(() => expect(sessionStorage.getItem('admin.accessToken')).toBe('jwt-admin'));
   });
 
   it('routes the Admin application root to the namespaced login path', async () => {
@@ -394,11 +440,23 @@ describe('Admin workspace shell', () => {
   });
 
   it('runs isolated Mock payment scenarios through a local application and never claims a real payment', async () => {
-    const createdChannel = await localPaymentChannelApplication.create({ requestKey: crypto.randomUUID(), providerCode: 'test-mock', providerName: '本机支付演练', providerType: PaymentProviderType.AGGREGATOR, paymentMethod: PaymentMethod.WECHAT, sortOrder: 1, reason: '验证渠道关联流程' });
+    const createdChannel = await localPaymentChannelApplication.create({
+      requestKey: crypto.randomUUID(),
+      providerCode: 'test-mock',
+      providerName: '本机支付演练',
+      providerType: PaymentProviderType.AGGREGATOR,
+      paymentMethod: PaymentMethod.WECHAT,
+      sortOrder: 1,
+      reason: '验证渠道关联流程',
+    });
     if (!createdChannel.ok) throw new Error('expected an active local channel');
     await router.push('/admin/payments/channels');
     await nextTick();
-    await vi.waitFor(() => expect(host.querySelector('.payment-channel-mock-link')?.getAttribute('href')).toContain(`channelId=${createdChannel.value.channelId}`));
+    await vi.waitFor(() =>
+      expect(host.querySelector('.payment-channel-mock-link')?.getAttribute('href')).toContain(
+        `channelId=${createdChannel.value.channelId}`,
+      ),
+    );
     await router.push({ path: '/admin/payments/mock', query: { orderId: '314159', channelId: createdChannel.value.channelId } });
     await nextTick();
     await new Promise((resolve) => setTimeout(resolve, 0));
@@ -535,8 +593,10 @@ describe('Admin workspace shell', () => {
     expect(host.querySelector('.system-operations-page h1')?.textContent).toBe('Admin 权限');
     expect(host.textContent).toContain('不创建独立 admin_user');
     expect(host.textContent).toContain('权限从登记目录选择');
-    expect(host.querySelectorAll('.admin-permission-path-row')).toHaveLength(10);
-    const operatorUser = [...host.querySelectorAll<HTMLButtonElement>('.admin-permission-user')].find((button) => button.textContent?.includes('运营演练管理员'))!;
+    expect(host.querySelectorAll('.admin-permission-path-row')).toHaveLength(12);
+    const operatorUser = [...host.querySelectorAll<HTMLButtonElement>('.admin-permission-user')].find((button) =>
+      button.textContent?.includes('运营演练管理员'),
+    )!;
     operatorUser.click();
     await nextTick();
     const permissionCheckbox = host.querySelector<HTMLInputElement>('.admin-permission-path-row input:not(:disabled)')!;
@@ -583,11 +643,21 @@ describe('Admin workspace shell', () => {
   });
 
   it('shows the shared liveness response and measured request latency without promoting it to dependency health', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(JSON.stringify({
-      requestId: 'req-health-1', code: 'OK', message: 'ok',
-      data: { status: 'live', service: 'gameing-hall-api' },
-      serverNow: '2026-10-13T10:11:12.123Z',
-    }), { status: 200 })));
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue(
+        new Response(
+          JSON.stringify({
+            requestId: 'req-health-1',
+            code: 'OK',
+            message: 'ok',
+            data: { status: 'live', service: 'gameing-hall-api' },
+            serverNow: '2026-10-13T10:11:12.123Z',
+          }),
+          { status: 200 },
+        ),
+      ),
+    );
     await router.push('/admin/health');
     await vi.waitFor(() => expect(host.textContent).toContain('存活'));
     expect(host.textContent).toContain('服务时间：');
@@ -753,14 +823,18 @@ describe('Admin workspace shell', () => {
     triggerReason.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
     document.querySelector<HTMLButtonElement>('.event-local-dialog .event-dialog-actions button:last-child')!.click();
-    await vi.waitFor(() => expect(document.querySelector('.event-local-dialog') === null || host.querySelector('[role="alert"]') !== null).toBe(true));
+    await vi.waitFor(() =>
+      expect(document.querySelector('.event-local-dialog') === null || host.querySelector('[role="alert"]') !== null).toBe(true),
+    );
     expect(host.querySelector('[role="alert"]')?.textContent).toBeUndefined();
     await vi.waitFor(() => expect(host.querySelector('.event-operations-page h1')?.textContent).toBe('活动实例'));
     await vi.waitFor(() => expect(host.querySelectorAll('.event-instance-card')).toHaveLength(1));
     expect(host.textContent).toContain('LOCAL_DEMO');
     host.querySelector<HTMLButtonElement>('.event-instance-actions button:first-child')!.click();
     await vi.waitFor(() => expect(document.querySelector('.event-local-dialog')).not.toBeNull());
-    const deliveryReason = document.querySelector<HTMLInputElement>('.event-local-dialog .event-template-form input[placeholder="至少 3 个字"]')!;
+    const deliveryReason = document.querySelector<HTMLInputElement>(
+      '.event-local-dialog .event-template-form input[placeholder="至少 3 个字"]',
+    )!;
     deliveryReason.value = '检查本地安全文案';
     deliveryReason.dispatchEvent(new Event('input', { bubbles: true }));
     await nextTick();
@@ -958,16 +1032,24 @@ describe('Admin workspace shell', () => {
     host.querySelector<HTMLButtonElement>('.ops-monitor-table-wrap tbody tr button')!.click();
     await vi.waitFor(() => expect(host.querySelector('.ops-monitor-detail')?.textContent).toContain('历史返点分配（不可变）'));
     const newParent = host.querySelector<HTMLInputElement>('.ops-referral-rebind input')!;
-    newParent.value = '94100'; newParent.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
+    newParent.value = '94100';
+    newParent.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
     host.querySelector<HTMLButtonElement>('.ops-referral-rebind button')!.click();
     await vi.waitFor(() => expect(host.querySelector('.ops-referral-preview')?.textContent).toContain('4 个关系行受影响'));
     const reason = host.querySelector<HTMLTextAreaElement>('.ops-referral-preview textarea')!;
-    reason.value = '审核身份后进行换绑演练'; reason.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
+    reason.value = '审核身份后进行换绑演练';
+    reason.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
     const totp = host.querySelector<HTMLInputElement>('.ops-referral-preview input')!;
-    totp.value = '000000'; totp.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
+    totp.value = '000000';
+    totp.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
     host.querySelector<HTMLButtonElement>('.ops-referral-preview > button')!.click();
     await vi.waitFor(() => expect(host.querySelector('.ops-monitor-detail .user-query-error')?.textContent).toContain('TOTP 不正确'));
-    totp.value = '246810'; totp.dispatchEvent(new Event('input', { bubbles: true })); await nextTick();
+    totp.value = '246810';
+    totp.dispatchEvent(new Event('input', { bubbles: true }));
+    await nextTick();
     host.querySelector<HTMLButtonElement>('.ops-referral-preview > button')!.click();
     await vi.waitFor(() => expect(host.querySelector('.ops-monitor-detail')?.textContent).toContain('审核身份后进行换绑演练'));
     expect(host.querySelector('.ops-monitor-detail')?.textContent).toContain('94002 → 94100');

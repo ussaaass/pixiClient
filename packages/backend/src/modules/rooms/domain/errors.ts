@@ -4,9 +4,9 @@
  * 领域所有者：rooms 模块（全部 application 用例抛出，adapters/HTTP 边界消费）。
  * 对应 SDD 章节：后端实施 SDD §9 第 4 步（房间与牌局）；与 wallet 模块
  * domain/errors.ts 同款纪律（每个用例文件维护自己的错误码映射表，
- * 本文件只提供抛错工具与统一错误码表）。
+ * 本文件只提供领域抛错工具，共享错误码见 `@gameing/contracts/common/api-errors`）。
  *
- * 错误码表（R，rooms 模块专属；contracts 无既有 rooms 错误码，本表为本地登记）：
+ * 错误码表（R，contracts 登记）：
  * - ROOM_NOT_FOUND：room 不存在或已 CLOSED（room.status = CLOSED=4）。
  * - ROOM_FULL：房间座位已满（room_membership 有效入座数 ≥ room.capacity）。
  * - ROOM_CLOSED：房间已关闭，不可再入座/开局（room.status = CLOSED=4）。
@@ -25,24 +25,9 @@
  * - ROUND_IN_PROGRESS：room 已有 ACTIVE/SETTLING round（开局命令重复触发）。
  */
 
-/** rooms 模块错误码表（稳定业务码，HTTP 边界 `code` 字段直接取 `error.code`）。 */
-export const R = {
-  ROOM_NOT_FOUND: 'ROOM_NOT_FOUND',
-  ROOM_FULL: 'ROOM_FULL',
-  ROOM_CLOSED: 'ROOM_CLOSED',
-  ROUND_NOT_FOUND: 'ROUND_NOT_FOUND',
-  ROUND_NOT_ACTIVE: 'ROUND_NOT_ACTIVE',
-  ROUND_ALREADY_SETTLED: 'ROUND_ALREADY_SETTLED',
-  GAME_ENTRY_NOT_FOUND: 'GAME_ENTRY_NOT_FOUND',
-  GAME_ENTRY_EXPIRED: 'GAME_ENTRY_EXPIRED',
-  WALLET_INSUFFICIENT: 'WALLET_INSUFFICIENT',
-  FENCING_CONFLICT: 'FENCING_CONFLICT',
-  STORAGE_UNAVAILABLE: 'STORAGE_UNAVAILABLE',
-  ROUND_PLAYER_NOT_FOUND: 'ROUND_PLAYER_NOT_FOUND',
-  INVALID_SUBMISSION: 'INVALID_SUBMISSION',
-  ROUND_IN_PROGRESS: 'ROUND_IN_PROGRESS',
-} as const;
+import { RoomErrorCode } from '@gameing/contracts/common/api-errors';
 
+export const R = RoomErrorCode;
 export type RoomErrorCode = (typeof R)[keyof typeof R];
 
 /** 携带 RoomErrorCode 的领域错误（HTTP 边界 `code` 字段直接取 `error.code`）。 */

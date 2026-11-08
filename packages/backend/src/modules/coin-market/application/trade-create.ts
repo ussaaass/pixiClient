@@ -42,9 +42,13 @@
  */
 
 import type { TradeRepo, ListingRepo, Tx } from '../ports/coin-market-repository.js';
+import type { AssetLedger, EntryIntent } from '../../wallet/ports/wallet-repository.js';
+import { WalletEntryType, WalletOperationType } from '../../wallet/ports/wallet-repository.js';
+import { AccountType, AssetType, HoldType } from '../../../infrastructure/database/models/wallet.js';
+import { requestHashOf } from '../../wallet/domain/ledger-rules.js';
 import type { Clock } from '../../wallet/ports/clock.js';
 import { CoinMarketDomainError, CM } from '../domain/errors.js';
-import { priceQuote, PAYMENT_DEADLINE_SECONDS } from '../domain/listing-rules.js';
+import { priceQuote, PAYMENT_DEADLINE_SECONDS, CoinMarketTradeStatus11 } from '../domain/listing-rules.js';
 
 /** 成交创建入参（路由层经 contracts CoinMarketTradeCreateRequestDto 校验后传入）。 */
 export interface TradeCreateInput {
@@ -81,6 +85,12 @@ export interface TradeReleasedDto {
   inserted: boolean;
 }
 
+export interface TradeReleaseInput {
+  tradeId: string;
+  actorUserId: string;
+  tx: Tx;
+}
+
 /**
  * 成交流程用例（构造注入 TradeRepo + ListingRepo + Clock，不用全局，
  * SDD §4；11 态状态机前置校验经 `canPlayerTriggerTransition`，本用例只做
@@ -91,14 +101,132 @@ export class TradeUseCase {
   constructor(
     private readonly tradeRepo: TradeRepo,
     private readonly listingRepo: ListingRepo,
+    private readonly ledger: AssetLedger,
     private readonly clock: Clock,
   ) {}
 
   /**
    * POST /me/coin-market/trades：成交创建（201 新创建 / 200 幂等重放）。
    */
+  async releaseToBuyer(input: TradeReleaseInput): Promise<TradeReleasedDto> {
+    const transaction = input.tx.transaction as { finished?: string | undefined } | null | undefined;
+    if (transaction == null || transaction.finished != null) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '成交放币资金处理必须在活动事务中运行。', { retryable: true });
+    }
+    const tradeRef = await this.tradeRepo.getTrade(input.tradeId, input.tx);
+    if (tradeRef === null) throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
+    const listing = await this.listingRepo.lockListing(tradeRef.coinMarketListingId, input.tx);
+    if (listing === null) throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${tradeRef.coinMarketListingId}`);
+    const trade = await this.tradeRepo.lockTrade(input.tradeId, input.tx);
+    if (trade === null) throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
+    if (trade.status === CoinMarketTradeStatus11.RELEASED || trade.status === CoinMarketTradeStatus11.AUTO_RELEASED) {
+      if (input.actorUserId !== trade.buyerUserId) {
+        throw new CoinMarketDomainError(CM.TRADE_NOT_ALLOWED, '只有买家可确认放币。', { retryable: false });
+      }
+      const replay = await this.ledger.claimOperation({
+        operationKey: `coin-market:trade:${trade.id}:release`,
+        operationType: WalletOperationType.COIN_MARKET_TRADE,
+        requestHash: requestHashOf({
+          tradeId: trade.id,
+          listingId: listing.id,
+          buyerUserId: trade.buyerUserId,
+          sellerUserId: listing.sellerUserId,
+          coins: trade.coins,
+        }),
+        initiatedByUserId: input.actorUserId,
+        extra: { tradeId: trade.id, outcome: 'RELEASED' },
+        reason: 'coin-market release replay',
+        tx: input.tx,
+      });
+      if (replay.inserted) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币状态缺少原账务操作。', { retryable: true });
+      const snapshot = await this.ledger.getOperationResultSnapshot(replay.operation.id, input.tx);
+      if (snapshot === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币幂等操作缺少结果快照。', { retryable: true });
+      const result = snapshot as unknown as TradeReleasedDto;
+      if (result.tradeId !== trade.id || result.status !== trade.status || typeof result.releasedAt !== 'string') {
+        throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币幂等快照与终态交易不一致。', { retryable: true });
+      }
+      return { ...result, inserted: false };
+    }
+    if (trade.status !== CoinMarketTradeStatus11.SELLER_CONFIRMATION_PENDING) {
+      throw new CoinMarketDomainError(CM.TRADE_NOT_ALLOWED, `交易状态不可放币（status=${trade.status}）。`, { retryable: false });
+    }
+    if (String(input.actorUserId) !== String(trade.buyerUserId)) {
+      throw new CoinMarketDomainError(CM.TRADE_NOT_ALLOWED, '只有买家可确认放币。', { retryable: false });
+    }
+    const sellerAccount = await this.ledger.readAccount(listing.sellerUserId, AssetType.COIN, AccountType.PLAYER, input.tx);
+    if (sellerAccount === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌卖家金币账户缺失。');
+    const buyerAccount = await this.ledger.readAccount(trade.buyerUserId, AssetType.COIN, AccountType.PLAYER, input.tx);
+    if (sellerAccount === null || buyerAccount === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '交易双方金币账户缺失。');
+    const amount = BigInt(trade.coins);
+    const now = await this.clock.now();
+    const claimed = await this.ledger.claimOperation({
+      operationKey: `coin-market:trade:${trade.id}:release`,
+      operationType: WalletOperationType.COIN_MARKET_TRADE,
+      requestHash: requestHashOf({
+        tradeId: trade.id,
+        listingId: listing.id,
+        buyerUserId: trade.buyerUserId,
+        sellerUserId: listing.sellerUserId,
+        coins: trade.coins,
+      }),
+      initiatedByUserId: input.actorUserId,
+      extra: {
+        tradeId: trade.id,
+        listingId: listing.id,
+        buyerUserId: trade.buyerUserId,
+        sellerUserId: listing.sellerUserId,
+        coins: trade.coins,
+      },
+      reason: 'coin-market confirmed payment; release coins to buyer',
+      tx: input.tx,
+    });
+    if (!claimed.inserted) {
+      const current = await this.tradeRepo.getTrade(trade.id, input.tx);
+      if (current?.status !== CoinMarketTradeStatus11.RELEASED && current?.status !== CoinMarketTradeStatus11.AUTO_RELEASED) {
+        throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币账务操作与交易状态不一致。', { retryable: true });
+      }
+      const snapshot = await this.ledger.getOperationResultSnapshot(claimed.operation.id, input.tx);
+      if (snapshot === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币幂等操作缺少结果快照。', { retryable: true });
+      return { ...(snapshot as unknown as TradeReleasedDto), inserted: false };
+    }
+    const intents: EntryIntent[] = [
+      {
+        accountId: sellerAccount.id,
+        delta: -amount,
+        frozenDelta: -amount,
+        entryType: WalletEntryType.HOLD,
+        assetHoldId: listing.assetHoldId,
+        memo: `coin-market settlement to buyer ${trade.buyerUserId}: ${amount} coins`,
+      },
+      {
+        accountId: buyerAccount.id,
+        delta: amount,
+        frozenDelta: 0n,
+        entryType: WalletEntryType.INTERNAL,
+        memo: `coin-market settlement from seller ${listing.sellerUserId}: ${amount} coins`,
+      },
+    ];
+    const consumeResult = await this.ledger.consumeHoldAmount(
+      { operationId: claimed.operation.id, holdId: listing.assetHoldId, amount, intents },
+      input.tx,
+    );
+    if (consumeResult.hold.assetAccountId !== sellerAccount.id || consumeResult.hold.holdType !== HoldType.COIN_MARKET_LISTING) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌占款账户或类型与成交不一致。', { retryable: true });
+    }
+    const result = await this.tradeRepo.releaseToBuyer({ tradeId: trade.id, releasedAt: now, tx: input.tx });
+    if (result === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币状态转换失败。', { retryable: true });
+    const dto = { tradeId: trade.id, status: result.status, releasedAt: toIso(now), inserted: true };
+    await this.ledger.setCommitted(claimed.operation.id, now, { ...dto }, input.tx);
+    return dto;
+  }
+
   async create(input: TradeCreateInput): Promise<TradeCreatedDto> {
     const { buyerUserId, tradeKey, coins, paymentMethod, tx } = input;
+    const transaction = tx.transaction as { finished?: string | undefined } | null | undefined;
+    if (transaction == null || transaction.finished != null) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '成交创建必须在活动事务中运行。', { retryable: true });
+    }
+    const requestAt = await this.clock.now();
 
     // 1. 报价（BigInt 整除，向下取整；登记舍入决策点）
     const coinsB = BigInt(coins);
@@ -129,16 +257,30 @@ export class TradeUseCase {
       tradeKey,
       coins,
       grossCents: priceQuoteResult.grossCents,
-      sellerNetCents: priceQuoteResult.sellerNetCents,
+      // DDL requires seller_net_cents = 0 for direct external payments; no platform
+      // wallet settlement occurs on this mode, even though gross is quoted for display.
+      sellerNetCents: paymentMethod === 2 ? priceQuoteResult.sellerNetCents : '0',
       paymentMethod,
+      paymentDeadlineAt: new Date(requestAt.getTime() + PAYMENT_DEADLINE_SECONDS * 1000),
       tx,
     });
 
     const trade = result.trade;
-    const deadlineAt =
-      trade.paymentDeadlineAt !== null
-        ? toIso(trade.paymentDeadlineAt)
-        : new Date(Date.now() + PAYMENT_DEADLINE_SECONDS * 1000).toISOString();
+    if (
+      !result.isNew &&
+      (String(trade.coinMarketListingId) !== String(input.listingId) ||
+        String(trade.buyerUserId) !== String(buyerUserId) ||
+        trade.coins !== coins ||
+        trade.paymentMode !== paymentMethod ||
+        trade.grossCents !== priceQuoteResult.grossCents ||
+        trade.sellerNetCents !== (paymentMethod === 2 ? priceQuoteResult.sellerNetCents : '0'))
+    ) {
+      throw new CoinMarketDomainError(CM.IDEMPOTENCY_KEY_REUSED, '成交幂等键已被不同请求使用。', { retryable: false });
+    }
+    if (trade.paymentDeadlineAt === null) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '成交行缺少付款截止时间。', { retryable: true });
+    }
+    const deadlineAt = toIso(trade.paymentDeadlineAt);
 
     return {
       tradeId: trade.id,

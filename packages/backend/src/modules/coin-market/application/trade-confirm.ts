@@ -3,9 +3,8 @@
  * 200；PAYMENT_PENDING=1 → SELLER_CONFIRMATION_PENDING=2，11 态 DDL 权威状态机）。
  *
  * 领域所有者：coin-market 模块（coin_market_trade 写 + 同事务 coin_market_listing
- * 守恒变更（reserved → filled）；SDD §5.13 "确认支付成功才将占款转为完成扣款"
- * 经 wallet ledger COIN_MARKET_TRADE=13 分录同事务，首版登记 payment_proof
- * 校验未闭环，本用例只推进 trade 状态 + listing 守恒变更）。
+ * 状态推进；收款确认本身不结算托管资产，hold 与 listing reserved 保持不变。
+ * 实际放币由独立 wallet ledger operation 同事务消费 hold，本用例只记录确认状态）。
  * 对应 SDD 章节：后端实施 SDD §4（锁顺序 coin_market_listing →
  * coin_market_trade → asset_hold，幂等先抢唯一约束；所有分录 / outbox 同
  * 事务）、§9 第 7 步（卖家确认收款：PAYMENT_PENDING=1 →
@@ -53,8 +52,8 @@ export interface TradeConfirmedDto {
 /**
  * 卖家确认收款用例（构造注入 TradeRepo + ListingRepo + Clock，不用全局，
  * SDD §4；11 态状态机前置校验经 `canPlayerTriggerTransition`，本用例
- * 只做落库 + 同事务 listing 守恒变更，asset_hold 释放经 wallet ledger
- * 扩展点登记，首版不直接调用）。
+ * 只记录卖家确认；不释放 asset_hold、不推进 listing filled 库存。实际结算
+ * 由独立放币用例同事务经 wallet ledger 消费 hold）。
  */
 export class TradeConfirmUseCase {
   constructor(
@@ -73,7 +72,15 @@ export class TradeConfirmUseCase {
    * @param tx 事务句柄（同事务约定）。
    */
   async run(userId: string, tradeId: string, tx: Tx): Promise<TradeConfirmedDto> {
-    // 1. 行锁读交易（11 态状态机前置校验）
+    // 1. 先读交易获取挂牌，再按 listing → trade 顺序加锁。
+    const tradeRef = await this.tradeRepo.getTrade(tradeId, tx);
+    if (tradeRef === null) {
+      throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${tradeId}`);
+    }
+    const listing = await this.listingRepo.lockListing(tradeRef.coinMarketListingId, tx);
+    if (listing === null) {
+      throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${tradeRef.coinMarketListingId}`);
+    }
     const trade = await this.tradeRepo.lockTrade(tradeId, tx);
     if (trade === null) {
       throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${tradeId}`);
@@ -81,11 +88,7 @@ export class TradeConfirmUseCase {
 
     // 2. 归属校验（卖家身份；首版经 listing 行读回 sellerUserId，登记决策点：
     //    直接读 trade.coinMarketListingId → listing.sellerUserId，不经 trade 行）
-    const listing = await this.listingRepo.lockListing(trade.coinMarketListingId, tx);
-    if (listing === null) {
-      throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${trade.coinMarketListingId}`);
-    }
-    if (listing.sellerUserId !== userId) {
+    if (String(listing.sellerUserId) !== String(userId)) {
       throw new CoinMarketDomainError(CM.TRADE_NOT_ALLOWED, '非卖家身份，不可确认收款。', {
         retryable: false,
       });
@@ -125,7 +128,7 @@ export class TradeConfirmUseCase {
       );
     }
 
-    // 6. 同事务推进 trade 状态 + listing 守恒变更（reserved → filled）
+    // 6. 同事务推进 trade 状态；hold 与 listing reserved 保持不变
     const now = await this.clock.now();
     const result = await this.tradeRepo.confirmPayment({
       tradeId,

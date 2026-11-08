@@ -29,6 +29,7 @@
  * 5. 分录（同一 operation；守恒：用户金币 -coins、用户 CNY +cashFen、
  *    系统 COI +coins、系统 CNY -cashFen——双资产文档 §2 "兑换同时把用户金币
  *    转给系统、系统余额转给用户"，双账本各自守恒，总额互换净值 0）。
+ * 流水门禁：与转账/提现相同，ACTIVE 且余额为正时，提交事务拒绝兑换；不产生账务副作用。
  * 6. `coin_exchange` 快照（FLOOR_CREDIT=2，previewKey = 报价定位值）+
  *    committed_at + result_snapshot + outbox 同事务（§6.3）。
  *
@@ -65,6 +66,7 @@ import { createExchangeQuote, calculateExchangeCashFen } from '@gameing/domain/w
 import { checkExchangeQuote, requestHashOf, assertConservation } from '../domain/ledger-rules.js';
 import { WalletDomainError, W } from '../domain/errors.js';
 import type { AssetLedger, ConfigReader, Tx, WalletContext, EntryIntent, SystemIdentityPort } from '../ports/wallet-repository.js';
+import type { TurnoverGateUseCase } from './turnover.js';
 import { WalletOperationType, WalletEntryType, WalletRoundingMode } from '../ports/wallet-repository.js';
 import type { OutboxPort } from '../ports/outbox-port.js';
 import type { Clock } from '../ports/clock.js';
@@ -93,6 +95,8 @@ export class CoinExchangeUseCase {
     private readonly config: ConfigReader,
     private readonly clock: Clock,
     private readonly systemIdentity: SystemIdentityPort,
+    private readonly turnoverGate: TurnoverGateUseCase,
+    private readonly referralPolicy: { findDirectParentRewardType(userId: string, tx: Tx): Promise<1 | 2 | null> },
   ) {}
 
   /** 报价（无事务）：读汇率 + 双方余额门禁 + 向下取整到分。 */
@@ -131,7 +135,15 @@ export class CoinExchangeUseCase {
     const quote = request.quote;
     const coins = BigInt(quote.coins);
 
-    // 1) 汇率 + 报价校验（锁外先读；锁内再复核防窗口期配置变化）。
+    // 1) 汇率门禁前先复核流水，失败时不读配置、不抢幂等键、不产生账务副作用。
+    await this.turnoverGate.assertTransferAllowed(ctx.userId, tx);
+    // 客损模式限制源于邀请领域；null 代表未绑定直属上级，按普通客户规则执行。
+    const directParentRewardType = await this.referralPolicy.findDirectParentRewardType(ctx.userId, tx);
+    if (directParentRewardType === 2) {
+      throw new WalletDomainError(W.EXCHANGE_NOT_AVAILABLE, 'exchange disabled for customer-loss referral policy');
+    }
+
+    // 2) 汇率 + 报价校验（锁外先读；锁内再复核防窗口期配置变化）。
     const rate = await this.config.readExchangeRate();
     if (rate === null) unavailableRate();
     const quoteStatus = checkExchangeQuote(quote, rate, this.clock.now());
@@ -141,7 +153,7 @@ export class CoinExchangeUseCase {
     const cnyFen = calculateExchangeCashFen(coins, rate.rateCoinUnits, rate.rateCashFen);
     if (cnyFen <= 0n) throw new WalletDomainError(W.INVALID_EXCHANGE_AMOUNT, 'exchange result rounds below 1 CNY fen');
 
-    // 2) 幂等抢键（命中 committed = 重放原结果，§4 "失败可重查原结果"）。
+    // 3) 幂等抢键（命中 committed = 重放原结果，§4 "失败可重查原结果"）。
     const operationKey = `exchange:${ctx.userId}:${request.idempotencyKey}`;
     const requestHash = requestHashOf({ quote, userId: ctx.userId });
     const claimed = await this.ledger.claimOperation({
@@ -162,7 +174,7 @@ export class CoinExchangeUseCase {
     }
     const operationId = claimed.operation.id;
 
-    // 3) 锁四账户（用户 COI/CNY + 系统 COI/CNY；按 asset_account.id 数值升序，
+    // 4) 锁四账户（用户 COI/CNY + 系统 COI/CNY；按 asset_account.id 数值升序，
     // §4 锁顺序；兑换涉及双资产两个账本，双资产文档 §2 "同一数据库事务内完成"）。
     const userCoin = await this.ledger.readAccount(ctx.userId, 1, 1, tx);
     const userCny = await this.ledger.readAccount(ctx.userId, 2, 1, tx);

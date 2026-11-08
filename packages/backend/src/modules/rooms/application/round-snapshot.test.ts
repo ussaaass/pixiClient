@@ -4,16 +4,31 @@ import { R } from '../domain/errors.js';
 import { createRoundSnapshotUseCase } from './round-snapshot.js';
 
 const round = {
-  id: '10', roomId: '20', roundNo: '3', status: RoundStatus.SETTLED,
-  handlerVersion: 'classic-v1', rulesSnapshot: { game: 'shisanshui' }, fencingToken: '4',
+  id: '10',
+  roomId: '20',
+  roundNo: '3',
+  status: RoundStatus.SETTLED,
+  handlerVersion: 'classic-v1',
+  rulesSnapshot: { game: 'shisanshui' },
+  fencingToken: '4',
 };
 const players = ['1', '2', '3', '4'].map((userId, index) => ({
-  id: String(index + 31), roundId: '10', userId, seatNo: index + 1,
+  id: String(index + 31),
+  roundId: '10',
+  userId,
+  seatNo: index + 1,
   status: RoundPlayerStatus.SUBMITTED,
   submissionSnapshot: { heldCards: [index], arrangement: { front: [], middle: [], back: [] } },
   netCoinDelta: null,
 }));
-const event = { roundId: '10', seq: '7', eventKey: 'submit:7', eventType: 2, roundPlayerId: '31', payloadCiphertext: new Uint8Array([1, 2]) };
+const event = {
+  roundId: '10',
+  seq: '7',
+  eventKey: 'submit:7',
+  eventType: 2,
+  roundPlayerId: '31',
+  payloadCiphertext: new Uint8Array([1, 2]),
+};
 
 function create(replacements: Record<string, unknown> = {}) {
   const roundRepo = {
@@ -37,7 +52,9 @@ describe('round snapshot recovery use case', () => {
   });
 
   it('hides player arrangements before settlement even from their owner', async () => {
-    const { run } = create({ roundRepo: { lockRound: vi.fn(async () => ({ ...round, status: RoundStatus.ACTIVE })), listRoundPlayers: vi.fn(async () => players) } });
+    const { run } = create({
+      roundRepo: { lockRound: vi.fn(async () => ({ ...round, status: RoundStatus.ACTIVE })), listRoundPlayers: vi.fn(async () => players) },
+    });
     const result = await run({ userId: '1', roundId: '10' }, {} as never);
     expect(result.players[0]?.submissionSnapshot).toBeNull();
   });

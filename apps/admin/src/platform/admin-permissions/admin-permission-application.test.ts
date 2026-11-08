@@ -18,7 +18,7 @@ const changeRequest = (overrides: Record<string, unknown> = {}) => ({
 describe('Admin permission management LOCAL_DEMO workflow', () => {
   it('lists only registered HTTP method/path permission entries and filters accounts', async () => {
     const paths = app.listPaths();
-    expect(paths.ok && paths.value.length).toBe(10);
+    expect(paths.ok && paths.value.length).toBe(12);
     expect(await app.listUsers({ keyword: '运营' })).toMatchObject({ ok: true, value: [{ userId: '90002' }] });
     expect(await app.listUsers({ status: AdminManagedUserStatus.LOCKED })).toMatchObject({ ok: true, value: [{ userId: '90004' }] });
     expect(await app.listUsers({ permissionCode: 'admin.support.read' })).toMatchObject({ ok: true, value: [{ userId: '90003' }] });

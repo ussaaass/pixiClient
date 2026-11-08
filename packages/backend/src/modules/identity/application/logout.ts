@@ -29,6 +29,7 @@ import type { SessionPort } from '../ports/session-port.js';
 import type { IdentityRepository, Tx } from '../ports/identity-repository.js';
 import type { OutboxPort } from '../ports/outbox-port.js';
 import type { SecurityEventService } from './security-events.js';
+import { DomainError, I } from '../domain/errors.js';
 
 export interface LogoutInput {
   /** 当前会话 sid（从已验签 access token 的 `sid` claim 取得；路由层注入）。 */
@@ -52,11 +53,11 @@ export class LogoutUseCase {
     const now = this.clock.now();
     const { sid, userId, deviceId } = input;
 
-    // 1) 幂等门禁：sid 已不存在（已登出/过期/被撤销）→ 直接成功（登出幂等，不抛错）。
-    const record = await this.sessions.getSession(sid).catch(() => null);
-    if (record === null) {
-      // sid 未知/已撤销/过期：登出语义幂等，返回 loggedOut=true（§3 登出不因已撤销失败）。
-      return { loggedOut: true };
+    // 1) Read errors must remain errors: Redis outage is not evidence that the session is absent.
+    // A known/missing sid is still fenced below using the authenticated userId from the JWT.
+    const record = await this.sessions.getSession(sid);
+    if (record !== null && (record.userId !== userId || record.sessionId !== sid)) {
+      throw new DomainError(I.ACCESS_TOKEN_INVALID, 'session ownership mismatch');
     }
 
     // 2) SQL 侧写安全事件（append-only；§3 "登出产生的 security event 写 SQL"）。
@@ -72,7 +73,12 @@ export class LogoutUseCase {
       tx,
     );
 
-    // 3) 同步完成 Redis 撤销（§3 "安全变更提交后必须同步完成 Redis 撤销才报告成功"）。
+    // 3) Persistently invalidate any SQL-encrypted registration replay tied to this sid.
+    // Persist this before acknowledging logout; the route currently supplies a null transaction,
+    // so the repository adapter executes this write as a standalone durable SQL update.
+    await this.repo.clearRegistrationReplayForSession(sid, tx);
+
+    // Always write the Redis sid fence, including idempotent logout after a prior delete/expiry.
     await this.sessions.revokeSession(sid, userId);
 
     // 4) outbox 记录（进程中断后幂等重试；§3 "以 SQL outbox 处理进程中断后的幂等重试"）。

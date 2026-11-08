@@ -71,6 +71,29 @@ function txOf(tx?: Tx): Transaction | null {
   return (tx?.transaction as Transaction | undefined) ?? null;
 }
 
+function bytesEqual(left: Uint8Array | null, right: Uint8Array | null): boolean {
+  if (left === null || right === null || left.length !== right.length) return false;
+  return left.every((byte, index) => byte === right[index]);
+}
+
+function isValidSubmittedRoundPlayer(
+  row: RoundPlayerModel,
+  input: { roundId: string; userId: string; submissionKey: string; submissionHash: Uint8Array; submissionType: number },
+): boolean {
+  return (
+    row.id !== null &&
+    /^[1-9][0-9]{0,19}$/.test(row.id) &&
+    row.roundId === input.roundId &&
+    row.userId === input.userId &&
+    row.status === RoundPlayerStatus.SUBMITTED &&
+    row.submissionKey === input.submissionKey &&
+    row.submissionType === input.submissionType &&
+    bytesEqual(row.submissionHash, input.submissionHash) &&
+    row.submittedAt instanceof Date &&
+    Number.isFinite(Date.prototype.getTime.call(row.submittedAt))
+  );
+}
+
 /** 共享 7 model 类（构造注入，不用全局，SDD §4）。 */
 type GameModels = {
   RoomModel: typeof RoomModel;
@@ -146,7 +169,7 @@ export class SequelizeRoomRepo implements RoomRepo {
     // 首版简化：直接联表查（生产可加 Redis 缓存，决策点登记）。
     const txq = txOf(tx);
     const memberships = await this.models.RoomMembershipModel.findAll({
-      where: { userId },
+      where: { userId, status: MembershipStatus.SEATED },
       transaction: txq,
     });
     if (memberships.length === 0) return [];
@@ -154,6 +177,13 @@ export class SequelizeRoomRepo implements RoomRepo {
     return this.models.RoomModel.findAll({
       where: { id: roomIds, status: { [Op.in]: [RoomStatus.WAITING, RoomStatus.ACTIVE, RoomStatus.RECOVERING] } },
       transaction: txq,
+    });
+  }
+
+  async findSeatedMembership(roomId: string, userId: string, tx: Tx): Promise<RoomMembershipModel | null> {
+    return this.models.RoomMembershipModel.findOne({
+      where: { roomId, userId, status: MembershipStatus.SEATED },
+      transaction: txOf(tx),
     });
   }
 
@@ -260,7 +290,10 @@ export class SequelizeRoomRepo implements RoomRepo {
  * round + round_player 仓储（RoundRepo；Sequelize 实现）。
  */
 export class SequelizeRoundRepo implements RoundRepo {
-  constructor(private readonly models: GameModels) {}
+  constructor(
+    private readonly models: GameModels,
+    private readonly now: () => Date = () => new Date(),
+  ) {}
 
   async createRound(input: {
     roomId: string;
@@ -399,9 +432,15 @@ export class SequelizeRoundRepo implements RoundRepo {
       throw new RoomDomainError(R.ROUND_PLAYER_NOT_FOUND, 'round_player row not found');
     }
 
-    // 幂等：submission_key 已命中（同键重放）→ 返回既有行（不产生第二提交）。
-    if (existing.submissionKey !== null && existing.submissionKey === input.submissionKey) {
-      return { inserted: false, roundPlayer: existing };
+    // 幂等重放只能接受相同键、相同内容；同键异内容不得静默沿用旧结果。
+    if (existing.status === RoundPlayerStatus.SUBMITTED) {
+      if (existing.submissionKey === input.submissionKey && bytesEqual(existing.submissionHash, input.submissionHash)) {
+        if (!isValidSubmittedRoundPlayer(existing, input)) {
+          throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player replay snapshot is malformed', { retryable: true });
+        }
+        return { inserted: false, roundPlayer: existing };
+      }
+      throw new RoomDomainError(R.ROUND_NOT_ACTIVE, 'round player already submitted with a different request');
     }
 
     const [rows] = await this.models.RoundPlayerModel.update(
@@ -411,30 +450,54 @@ export class SequelizeRoundRepo implements RoundRepo {
         submissionSnapshot: input.submissionSnapshot,
         submissionHash: input.submissionHash,
         submissionType: input.submissionType,
-        submittedAt: new Date(),
+        submittedAt: this.now(),
       } as never,
       {
         where: { id: existing.id, status: RoundPlayerStatus.ACTIVE },
         transaction: txq,
       } as never,
     );
-    if (rows === 0) {
+    if (rows !== 1) {
+      if (rows !== 0) {
+        throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player submit update affected an unexpected row count', {
+          retryable: true,
+        });
+      }
       // 状态已非 ACTIVE（SUBMITTED/SETTLED/ABORTED）→ 幂等或非法转换。
-      // 已 SUBMITTED 且 submission_key 相同 = 重放（U(round_id, submission_key) 兜底）；
-      // 不同 submission_key = 非法 → ROUND_NOT_ACTIVE 由用例层前置读判定。
+      // 行已推进为 SUBMITTED 时，仅相同 submission key 与摘要视为安全重放。
       const reloaded = await this.models.RoundPlayerModel.findOne({
         where: { id: existing.id },
         transaction: txq,
       });
-      if (reloaded !== null && reloaded.status === RoundPlayerStatus.SUBMITTED) {
+      if (
+        reloaded !== null &&
+        reloaded.status === RoundPlayerStatus.SUBMITTED &&
+        reloaded.submissionKey === input.submissionKey &&
+        bytesEqual(reloaded.submissionHash, input.submissionHash)
+      ) {
+        if (!isValidSubmittedRoundPlayer(reloaded, input)) {
+          throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player replay snapshot is malformed', { retryable: true });
+        }
         return { inserted: false, roundPlayer: reloaded };
+      }
+      if (reloaded !== null && reloaded.status === RoundPlayerStatus.SUBMITTED) {
+        throw new RoomDomainError(R.ROUND_NOT_ACTIVE, 'round player already submitted with a different request');
       }
       throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player submit state transition failed', { retryable: true });
     }
 
     const updated = await this.models.RoundPlayerModel.findOne({ where: { id: existing.id }, transaction: txq });
-    if (updated === null) {
-      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player row missing after submit', { retryable: true });
+    if (
+      updated === null ||
+      updated.roundId !== input.roundId ||
+      updated.userId !== input.userId ||
+      updated.status !== RoundPlayerStatus.SUBMITTED ||
+      updated.submissionKey !== input.submissionKey ||
+      updated.submissionType !== input.submissionType ||
+      !bytesEqual(updated.submissionHash, input.submissionHash) ||
+      updated.submittedAt === null
+    ) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player row mismatch after submit', { retryable: true });
     }
     return { inserted: true, roundPlayer: updated };
   }
@@ -455,7 +518,7 @@ export class SequelizeRoundRepo implements RoundRepo {
   }): Promise<{ inserted: boolean; settlement: SettlementModel }> {
     const txq = txOf(input.tx);
     try {
-      const settlement = await this.models.SettlementModel.create(
+      const settlement: SettlementModel = await this.models.SettlementModel.create(
         {
           roundId: input.roundId,
           assetOperationId: input.assetOperationId,
@@ -466,6 +529,14 @@ export class SequelizeRoundRepo implements RoundRepo {
         } as never,
         { transaction: txq } as never,
       );
+      if (
+        settlement.roundId !== input.roundId ||
+        settlement.status !== SettlementStatus.PREPARED ||
+        !bytesEqual(settlement.inputHash, input.settlementInputHash) ||
+        !bytesEqual(settlement.resultHash, input.resultHash)
+      ) {
+        throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'settlement row mismatch after insert', { retryable: true });
+      }
       return { inserted: true, settlement };
     } catch (err) {
       if (isDuplicateKeyError(err)) {
@@ -477,6 +548,14 @@ export class SequelizeRoundRepo implements RoundRepo {
         if (existing === null) {
           throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'settlement U(round_id) conflict without row', { retryable: true });
         }
+        if (
+          existing.roundId !== input.roundId ||
+          existing.status !== SettlementStatus.PREPARED ||
+          !(existing.inputHash instanceof Uint8Array) ||
+          !(existing.resultHash instanceof Uint8Array)
+        ) {
+          throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'settlement row mismatch after unique conflict', { retryable: true });
+        }
         return { inserted: false, settlement: existing };
       }
       throw err;
@@ -485,34 +564,57 @@ export class SequelizeRoundRepo implements RoundRepo {
 
   async markRoundActive(roundId: string, tx: Tx): Promise<void> {
     const txq = txOf(tx);
-    await this.models.RoundModel.update(
+    const [affectedRows] = await this.models.RoundModel.update(
       { status: RoundStatus.ACTIVE, playingStartedAt: new Date() } as never,
       { where: { id: roundId, status: RoundStatus.PREPARING }, transaction: txq } as never,
     );
+    if (affectedRows !== 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round PREPARING to ACTIVE transition did not affect exactly one row', {
+        retryable: true,
+      });
+    }
   }
 
   async markRoundSettling(roundId: string, tx: Tx): Promise<void> {
     const txq = txOf(tx);
-    await this.models.RoundModel.update(
+    const [affectedRows] = await this.models.RoundModel.update(
       { status: RoundStatus.SETTLING } as never,
       { where: { id: roundId, status: RoundStatus.ACTIVE }, transaction: txq } as never,
     );
+    if (affectedRows !== 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round ACTIVE to SETTLING transition did not affect exactly one row', {
+        retryable: true,
+      });
+    }
   }
 
   async markRoundSettled(roundId: string, tx: Tx): Promise<void> {
     const txq = txOf(tx);
-    await this.models.RoundModel.update(
+    const [affectedRows] = await this.models.RoundModel.update(
       { status: RoundStatus.SETTLED, settledAt: new Date() } as never,
       { where: { id: roundId, status: RoundStatus.SETTLING }, transaction: txq } as never,
     );
+    if (affectedRows !== 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round SETTLING to SETTLED transition did not affect exactly one row', {
+        retryable: true,
+      });
+    }
   }
 
   async markRoundPlayerSettled(roundPlayerId: string, netCoinDelta: string, tx: Tx): Promise<void> {
     const txq = txOf(tx);
-    await this.models.RoundPlayerModel.update(
+    if (typeof netCoinDelta !== 'string' || !/^(0|-[1-9][0-9]*|[1-9][0-9]*)$/.test(netCoinDelta)) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player settlement delta must be a canonical integer string');
+    }
+    const [affectedRows] = await this.models.RoundPlayerModel.update(
       { status: RoundPlayerStatus.SETTLED, netCoinDelta } as never,
       { where: { id: roundPlayerId, status: RoundPlayerStatus.SUBMITTED }, transaction: txq } as never,
     );
+    if (affectedRows !== 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round_player SUBMITTED to SETTLED transition did not affect exactly one row', {
+        retryable: true,
+      });
+    }
   }
 
   async cancelRound(input: { roundId: string; fencingToken: string; tx: Tx }): Promise<void> {
@@ -605,13 +707,14 @@ export class SequelizeGameEntryRepo implements GameEntryRepo {
     }
   }
 
-  async claimEntry(input: { entryId: string; roomId: string; tx: Tx }): Promise<GameEntryModel> {
+  async claimEntry(input: { entryId: string; roomId: string; tx: Tx }): Promise<{ claimed: boolean; entry: GameEntryModel | null }> {
     const txq = txOf(input.tx);
-    await this.models.GameEntryModel.update(
+    const [affectedRows] = await this.models.GameEntryModel.update(
       { status: EntryStatus.SEATED, roomId: input.roomId } as never,
       { where: { id: input.entryId, status: EntryStatus.QUEUED }, transaction: txq } as never,
     );
-    return (await this.models.GameEntryModel.findByPk(input.entryId, { transaction: txq }))!;
+    const entry = await this.models.GameEntryModel.findByPk(input.entryId, { transaction: txq });
+    return { claimed: affectedRows === 1, entry };
   }
 
   async lockEntry(entryId: string, tx: Tx): Promise<GameEntryModel | null> {
@@ -755,11 +858,20 @@ export class SequelizeSettlementRepo implements SettlementRepo {
 
   async commitSettlement(settlementId: string, completedAt: Date, tx: Tx): Promise<SettlementModel> {
     const txq = txOf(tx);
-    await this.models.SettlementModel.update(
+    const [affectedRows] = await this.models.SettlementModel.update(
       { status: SettlementStatus.COMMITTED, completedAt } as never,
       { where: { id: settlementId, status: SettlementStatus.PREPARED }, transaction: txq } as never,
     );
-    return (await this.models.SettlementModel.findByPk(settlementId, { transaction: txq }))!;
+    if (affectedRows !== 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'settlement PREPARED to COMMITTED transition did not affect exactly one row', {
+        retryable: true,
+      });
+    }
+    const settlement = await this.models.SettlementModel.findByPk(settlementId, { transaction: txq });
+    if (settlement === null || settlement.status !== SettlementStatus.COMMITTED) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'committed settlement row missing or mismatched', { retryable: true });
+    }
+    return settlement;
   }
 
   async findSettlementByRoundId(roundId: string, tx?: Tx): Promise<SettlementModel | null> {

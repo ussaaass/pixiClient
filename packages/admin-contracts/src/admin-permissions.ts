@@ -15,7 +15,7 @@ export const AdminPermissionPathDtoSchema = Type.Object(
     permissionCode: Type.String({ pattern: '^[a-z][a-z0-9_.-]{2,127}$' }),
     name: Type.String({ minLength: 1, maxLength: 100 }),
     httpMethod: Type.Union(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => Type.Literal(method))),
-    pathPattern: Type.String({ pattern: '^/api/v1/admin(?:/[a-z0-9:_-]+)*$' }),
+    pathPattern: Type.String({ pattern: '^/api/v1/(?:admin|support)(?:/[a-z0-9:_-]+)*$' }),
     status: Type.Union([Type.Literal(AdminPermissionStatus.ACTIVE), Type.Literal(AdminPermissionStatus.DISABLED)]),
   },
   { additionalProperties: false },

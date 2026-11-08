@@ -63,6 +63,62 @@ export const ACCESS_TOKEN_TTL_MS = 10 * 60 * 1000;
 const SESSION_KEY_PREFIX = 'session:';
 const SESSION_USER_KEY_PREFIX = 'session:user:';
 const AUTH_VERSION_KEY_PREFIX = 'user:authversion:';
+const SESSION_REVOKED_PREFIX = 'session:revoked:';
+
+const CREATE_SESSION_IF_ACTIVE_LUA = `
+  local sessionType = redis.call('TYPE', KEYS[1]).ok
+  local indexType = redis.call('TYPE', KEYS[2]).ok
+  local revokedType = redis.call('TYPE', KEYS[3]).ok
+  if (sessionType ~= 'none' and sessionType ~= 'string') or (indexType ~= 'none' and indexType ~= 'set') or (revokedType ~= 'none' and revokedType ~= 'string') then return -3 end
+  if redis.call('EXISTS', KEYS[3]) == 1 then return -1 end
+  local existing = redis.call('GET', KEYS[1])
+  if existing and existing ~= ARGV[1] then return -2 end
+  local indexTtl = redis.call('TTL', KEYS[2])
+  redis.call('SET', KEYS[1], ARGV[1], 'EX', ARGV[2])
+  redis.call('SADD', KEYS[2], ARGV[3])
+  if indexTtl == -2 or (indexTtl >= 0 and indexTtl < tonumber(ARGV[2])) then redis.call('EXPIRE', KEYS[2], ARGV[2]) end
+  return 1
+`;
+
+const REVOKE_SESSION_LUA = `
+  local sessionType = redis.call('TYPE', KEYS[1]).ok
+  local indexType = redis.call('TYPE', KEYS[2]).ok
+  local revokedType = redis.call('TYPE', KEYS[3]).ok
+  if (sessionType ~= 'none' and sessionType ~= 'string') or (indexType ~= 'none' and indexType ~= 'set') or (revokedType ~= 'none' and revokedType ~= 'string') then return -1 end
+  redis.call('SET', KEYS[3], '1', 'EX', ARGV[1])
+  redis.call('DEL', KEYS[1])
+  redis.call('SREM', KEYS[2], ARGV[2])
+  return 1
+`;
+
+const TOUCH_SESSION_IDLE_LUA = `
+  local sessionType = redis.call('TYPE', KEYS[1]).ok
+  local indexType = redis.call('TYPE', KEYS[2]).ok
+  if sessionType ~= 'string' or (indexType ~= 'none' and indexType ~= 'set') then return -1 end
+  local currentIndexTtl = redis.call('TTL', KEYS[2])
+  redis.call('EXPIRE', KEYS[1], ARGV[1])
+  if currentIndexTtl == -2 or (currentIndexTtl >= 0 and currentIndexTtl < tonumber(ARGV[1])) then
+    redis.call('EXPIRE', KEYS[2], ARGV[1])
+  end
+  return 1
+`;
+
+const REVOKE_USER_SESSIONS_LUA = `
+  local indexType = redis.call('TYPE', KEYS[1]).ok
+  if indexType ~= 'none' and indexType ~= 'set' then return -1 end
+  local sids = redis.call('SMEMBERS', KEYS[1])
+  for _, sid in ipairs(sids) do
+    local sessionType = redis.call('TYPE', ARGV[3] .. sid).ok
+    local revokedType = redis.call('TYPE', ARGV[1] .. sid).ok
+    if (sessionType ~= 'none' and sessionType ~= 'string') or (revokedType ~= 'none' and revokedType ~= 'string') then return -1 end
+  end
+  for _, sid in ipairs(sids) do
+    redis.call('SET', ARGV[1] .. sid, '1', 'EX', ARGV[2])
+    redis.call('DEL', ARGV[3] .. sid)
+  end
+  redis.call('DEL', KEYS[1])
+  return #sids
+`;
 
 function sessionKey(sid: string): string {
   return `${SESSION_KEY_PREFIX}${sid}`;
@@ -103,13 +159,27 @@ export class RedisSessionStore {
   async createSession(record: SessionRecord, nowMs: number): Promise<void> {
     const key = sessionKey(record.sessionId);
     const userKey = sessionUserKey(record.userId);
-    const remainingMs = Math.max(1, effectiveExpiryMs(nowMs, null) - nowMs);
+    const recordExpiryMs = Math.min(Date.parse(record.expiresAt), Date.parse(record.absoluteExpiry));
+    if (!Number.isFinite(recordExpiryMs) || recordExpiryMs <= nowMs) throw new Error('cannot create an expired session');
+    const remainingMs = Math.max(1, recordExpiryMs - nowMs);
 
-    const multi = this.redis.multi();
-    multi.set(key, JSON.stringify(record), 'EX', Math.ceil(remainingMs / 1000));
-    multi.sadd(userKey, record.sessionId);
-    multi.expire(userKey, Math.ceil(remainingMs / 1000));
-    await multi.exec();
+    // Idempotent replay is allowed only while active. Revocation creates a separate short-lived
+    // tombstone checked atomically with SET/index reconstruction, preventing logout resurrection.
+    const serialized = JSON.stringify(record);
+    const ttlSeconds = Math.ceil(remainingMs / 1000);
+    const result = await this.redis.eval(
+      CREATE_SESSION_IF_ACTIVE_LUA,
+      3,
+      key,
+      userKey,
+      `${SESSION_REVOKED_PREFIX}${record.sessionId}`,
+      serialized,
+      String(ttlSeconds),
+      record.sessionId,
+    );
+    if (Number(result) === -1) throw new Error('cannot recreate a revoked session');
+    if (Number(result) === -2) throw new Error('session id collision with different record');
+    if (Number(result) === -3) throw new Error('invalid Redis session key type');
   }
 
   /** 读取会话；过期/撤销/未知返回 null（§3：Redis 丢失即全部会话失效）。 */
@@ -128,10 +198,17 @@ export class RedisSessionStore {
     const record = userId === null ? await this.getSession(sid) : null;
     const owner = userId ?? record?.userId;
     if (owner === undefined) return;
-    const multi = this.redis.multi();
-    multi.del(sessionKey(sid));
-    if (owner !== null) multi.srem(sessionUserKey(owner), sid);
-    await multi.exec();
+    const remainingMs = record ? Math.max(1, Date.parse(record.expiresAt) - Date.now()) : SESSION_LIFETIME.absoluteMs;
+    const result = await this.redis.eval(
+      REVOKE_SESSION_LUA,
+      3,
+      sessionKey(sid),
+      owner === null ? '__session-no-user-index__' : sessionUserKey(owner),
+      `${SESSION_REVOKED_PREFIX}${sid}`,
+      String(Math.ceil(remainingMs / 1000)),
+      sid,
+    );
+    if (Number(result) === -1) throw new Error('invalid Redis session key type while revoking');
   }
 
   /**
@@ -139,14 +216,15 @@ export class RedisSessionStore {
    * 逐个 del 会话 key 并清空 user Set；user Set 的 TTL 一并移除（下次 createSession 重建）。
    */
   async revokeUserSessions(userId: string): Promise<void> {
-    const sids = await this.getSessionsByUser(userId);
-    if (sids.length === 0) return;
-    const multi = this.redis.multi();
-    for (const sid of sids) {
-      multi.del(sessionKey(sid));
-    }
-    multi.del(sessionUserKey(userId));
-    await multi.exec();
+    const result = await this.redis.eval(
+      REVOKE_USER_SESSIONS_LUA,
+      1,
+      sessionUserKey(userId),
+      SESSION_REVOKED_PREFIX,
+      String(Math.ceil(SESSION_LIFETIME.absoluteMs / 1000)),
+      SESSION_KEY_PREFIX,
+    );
+    if (Number(result) === -1) throw new Error('invalid Redis session key type while revoking user sessions');
   }
 
   /**
@@ -171,10 +249,9 @@ export class RedisSessionStore {
   /** 续期会话空闲寿命（刷新成功后调用）：重算 TTL 并重设 user Set TTL。 */
   async touchSessionIdle(sid: string, userId: string, idleExpiryMs: number, nowMs: number): Promise<void> {
     const remainingMs = Math.max(1, idleExpiryMs - nowMs);
-    const multi = this.redis.multi();
-    multi.expire(sessionKey(sid), Math.ceil(remainingMs / 1000));
-    multi.expire(sessionUserKey(userId), Math.ceil(remainingMs / 1000));
-    await multi.exec();
+    const ttlSeconds = Math.ceil(remainingMs / 1000);
+    const result = await this.redis.eval(TOUCH_SESSION_IDLE_LUA, 2, sessionKey(sid), sessionUserKey(userId), String(ttlSeconds));
+    if (Number(result) === -1) throw new Error('invalid Redis session key type while extending idle expiry');
   }
 
   /** 用户 Set 中 sid 的当前 TTL（秒，Redis 原始语义；-1 永不过期 / -2 不存在）。 */

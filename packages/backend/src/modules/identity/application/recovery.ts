@@ -22,7 +22,7 @@
  *   + 安全事件，同事务，§3 "撤销范围 + auth_version 递增 + user_security_event 同事务"）。
  */
 
-import type { AccountRecoveryRequestSchema, SessionResponseSchema, Static } from '@gameing/contracts/identity';
+import type { AccountRecoveryRequestSchema, Static } from '@gameing/contracts/identity';
 import { RecoveryStatus, UserStatus } from '../../../infrastructure/database/models/identity.js';
 import { DomainError, I } from '../domain/errors.js';
 import { verifyTotp } from '../domain/totp.js';
@@ -38,6 +38,7 @@ import { buildNewSession } from '../adapters/redis-session-port.js';
 import { toPlayerUser } from '../adapters/row-mappers.js';
 import { createHash } from 'node:crypto';
 import type { SecurityEventService } from './security-events.js';
+import type { SessionResult } from './session-result.js';
 
 export interface RecoveryInput {
   request: Static<typeof AccountRecoveryRequestSchema>;
@@ -58,7 +59,7 @@ export class RecoveryUseCase {
     private readonly securityEvents: SecurityEventService,
   ) {}
 
-  async run(input: RecoveryInput, tx: Tx): Promise<Static<typeof SessionResponseSchema>> {
+  async run(input: RecoveryInput, tx: Tx): Promise<SessionResult> {
     const { request, ctx } = input;
     const now = this.clock.now();
     const nowMs = now.getTime();
@@ -192,6 +193,8 @@ export class RecoveryUseCase {
       expiresAt: expiresAtIso,
       user: toPlayerUser(user),
       device: { deviceId: ctx.deviceId ?? user.id, trusted: true },
+      sid,
+      refreshToken,
     };
   }
 

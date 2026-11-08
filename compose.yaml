@@ -1,8 +1,9 @@
-name: gameing-hall-pixi
+# 项目资源命名空间稳定固定；临时 override 可显式提供 COMPOSE_PROJECT_NAME，但仅在隔离环境中使用。
+name: ${COMPOSE_PROJECT_NAME:-gameing-hall-pixi}
 
 services:
   mysql:
-    image: mysql:9.7.2
+    image: mysql:9.7.4
     restart: unless-stopped
     environment:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD in .env}
@@ -14,28 +15,28 @@ services:
       - --collation-server=utf8mb4_0900_ai_ci
       - --default-time-zone=+00:00
     ports:
-      - "127.0.0.1:${MYSQL_HOST_PORT:-10306}:3306"
+      - '127.0.0.1:${MYSQL_HOST_PORT:-10306}:3306'
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p\"$${MYSQL_ROOT_PASSWORD}\" --silent"]
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -uroot -p"$${MYSQL_ROOT_PASSWORD}" --silent']
       interval: 5s
       timeout: 5s
       retries: 20
       start_period: 30s
 
   redis:
-    image: redis:8.10.2
+    image: redis:8.10.3-alpine
     restart: unless-stopped
     environment:
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
-    command: ["redis-server", "--appendonly", "yes", "--requirepass", "${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}"]
+    command: ['redis-server', '--appendonly', 'yes', '--requirepass', '${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}']
     ports:
-      - "127.0.0.1:${REDIS_HOST_PORT:-10371}:6379"
+      - '127.0.0.1:${REDIS_HOST_PORT:-10371}:6379'
     volumes:
       - redis_data:/data
     healthcheck:
-      test: ["CMD-SHELL", "redis-cli -a \"$${REDIS_PASSWORD}\" --no-auth-warning ping | grep -q PONG"]
+      test: ['CMD-SHELL', 'redis-cli -a "$${REDIS_PASSWORD}" --no-auth-warning ping | grep -q PONG']
       interval: 5s
       timeout: 3s
       retries: 20
@@ -45,12 +46,12 @@ services:
   # 本服务以 root 一次性把各 node_modules 卷与 pnpm store 交给 node，再退出。
   # 只依赖官方 node 基础镜像（自带 node 用户与 chown），不需要 pnpm，因此无需构建自定义镜像。
   prepare-volumes:
-    profiles: ["dev", "full"]
-    image: node:24.21.0-bookworm-slim
+    profiles: ['dev', 'full']
+    image: node:26.13.0-bookworm-slim
     init: true
     user: root
     working_dir: /workspace
-    command: ["/bin/sh", "-lc", "chown -R node:node /vol/dev /vol/server /vol/web /vol/admin /vol/store"]
+    command: ['/bin/sh', '-lc', 'chown -R node:node /vol/dev /vol/server /vol/web /vol/admin /vol/store']
     volumes:
       - dev_node_modules:/vol/dev
       - server_node_modules:/vol/server
@@ -59,26 +60,26 @@ services:
       - pnpm_store:/vol/store
 
   dev:
-    profiles: ["dev"]
+    profiles: ['dev']
     build:
       context: .
       dockerfile: Dockerfile.dev
     init: true
     user: node
     working_dir: /workspace
-    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && sleep infinity"]
+    command: ['/bin/sh', '-lc', 'pnpm install --frozen-lockfile --store-dir /pnpm/store && sleep infinity']
     volumes:
       - .:/workspace
       - dev_node_modules:/workspace/node_modules
       - pnpm_store:/pnpm/store
     environment:
       MYSQL_HOST: mysql
-      MYSQL_PORT: "3306"
+      MYSQL_PORT: '3306'
       MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
       MYSQL_USER: ${MYSQL_USER:-gameing}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       REDIS_HOST: redis
-      REDIS_PORT: "6379"
+      REDIS_PORT: '6379'
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
     depends_on:
       prepare-volumes:
@@ -89,30 +90,31 @@ services:
         condition: service_healthy
 
   server:
-    profiles: ["full"]
+    profiles: ['full']
     build:
       context: .
       dockerfile: Dockerfile.dev
     init: true
     user: node
     working_dir: /workspace
-    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/server dev"]
+    command: ['/bin/sh', '-lc', 'pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/server dev']
     ports:
-      - "127.0.0.1:10300:3000"
+      - '127.0.0.1:10300:3000'
     volumes:
       - .:/workspace
       - server_node_modules:/workspace/node_modules
       - pnpm_store:/pnpm/store
     environment:
-      PORT: "3000"
+      PORT: '3000'
       MYSQL_HOST: mysql
-      MYSQL_PORT: "3306"
+      MYSQL_PORT: '3306'
       MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
       MYSQL_USER: ${MYSQL_USER:-gameing}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       REDIS_HOST: redis
-      REDIS_PORT: "6379"
+      REDIS_PORT: '6379'
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+      SYSTEM_USER_ID: ${SYSTEM_USER_ID:-}
     depends_on:
       prepare-volumes:
         condition: service_completed_successfully
@@ -121,23 +123,29 @@ services:
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/v1/health/live').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 5s
       timeout: 3s
       retries: 12
       start_period: 10s
 
   web:
-    profiles: ["full"]
+    profiles: ['full']
     build:
       context: .
       dockerfile: Dockerfile.dev
     init: true
     user: node
     working_dir: /workspace
-    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/web dev --host 0.0.0.0"]
+    command: ['/bin/sh', '-lc', 'pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/web dev --host 0.0.0.0']
     ports:
-      - "127.0.0.1:10373:5173"
+      - '127.0.0.1:10373:5173'
     volumes:
       - .:/workspace
       - web_node_modules:/workspace/node_modules
@@ -150,23 +158,23 @@ services:
       server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5173').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:5173').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 5s
       timeout: 3s
       retries: 12
       start_period: 10s
 
   admin:
-    profiles: ["full"]
+    profiles: ['full']
     build:
       context: .
       dockerfile: Dockerfile.dev
     init: true
     user: node
     working_dir: /workspace
-    command: ["/bin/sh", "-lc", "pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/admin dev --host 0.0.0.0"]
+    command: ['/bin/sh', '-lc', 'pnpm install --frozen-lockfile --store-dir /pnpm/store && pnpm --filter @gameing/admin dev --host 0.0.0.0']
     ports:
-      - "127.0.0.1:10374:5174"
+      - '127.0.0.1:10374:5174'
     volumes:
       - .:/workspace
       - admin_node_modules:/workspace/node_modules
@@ -179,7 +187,7 @@ services:
       server:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:5174').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test: ['CMD', 'node', '-e', "fetch('http://127.0.0.1:5174').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -190,33 +198,40 @@ services:
   # 服务端跑的是打包后的自包含 ESM 产物。启动方式：
   #   docker compose --profile prod up -d --wait
   api-prod:
-    profiles: ["prod"]
+    profiles: ['prod']
     build:
       context: .
       dockerfile: Dockerfile
     init: true
     restart: unless-stopped
     ports:
-      - "127.0.0.1:${API_PROD_HOST_PORT:-10300}:3000"
+      - '127.0.0.1:${API_PROD_HOST_PORT:-10300}:3000'
     environment:
       NODE_ENV: production
-      PORT: "3000"
+      PORT: '3000'
       LOG_LEVEL: ${LOG_LEVEL:-info}
       MYSQL_HOST: mysql
-      MYSQL_PORT: "3306"
+      MYSQL_PORT: '3306'
       MYSQL_DATABASE: ${MYSQL_DATABASE:-gameing_hall}
       MYSQL_USER: ${MYSQL_USER:-gameing}
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Set MYSQL_PASSWORD in .env}
       REDIS_HOST: redis
-      REDIS_PORT: "6379"
+      REDIS_PORT: '6379'
       REDIS_PASSWORD: ${REDIS_PASSWORD:?Set REDIS_PASSWORD in .env}
+      SYSTEM_USER_ID: ${SYSTEM_USER_ID:-}
     depends_on:
       mysql:
         condition: service_healthy
       redis:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/v1/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://127.0.0.1:3000/api/v1/health/ready').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
       interval: 10s
       timeout: 3s
       retries: 6

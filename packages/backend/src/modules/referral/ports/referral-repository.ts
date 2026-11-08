@@ -87,6 +87,9 @@ export interface ReferralBindingRepo {
   /** 按用户查绑定行（幂等重放 / 归因去重；无锁读）。 */
   findBindingByUser(userId: string, tx: Tx): Promise<ReferralBindingModel | null>;
 
+  /** 查询当前绑定用户直属上级的返佣模式（null = 无直属上级或用户未绑定）。 */
+  findDirectParentRewardType(userId: string, tx: Tx): Promise<1 | 2 | null>;
+
   /**
    * 列出某用户作为直属上级的全部绑定（GET /me/referrals/direct-invitees）。
    * 游标分页（created_at + id 稳定游标，50/页，SDD §5.4 邀请列表约定）。

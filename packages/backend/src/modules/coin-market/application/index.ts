@@ -40,6 +40,7 @@ export {
   type TradeReleasedDto,
 } from './trade-create.js';
 export { TradeConfirmUseCase } from './trade-confirm.js';
+export { CoinMarketExpiryScanUseCase } from './coin-market-expiry-scan.js';
 
 // ---------------------------------------------------------------------------
 // 成交列表 + 详情 + 过期 / 取消（GET /me/coin-market/trades +

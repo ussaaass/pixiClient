@@ -42,7 +42,7 @@ const tradeStatusLabels: Record<number, string> = {
   [CoinMarketTradeStatus.SELLER_EVIDENCE_PENDING]: '等待卖家补证',
   [CoinMarketTradeStatus.PLATFORM_REVIEW]: '等待平台裁定',
   [CoinMarketTradeStatus.RELEASED]: '金币已转入买家账户（本地模拟）',
-  [CoinMarketTradeStatus.RETURNED]: '金币已退回卖家（本地模拟）',
+  [CoinMarketTradeStatus.RESOLVED_RETURN]: '金币已退回卖家（本地模拟）',
   [CoinMarketTradeStatus.PAYMENT_EXPIRED]: '付款超时',
 };
 const paymentInstructions = ref('');
@@ -58,9 +58,13 @@ const activeTradeCount = computed(
   () =>
     trades.value.filter(
       (trade) =>
-        ![CoinMarketTradeStatus.RELEASED, CoinMarketTradeStatus.RETURNED, CoinMarketTradeStatus.PAYMENT_EXPIRED].includes(
-          trade.status as 7 | 8 | 9,
-        ),
+        ![
+          CoinMarketTradeStatus.RELEASED,
+          CoinMarketTradeStatus.AUTO_RELEASED,
+          CoinMarketTradeStatus.PAYMENT_EXPIRED,
+          CoinMarketTradeStatus.RESOLVED_RETURN,
+          CoinMarketTradeStatus.CANCELLED,
+        ].includes(trade.status as 7 | 8 | 9 | 10 | 11),
     ).length,
 );
 

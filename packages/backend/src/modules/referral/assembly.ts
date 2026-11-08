@@ -76,6 +76,8 @@ export interface ReferralModuleDeps {
 export interface ReferralModule {
   // ports（共享实现，供测试 / 其他模块 mock 时参考）
   bindingRepo: ReferralBindingRepo;
+  /** 当前玩家直属上级的返佣模式查询，用于 wallet 权限门禁。 */
+  findDirectParentRewardType(userId: string, tx: Tx): Promise<1 | 2 | null>;
   eventRepo: BindingEventRepo;
   rewardRepo: RewardAllocationRepo;
   agentDomainRepo: AgentDomainRepo;
@@ -132,6 +134,7 @@ export function createReferralModule(deps: ReferralModuleDeps): ReferralModule {
 
   const module: ReferralModule = {
     bindingRepo,
+    findDirectParentRewardType: (userId, tx) => bindingRepo.findDirectParentRewardType(userId, tx),
     eventRepo,
     rewardRepo,
     agentDomainRepo,

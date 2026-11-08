@@ -75,12 +75,12 @@ export interface AgentDomainRepo {
 }
 
 // ---------------------------------------------------------------------------
-// AdminAuditEventRepo（admin_audit_event append-only；U(request_key) 幂等）
+// AdminAuditEventRepo（admin_audit_event append-only；权限变更按 action+request_key 幂等）
 // ---------------------------------------------------------------------------
 
 export interface AdminAuditEventRepo {
   /**
-   * 写审计事件（append-only，status 固定 RECORDED=1；U(request_key)
+   * 写审计事件（append-only，status 固定 RECORDED=1；权限变更按 action+request_key
    * 幂等兜底：命中 → 返回既有行 `inserted: false`，不产生第二行；
    * snapshot 经 `validateAuditSnapshot` 脱敏校验后落库；ipHash 经
    * 路由层 `crypto.createHash('sha256').update(ip + secret).digest()`
@@ -108,6 +108,12 @@ export interface AdminAuditEventRepo {
     tx: Tx;
   }): Promise<{ inserted: boolean; event: AdminAuditEventModel }>;
 
+  /** 按 action+target 定位既有权限变更 request_key（并发串行由目标 user 行锁保证）。 */
+  findPermissionAuditByRequestKey(requestKey: string, tx: Tx): Promise<AdminAuditEventModel | null>;
+
+  /** 按目标 Admin 返回最近权限变更审计（只读）。 */
+  listPermissionAuditsForTarget(targetAdminUserId: string, tx: Tx): Promise<AdminAuditEventModel[]>;
+
   /** 按 request_key 读既有审计事件（幂等重放 / 审计查询用；只读无锁）。 */
   findAuditEventByRequestKey(requestKey: string, tx: Tx): Promise<AdminAuditEventModel | null>;
 }
@@ -120,8 +126,14 @@ export interface AdminPermissionRepo {
   /** 按 permission_code 读权限行（只读无锁；缺失返回 null）。 */
   findPermissionByCode(permissionCode: string, tx: Tx): Promise<AdminPermissionModel | null>;
 
+  /** 按 code 集合读取目录（权限修改时校验所有 code 均存在且 active）。 */
+  findPermissionsByCodes(permissionCodes: readonly string[], tx: Tx): Promise<AdminPermissionModel[]>;
+
   /** Resolve an active permission directory entry by exact method and canonical path template. */
   findPermissionByRoute(httpMethod: string, pathPattern: string, tx: Tx): Promise<AdminPermissionModel | null>;
+
+  /** 返回被授权管理接口用的启用目录项。 */
+  listActivePermissions(tx: Tx): Promise<AdminPermissionModel[]>;
 }
 
 // ---------------------------------------------------------------------------
@@ -211,7 +223,7 @@ export interface AiJobReviewRepo {
 }
 
 // ---------------------------------------------------------------------------
-// AdminUserRepo（user admin 视角读；经 identity UserModel，不写）
+// AdminUserRepo（user admin 视角读写；权限授予通过本模块端口，不改变 identity 职责）
 // ---------------------------------------------------------------------------
 
 export interface AdminUserRepo {
@@ -236,4 +248,10 @@ export interface AdminUserRepo {
 
   /** 按 username 读 user 行（Admin 登录前置；只读无锁；缺失返回 null）。 */
   findUserByUsername(username: string, tx: Tx): Promise<UserModel | null>;
+
+  /** Admin 权限变更时锁定目标 user 行；调用方必须在事务中使用。 */
+  lockPermissionTargetUser(userId: string, tx: Tx): Promise<UserModel | null>;
+
+  /** 条件更新目标 user.permissions 并递增 auth_version，返回影响行数。 */
+  updateUserPermissions(input: { userId: string; expectedAuthVersion: string; permissions: readonly string[]; tx: Tx }): Promise<number>;
 }

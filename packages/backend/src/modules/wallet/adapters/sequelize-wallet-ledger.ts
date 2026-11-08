@@ -40,7 +40,14 @@ import type {
   GiftGrantModel,
   TurnoverStateModel,
 } from '../../../infrastructure/database/models/wallet.js';
-import { RecordStatus, ActiveStatus, TurnoverStatus, HoldStatus } from '../../../infrastructure/database/models/wallet.js';
+import {
+  RecordStatus,
+  ActiveStatus,
+  TurnoverStatus,
+  HoldStatus,
+  AssetType,
+  AccountType,
+} from '../../../infrastructure/database/models/wallet.js';
 import type { UserModel as IdentityUserModel } from '../../../infrastructure/database/models/identity.js';
 import type { AssetLedger, EntryIntent, HoldAmountPostInput, HoldAmountPostResult, LedgerPost, Tx } from '../ports/wallet-repository.js';
 import { WalletDomainError, W, isDuplicateKeyError } from '../domain/errors.js';
@@ -200,6 +207,57 @@ export class SequelizeWalletLedger implements AssetLedger {
       where: { userId, assetType, accountType, status: ActiveStatus.ACTIVE },
       transaction: txOf(tx),
     });
+  }
+
+  // ------------------------------------------------------------------
+  // 玩家开户（仅创建缺失的标准账户；绝不修改既有余额/状态）
+  // ------------------------------------------------------------------
+
+  async ensurePlayerAccounts(userId: string, tx: Tx): Promise<AssetAccountModel[]> {
+    const txq = txOf(tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null) {
+      throw new TypeError('ensurePlayerAccounts requires an active transaction');
+    }
+    const specs = [
+      { assetType: AssetType.COIN, currency: 'COI' },
+      { assetType: AssetType.CNY_BALANCE, currency: 'CNY' },
+    ] as const;
+    const accounts: AssetAccountModel[] = [];
+
+    for (const spec of specs) {
+      const where = { userId, assetType: spec.assetType, currency: spec.currency };
+      let row = await this.models.AssetAccountModel.findOne({ where, transaction: txq } as never);
+      if (row === null) {
+        try {
+          // Deliberately omit amount/frozen/version/status: database defaults initialize a new account.
+          row = await this.models.AssetAccountModel.create(
+            { userId, accountType: AccountType.PLAYER, assetType: spec.assetType, currency: spec.currency } as never,
+            { transaction: txq } as never,
+          );
+        } catch (error) {
+          if (!isDuplicateKeyError(error)) {
+            throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'player account creation failed');
+          }
+          // A concurrent transaction won the unique key. Re-read in the caller's transaction;
+          // if it isn't visible or isn't a compatible account, fail closed.
+          row = await this.models.AssetAccountModel.findOne({ where, lock: 'FOR UPDATE', transaction: txq } as never);
+          if (row === null) {
+            throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'player account unique conflict without visible row');
+          }
+        }
+      }
+      if (
+        row.userId !== userId ||
+        row.accountType !== AccountType.PLAYER ||
+        row.assetType !== spec.assetType ||
+        row.currency !== spec.currency ||
+        row.status !== ActiveStatus.ACTIVE
+      ) {
+        throw new WalletDomainError(W.WALLET_STORAGE_UNAVAILABLE, 'player account status/type mismatch');
+      }
+      accounts.push(row);
+    }
+    return accounts;
   }
 
   // ------------------------------------------------------------------

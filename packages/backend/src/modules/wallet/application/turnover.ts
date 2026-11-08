@@ -13,7 +13,7 @@
  * - remaining_coins > 0 且 status = ACTIVE(1) = 未完成流水，禁止提现/转出金币
  *   （转账 submit 与提现申请原子事务内复核，双资产文档 §5.1 "这项服务端事务
  *   校验不可由前端禁用按钮取代"）；
- * - remaining_coins = 0 或 status = COMPLETE(2)/REVERSED(3) = 放行。
+ * - remaining_coins = 0 或 status = COMPLETE(2) = 放行。REVERSED(3) 没有放行语义：保持未完成门槛，以 fail closed 保护资金。
  *
  * 错误码映射（contracts `WalletErrorCode` → 触发条件）：
  * - `TURNOVER_INCOMPLETE`：`assertTransferAllowed` 判定 remaining_coins > 0 且

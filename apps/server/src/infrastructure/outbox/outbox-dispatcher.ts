@@ -11,8 +11,8 @@
  *   断线补拉走 HTTP——Socket 只发提示/增量，不承载权威数据）。
  * - **任务类** topic（worker 闭环）：经 `OutboxTaskHandler` 注册表分发
  *   到各域用例（REFERRAL_REWARD 入账、payout 推进、支付订单过期等，
- *   §6.3 "恢复任务"）；未注册 topic 按投递成功处理（提示类默认，
- *   不阻塞 SENT 落库，登记决策点：严格模式 vs 宽松模式）。
+ *   §6.3 "恢复任务"）；仅显式登记的 Socket topic 可推送，其余未知 topic
+ *   fail closed，避免新业务事件被误标 SENT。
  * - 消费者幂等：事件消费侧经 event_key 唯一键天然幂等（重投同一行
  *   经 SENT 状态拦截，不再重复处理）。
  */
@@ -23,7 +23,8 @@ import type { Logger } from '../../infrastructure/logging/logger.js';
 /** Socket 通知端口（首版实现经 SocketAuthHandles 的 user→connections Map）。 */
 export interface SocketNotifPort {
   /** 按 user_id 向 /platform 命名空间全部连接推送事件（连接缺失 = 0 条，
-   * 不算失败——断线补拉走 HTTP，§6.3 "先持久化后推送"）。 */
+   * 不算失败——断线补拉走 HTTP，§6.3 "先持久化后推送"）。payload 含 outbox eventKey，
+   * 供客户端对至少一次投递去重；这不是客户端 ACK。 */
   notifyUser(userId: string, event: string, payload: Record<string, unknown>): Promise<void> | void;
 }
 
@@ -40,13 +41,14 @@ export interface OutboxTaskHandler {
 }
 
 export interface TopicDispatchTable {
-  /** 任务处理器注册表（topic → handler；未命中走 Socket 提示）。 */
+  /** 任务处理器注册表（topic → handler；通知 topic 走 Socket 提示）。 */
   readonly tasks: ReadonlyMap<string, OutboxTaskHandler>;
-  /** 任务 topic 前缀白名单（命中 = 任务语义；其余 = Socket 提示语义）。 */
+  /** 任务语义 topic 分类（含尚未装配 handler 的 fail-closed topic）。 */
   isTaskTopic(topic: string): boolean;
 }
 
 /** 缺省 Socket 提示事件名映射（未命中映射的 topic 直接以 topic 名推）。 */
+const TASK_TOPICS = new Set(['payments.withdrawal.requested', 'coin-market.expiry-scan', 'referral.reward-posted']);
 const SOCKET_EVENT_MAP: Readonly<Record<string, string>> = {
   'wallet.transfer': 'wallet.transfer',
   'wallet.exchange': 'wallet.exchange',
@@ -95,6 +97,14 @@ export function createOutboxDispatcher(options: {
   async function deliver(row: OutboxModel): Promise<boolean> {
     const topic = row.topic;
     const task = taskMap.get(topic);
+    if (TASK_TOPICS.has(topic) && task === undefined) {
+      logger.error('outbox 任务 topic 无可用 handler（不得当作 Socket 通知确认）', {
+        workerId,
+        outboxId: row.id,
+        topic,
+      });
+      return false;
+    }
     if (task !== undefined) {
       try {
         const ok = await task.run(row);
@@ -107,15 +117,27 @@ export function createOutboxDispatcher(options: {
           return false;
         }
         return true;
-      } catch (error) {
+      } catch {
         logger.warn('outbox 任务处理异常（经退避重试）', {
           workerId,
           outboxId: row.id,
           topic,
-          error: error instanceof Error ? error.message : String(error),
+          errorCode: 'TASK_HANDLER_FAILED',
         });
         return false;
       }
+    }
+
+    // Socket 提示必须显式登记。未知 topic 可能是新的业务任务，不得宽松
+    // 路由后标记 SENT；保持 fail closed，待对应 handler/映射上线再消费。
+    if (!Object.hasOwn(SOCKET_EVENT_MAP, topic)) {
+      logger.error('outbox 未登记 topic（fail closed）', {
+        workerId,
+        outboxId: row.id,
+        topic,
+        errorCode: 'UNKNOWN_TOPIC',
+      });
+      return false;
     }
 
     // Socket 提示类：user_id 为 null 的公开事件首版跳过推送（登记决策点：
@@ -125,11 +147,21 @@ export function createOutboxDispatcher(options: {
       return true;
     }
     const event = SOCKET_EVENT_MAP[topic] ?? topic;
-    await socketNotif.notifyUser(row.userId, event, row.payload);
-    return true;
+    try {
+      await socketNotif.notifyUser(row.userId, event, { ...row.payload, eventKey: row.eventKey });
+      return true;
+    } catch {
+      logger.warn('outbox Socket 投递失败（经退避重试）', {
+        workerId,
+        outboxId: row.id,
+        topic,
+        errorCode: 'SOCKET_DELIVERY_FAILED',
+      });
+      return false;
+    }
   }
 
-  return { deliver, isTaskTopic: (topic: string): boolean => taskMap.has(topic) };
+  return { deliver, isTaskTopic: (topic: string): boolean => TASK_TOPICS.has(topic) || taskMap.has(topic) };
 }
 
 export type OutboxDispatcher = ReturnType<typeof createOutboxDispatcher>;

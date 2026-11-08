@@ -9,49 +9,39 @@
  *
  * 状态布局（全部 key 带 TTL）：
  * - `session:{sid}`：SessionRecord JSON（refreshHash = 当前代摘要，rotationSeq）。
- * - `session:replay:{sid}`：Lua 写入的"上一代刷新结果"JSON
- *   `{ presentedHash, operationId, newRefreshHash, result, atMs }`，
- *   每次成功轮换覆盖，TTL 固定 30s（REPLAY_WINDOW_MS）。
- *   读侧先 GET 该 key，命中且 presentedHash+operationId 相同即重放原结果（JS 侧，
- *   不进 Lua——重放返回的是上一代结果而非新代，不推进 seq）。
+ * - `session:replay:{sid}`：Lua 写入的"上一代刷新结果"JSON，含旧凭证摘要、operationId、
+ *   新摘要、加密 refresh token 与轮换结果；每次成功轮换覆盖，TTL 固定 30s。
+ *   Lua 在本脚本内原子比对凭证与 operationId，并直接返回缓存的密文 replay payload。
  *
  * Lua 契约（`session:rotate` 脚本，由 ioredis `Script` 自动 SHA1 缓存，NOSCRIPT 自动重定义）：
  *   KEYS[1] = session:{sid}（SessionRecord JSON）
  *   KEYS[2] = session:replay:{sid}（上一代结果 JSON）
- *   ARGV[1] = presentedHash（客户端提交的 refresh token 的 sha256 hex）
- *   ARGV[2] = newHash（新一代 refresh token 的 sha256 hex，JS 侧预先算好）
- *   ARGV[3] = operationId（客户端单飞操作 ID）
- *   ARGV[4] = nowMs（UTC 毫秒，由 JS 注入时钟，脚本内不用 TIME）
- *   ARGV[5] = replayTtlSeconds（30，REPLAY_WINDOW_MS/1000）
+ *   ARGV[1..6] = presentedHash, newHash, encryptedToken, operationId, nowMs, replayTtlSeconds
+ *   ARGV[7..10] = current effective expiry ms, absolute expiry ms, next idle ISO, next effective expiry ISO
  *
  * 返回值（单元素表）：
- *   `OK|{json}`     —— 成功轮换：{ sessionId, refreshHash(new), rotationSeq, replayCache:{...} }
- *   `REUSE|{json}`  —— 已消费凭证再次使用（复用检测）：{ revoked:true, replayCache:{...} }
- *                      撤销整 session + user Set 成员（revoke 的 user Set 摘除由 JS 侧
- *                      依据返回补做，脚本内无法安全地枚举 user Set —— 脚本拿到的是
- *                      session JSON，user Set key 形如 session:user:{userId}，脚本可构造）。
+ *   `OK|{json}`     —— 成功轮换：{ sessionId, userId, authVersion, replayCache }
+ *   `REUSE|{json}`  —— 已消费凭证再次使用（复用检测）：{ presentedHash, operationId, atMs }
+ *                      脚本原子删除 session 并从 user Set 摘除该 sid。
  */
 
 import type { RedisClient } from './client.js';
 
-/** 弱网重放窗口（§3 推荐 30 秒；"刷新响应丢失仅重放一次既有结果"）。 */
+/** 弱网重放窗口（§3 的 30 秒；超窗后旧代凭证视为复用）。 */
 export const REPLAY_WINDOW_MS = 30 * 1000;
 
 /** 轮换结果：成功。 */
 export interface RotationOk {
   kind: 'OK';
-  /** 新一代 refresh token 的 sha256（与 JS 侧传入的 newHash 一致，回显便于对账）。 */
   newRefreshHash: string;
-  /** 推进后的轮换序号。 */
   rotationSeq: number;
-  /** 新一代空闲到期（ISO 8601 UTC）。 */
-  idleExpiry: string;
+  idleExpiryEpochMs: number;
 }
 
 /** 轮换结果：已消费凭证再次使用（§3 撤销该 session + 持久安全事件）。 */
 export interface RotationReuse {
   kind: 'REUSE_DETECTED';
-  /** 撤销时该 session 所属 user（供 JS 侧写 user_security_event + 摘 user Set）。 */
+  /** 复用检测不产生附加会话快照。 */
   userId: string;
 }
 
@@ -62,17 +52,67 @@ export interface ReplayCacheEntry {
   presentedHash: string;
   operationId: string;
   newRefreshHash: string;
+  encryptedRefreshToken: string;
   result: RotationOk;
-  /** 缓存写入时间（UTC 毫秒）。 */
-  atMs: number;
 }
 
 /** 脚本返回解析后的联合类型。 */
 export type ScriptOutcome =
   | { kind: 'OK'; record: SessionRecordSnapshot; replayCache: ReplayCacheEntry }
-  | { kind: 'REUSE_DETECTED'; record: SessionRecordSnapshot; replayCache: ReplayCacheEntry }
+  | { kind: 'REUSE_DETECTED'; record: SessionRecordSnapshot }
   | { kind: 'REPLAY'; record: SessionRecordSnapshot; replayCache: ReplayCacheEntry };
-/** 脚本视角的 session 快照（只需轮换相关字段）。 */
+
+function isReplayCacheEntry(value: unknown): value is ReplayCacheEntry {
+  if (typeof value !== 'object' || value === null) return false;
+  const entry = value as Partial<ReplayCacheEntry>;
+  return (
+    typeof entry.presentedHash === 'string' &&
+    typeof entry.operationId === 'string' &&
+    typeof entry.newRefreshHash === 'string' &&
+    typeof entry.encryptedRefreshToken === 'string' &&
+    typeof entry.result === 'object' &&
+    entry.result !== null &&
+    typeof entry.result.newRefreshHash === 'string' &&
+    typeof entry.result.rotationSeq === 'number' &&
+    typeof entry.result.idleExpiryEpochMs === 'number'
+  );
+}
+
+function decodeObject<T>(raw: string, guard: (value: unknown) => value is T): T {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(raw);
+  } catch {
+    throw new Error('invalid refresh rotation JSON');
+  }
+  if (!guard(parsed)) throw new Error('invalid refresh rotation payload');
+  return parsed;
+}
+
+function isSessionSnapshot(value: unknown): value is SessionRecordSnapshot {
+  if (typeof value !== 'object' || value === null) return false;
+  const record = value as Partial<SessionRecordSnapshot>;
+  return typeof record.sessionId === 'string' && typeof record.userId === 'string' && typeof record.authVersion === 'string';
+}
+
+interface RotationOkPayload extends SessionRecordSnapshot {
+  replayCache: ReplayCacheEntry;
+}
+function isRotationOkPayload(value: unknown): value is RotationOkPayload {
+  if (!isSessionSnapshot(value)) return false;
+  return 'replayCache' in value && isReplayCacheEntry(value.replayCache);
+}
+function isReusePayload(value: unknown): value is { presentedHash: string; operationId: string; userId: string; authVersion: string } {
+  if (typeof value !== 'object' || value === null) return false;
+  const reuse = value as { presentedHash?: unknown; operationId?: unknown; userId?: unknown; authVersion?: unknown };
+  return (
+    typeof reuse.presentedHash === 'string' &&
+    typeof reuse.operationId === 'string' &&
+    typeof reuse.userId === 'string' &&
+    typeof reuse.authVersion === 'string'
+  );
+}
+/** 脚本返回给应用层的最小 session 身份快照。 */
 export interface SessionRecordSnapshot {
   sessionId: string;
   userId: string;
@@ -89,14 +129,21 @@ local session = cjson.decode(sessionRaw)
 
 local presented = ARGV[1]
 local newHash = ARGV[2]
-local opId = ARGV[3]
-local nowMs = tonumber(ARGV[4])
-local replayTtl = tonumber(ARGV[5])
+local encryptedToken = ARGV[3]
+local opId = ARGV[4]
+local nowMs = tonumber(ARGV[5])
+local replayTtl = tonumber(ARGV[6])
+local currentExpiryMs = tonumber(ARGV[7])
+local absoluteExpiryMs = tonumber(ARGV[8])
+local nextIdleIso = ARGV[9]
+local nextExpiryIso = ARGV[10]
 
-local sessionTtlMs = (session.expiryEpochMs or 0) - nowMs
-if sessionTtlMs <= 0 then
-  return 'EXPIRED'
-end
+-- SessionRecord keeps canonical ISO timestamps; JS converts both current effective and
+-- absolute expiry. Lua validates key TTL against the current effective expiry in milliseconds.
+if not currentExpiryMs or not absoluteExpiryMs or type(nextIdleIso) ~= 'string' or type(nextExpiryIso) ~= 'string' then return 'INVALID_SESSION' end
+if currentExpiryMs <= nowMs or absoluteExpiryMs <= nowMs then return 'EXPIRED' end
+local sessionTtlMs = redis.call('PTTL', KEYS[1])
+if sessionTtlMs <= 0 or sessionTtlMs > currentExpiryMs - nowMs + 1000 then return 'EXPIRED' end
 
 local replayKey = KEYS[2]
 local replayRaw = redis.call('GET', replayKey)
@@ -104,14 +151,21 @@ local replayRaw = redis.call('GET', replayKey)
 -- 同凭证 + 同 operationId 在 30s 窗口内重放：返回上一代结果（不推进 seq、不写新摘要）。
 if replayRaw ~= false then
   local replay = cjson.decode(replayRaw)
-  if replay.presentedHash == presented and replay.operationId == opId then
+  if replay.presentedHash == presented and replay.operationId == opId and session.refreshHash == replay.newRefreshHash then
+    local remainingSec = math.max(1, math.ceil(redis.call('PTTL', KEYS[1]) / 1000))
+    local userKey = 'session:user:' .. session.userId
+    local userTtl = redis.call('TTL', userKey)
+    if userTtl == -2 or (userTtl >= 0 and userTtl < remainingSec) then redis.call('EXPIRE', userKey, remainingSec) end
     return 'REPLAY|' .. replayRaw
   end
 end
 
+
 if session.refreshHash ~= presented then
-  -- 已消费凭证再次使用（RFC 9700 复用检测）：撤销整 session。
-  -- session key TTL 缩短到立即过期效果不彻底（同实例窗口内仍可读），直接 DEL。
+  -- 已消费凭证再次使用（RFC 9700 复用检测）：先持久化 sid tombstone，再撤销。
+  -- Tombstone survives session deletion for at least the remaining session lifetime.
+  local remainingSec = math.max(1, math.ceil(sessionTtlMs / 1000))
+  redis.call('SET', 'session:revoked:' .. session.sessionId, '1', 'EX', remainingSec)
   redis.call('DEL', KEYS[1])
   if session.userId and session.userId ~= '' then
     redis.call('SREM', 'session:user:' .. session.userId, session.sessionId)
@@ -119,18 +173,20 @@ if session.refreshHash ~= presented then
   local reuse = cjson.new()
   reuse.presentedHash = presented
   reuse.operationId = opId
+  reuse.userId = session.userId
+  reuse.authVersion = session.authVersion
   reuse.atMs = nowMs
-  local reuseJson = cjson.encode(reuse)
+  local reuseJson = cjson.encode({ presentedHash = reuse.presentedHash, operationId = reuse.operationId, userId = reuse.userId, authVersion = reuse.authVersion })
   return 'REUSE|' .. reuseJson
 end
 
 -- 正常轮换：摘要推进、序号 +1、空闲窗口续期。
 session.rotationSeq = (session.rotationSeq or 0) + 1
 session.refreshHash = newHash
-session.idleExpiryEpochMs = nowMs + 7 * 24 * 3600 * 1000
-local absolute = session.absoluteExpiryEpochMs or 0
-session.expiryEpochMs = math.min(absolute, session.idleExpiryEpochMs)
-local remainingSec = math.ceil((session.expiryEpochMs - nowMs) / 1000)
+local nextExpiryMs = math.min(absoluteExpiryMs, nowMs + 7 * 24 * 3600 * 1000)
+session.idleExpiry = nextIdleIso
+session.expiresAt = nextExpiryIso
+local remainingSec = math.ceil((nextExpiryMs - nowMs) / 1000)
 if remainingSec < 1 then remainingSec = 1 end
 redis.call('SET', KEYS[1], cjson.encode(session), 'EX', remainingSec)
 
@@ -138,21 +194,24 @@ local okCache = cjson.new()
 okCache.presentedHash = presented
 okCache.operationId = opId
 okCache.newRefreshHash = newHash
+okCache.encryptedRefreshToken = encryptedToken
 okCache.result = cjson.new()
 okCache.result.newRefreshHash = newHash
 okCache.result.rotationSeq = session.rotationSeq
-okCache.result.idleExpiryEpochMs = session.idleExpiryEpochMs
-local okJson = cjson.encode(okCache)
+okCache.result.idleExpiryEpochMs = nextExpiryMs
+local okJson = cjson.encode({ presentedHash = okCache.presentedHash, operationId = okCache.operationId, newRefreshHash = okCache.newRefreshHash, encryptedRefreshToken = okCache.encryptedRefreshToken, result = { newRefreshHash = okCache.result.newRefreshHash, rotationSeq = okCache.result.rotationSeq, idleExpiryEpochMs = okCache.result.idleExpiryEpochMs } })
 redis.call('SET', replayKey, okJson, 'EX', replayTtl)
 
 local userKey = 'session:user:' .. session.userId
-redis.call('EXPIRE', userKey, remainingSec)
+local userTtl = redis.call('TTL', userKey)
+if userTtl == -2 or (userTtl >= 0 and userTtl < remainingSec) then redis.call('EXPIRE', userKey, remainingSec) end
 
 local out = cjson.new()
 out.sessionId = session.sessionId
 out.userId = session.userId
 out.authVersion = session.authVersion
-return 'OK|' .. cjson.encode(out)
+out.replayCache = okCache
+return 'OK|' .. cjson.encode({ sessionId = out.sessionId, userId = out.userId, authVersion = out.authVersion, replayCache = { presentedHash = okCache.presentedHash, operationId = okCache.operationId, newRefreshHash = okCache.newRefreshHash, encryptedRefreshToken = okCache.encryptedRefreshToken, result = { newRefreshHash = okCache.result.newRefreshHash, rotationSeq = okCache.result.rotationSeq, idleExpiryEpochMs = okCache.result.idleExpiryEpochMs } } })
 `;
 
 /**
@@ -172,6 +231,7 @@ export class RefreshRotationStore {
       lua: ROTATE_SCRIPT,
       numberOfKeys: 2,
     });
+    await this.redis.script('LOAD', ROTATE_SCRIPT);
   }
 
   /**
@@ -186,94 +246,70 @@ export class RefreshRotationStore {
     sid: string,
     presentedHash: string,
     newHash: string,
+    encryptedRefreshToken: string,
     operationId: string,
     nowMs: number,
   ): Promise<ScriptOutcome | { kind: 'MISS' } | { kind: 'EXPIRED' }> {
-    const result = await this.redis.call(
-      'sessionRotate',
+    const rawSession = await this.redis.get(`session:${sid}`);
+    if (rawSession === null) return { kind: 'MISS' };
+    let session: { absoluteExpiry?: unknown; expiresAt?: unknown; sessionId?: unknown; userId?: unknown };
+    try {
+      session = JSON.parse(rawSession) as typeof session;
+    } catch {
+      throw new Error('invalid session JSON');
+    }
+    const absoluteExpiryMs = typeof session.absoluteExpiry === 'string' ? Date.parse(session.absoluteExpiry) : Number.NaN;
+    const currentExpiryMs = typeof session.expiresAt === 'string' ? Date.parse(session.expiresAt) : Number.NaN;
+    if (!Number.isFinite(absoluteExpiryMs) || !Number.isFinite(currentExpiryMs)) throw new Error('invalid session expiry fields');
+    if (
+      typeof session.sessionId !== 'string' ||
+      session.sessionId !== sid ||
+      typeof session.userId !== 'string' ||
+      !/^\d+$/.test(session.userId)
+    ) {
+      throw new Error('invalid session identity fields');
+    }
+    const nextIdleMs = nowMs + 7 * 24 * 3600 * 1000;
+    const nextExpiryMs = Math.min(absoluteExpiryMs, nextIdleMs);
+    const nextIdleIso = new Date(nextIdleMs).toISOString();
+    const nextExpiryIso = new Date(nextExpiryMs).toISOString();
+    const sessionRotate = (this.redis as RedisClient & { sessionRotate: (...args: string[]) => Promise<unknown> }).sessionRotate;
+    const result = await sessionRotate.call(
+      this.redis,
       `session:${sid}`,
       `session:replay:${sid}`,
       presentedHash,
       newHash,
+      encryptedRefreshToken,
       operationId,
       String(nowMs),
       String(Math.ceil(REPLAY_WINDOW_MS / 1000)),
+      String(currentExpiryMs),
+      String(absoluteExpiryMs),
+      nextIdleIso,
+      nextExpiryIso,
     );
-    if (typeof result !== 'string') return { kind: 'MISS' };
+    if (typeof result !== 'string') throw new Error('invalid refresh rotation script result type');
     if (result.startsWith('OK|')) {
-      const out = JSON.parse(result.slice(3)) as SessionRecordSnapshot;
-      const cache = await this.getReplayCache(sid);
-      return {
-        kind: 'OK',
-        record: out,
-        replayCache: cache ?? {
-          presentedHash,
-          operationId,
-          newRefreshHash: newHash,
-          result: {
-            kind: 'OK',
-            newRefreshHash: newHash,
-            rotationSeq: 0,
-            idleExpiry: new Date(nowMs + 7 * 24 * 3600 * 1000).toISOString(),
-          },
-          atMs: nowMs,
-        },
-      };
+      const out = decodeObject(result.slice(3), isRotationOkPayload);
+      return { kind: 'OK', record: out, replayCache: out.replayCache };
     }
     if (result.startsWith('REUSE|')) {
-      const reuse = JSON.parse(result.slice(6)) as Partial<ReplayCacheEntry> & { userId?: string; authVersion?: string };
-      const record = this.minimalSnapshot(sid, reuse.userId, reuse.authVersion);
-      return {
-        kind: 'REUSE_DETECTED',
-        record,
-        replayCache: {
-          presentedHash: reuse.presentedHash ?? presentedHash,
-          operationId: reuse.operationId ?? operationId,
-          newRefreshHash: reuse.newRefreshHash ?? '',
-          result: {
-            kind: 'OK',
-            newRefreshHash: reuse.newRefreshHash ?? '',
-            rotationSeq: 0,
-            idleExpiry: new Date(nowMs).toISOString(),
-          },
-          atMs: reuse.atMs ?? nowMs,
-        },
-      };
+      const reuse = decodeObject(result.slice(6), isReusePayload);
+      return { kind: 'REUSE_DETECTED', record: this.minimalSnapshot(sid, reuse.userId, reuse.authVersion) };
     }
     if (result.startsWith('REPLAY|')) {
-      const cache = JSON.parse(result.slice(7)) as ReplayCacheEntry;
+      const cache = decodeObject(result.slice(7), isReplayCacheEntry);
       return { kind: 'REPLAY', record: this.minimalSnapshot(sid, undefined, undefined), replayCache: cache };
     }
     if (result === 'MISS') return { kind: 'MISS' };
-    return { kind: 'EXPIRED' };
+    if (result === 'EXPIRED') return { kind: 'EXPIRED' };
+    if (result === 'INVALID_SESSION') throw new Error('invalid session expiry fields in Redis');
+    throw new Error('unknown refresh rotation script result');
   }
 
-  /** 复用/重放时 session 已被撤销，构造最小快照供安全事件落库（userId 可能未知）。 */
+  /** 复用时 Lua 一并返回撤销 session 的身份快照，供安全事件主体落库。 */
   private minimalSnapshot(sid: string, userId: string | undefined, authVersion: string | undefined): SessionRecordSnapshot {
     return { sessionId: sid, userId: userId ?? '', authVersion: authVersion ?? '' };
-  }
-
-  /**
-   * 弱网重放窗口读取（JS 侧，不进 Lua）：命中同凭证+同 operationId 返回上一代结果。
-   * 用例层在调用 `rotateRefresh` 前先查本方法：
-   * - 命中 → 直接重放 `replayCache.result`（同一代，不生成新代）；
-   * - 未命中/窗口外/不同 operationId → 走 `rotateRefresh` 的 Lua 路径，
-   *   Lua 内已消费凭证 + 不同 opId/窗口外 判 `REUSE_DETECTED`（§3 复用检测）。
-   *
-   * 复用检测补查：session 被 Lua DEL 后无法再取 userId，调用前用 `getSession` 预判并透传，
-   * 兜底时 record.userId 为空串，安全事件以 presentedHash 作为关联键（不阻断撤销本身）。
-   */
-  async getReplayCache(sid: string): Promise<ReplayCacheEntry | null> {
-    const raw = await this.redis.get(`session:replay:${sid}`);
-    return raw === null ? null : (JSON.parse(raw) as ReplayCacheEntry);
-  }
-
-  /** 重放命中判定：同凭证 + 同 operationId + 窗口未过（30s）。 */
-  async isReplayHit(sid: string, presentedHash: string, operationId: string, nowMs: number): Promise<ReplayCacheEntry | null> {
-    const cache = await this.getReplayCache(sid);
-    if (cache === null) return null;
-    if (cache.presentedHash !== presentedHash || cache.operationId !== operationId) return null;
-    if (nowMs - cache.atMs > REPLAY_WINDOW_MS) return null;
-    return cache;
   }
 }

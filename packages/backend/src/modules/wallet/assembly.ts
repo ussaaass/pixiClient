@@ -43,6 +43,7 @@ import {
   TurnoverStateModel,
 } from '../../infrastructure/database/models/wallet.js';
 import { UserModel } from '../../infrastructure/database/models/identity.js';
+import { ReferralBindingModel } from '../../infrastructure/database/models/referral.js';
 
 import { SequelizeWalletLedger } from './adapters/sequelize-wallet-ledger.js';
 
@@ -51,6 +52,8 @@ import type { OutboxPort, OutboxAppendInput } from './ports/outbox-port.js';
 import type { Clock } from './ports/clock.js';
 import { SystemClock } from './ports/clock.js';
 import { parseCnyToCoinRatio } from './domain/ledger-rules.js';
+import type { ReferralModule } from '../referral/public.js';
+import { SequelizeReferralBindingRepo } from '../referral/public.js';
 
 import { WalletSummaryUseCase } from './application/wallet-summary.js';
 import { WalletActivityUseCase } from './application/wallet-activity.js';
@@ -73,9 +76,14 @@ export interface WalletModuleConfig {
 export interface WalletModuleDeps {
   sequelize: Sequelize;
   config: WalletModuleConfig;
+  referralModule?: ReferralModule;
 }
 
 /** 全部 ports + 用例实例的 WalletModule（构造注入，不用全局，SDD §4）。 */
+export interface PlayerAssetAccountsPort {
+  ensure(userId: string, tx: Tx): Promise<void>;
+}
+
 export interface WalletModule {
   // ports（共享实现，供测试/其他模块 mock 时参考）
   ledger: AssetLedger;
@@ -100,11 +108,13 @@ export interface WalletModule {
   giftGrant: GrantWelcomeGiftUseCase;
   turnoverGate: TurnoverGateUseCase;
 
+  /** Narrow identity-facing account provisioning capability; caller owns the SQL transaction. */
+  playerAssetAccounts: PlayerAssetAccountsPort;
+
   /**
-   * identity `WelcomeGiftPort` 适配（任务硬约定 8）：装配 identity 模块时
-   * `config.welcomeGift = walletModule.welcomeGiftPort`，替换首步的 null。
-   * 委托 `giftGrant.grantWelcomeGift(userId)`（按账号一次幂等，
-   * gift_grant.U(grant_key) + asset_operation.operation_key 双兜底）。
+   * identity `WelcomeGiftPort` 适配：服务端组合在 wallet 与 identity 均装配后
+   * 将此端口注入 identity config。委托 `giftGrant.grantWelcomeGift(userId)`（按账号
+   * 一次幂等，gift_grant.U(grant_key) + asset_operation.operation_key 双兜底）。
    */
   welcomeGiftPort: WelcomeGiftPort;
 }
@@ -172,7 +182,13 @@ class FixedSystemIdentity implements SystemIdentityPort {
  * 共享 Sequelize 实例（models 已 addModels 注册，§3.2 归属矩阵）。
  */
 export function createWalletModule(deps: WalletModuleDeps): WalletModule {
-  const { sequelize, config } = deps;
+  const { sequelize, config, referralModule } = deps;
+  const referralBindingRepo = new SequelizeReferralBindingRepo(ReferralBindingModel, UserModel);
+  const referralPolicy = {
+    findDirectParentRewardType:
+      referralModule?.findDirectParentRewardType ??
+      ((userId: string, tx: Tx) => referralBindingRepo.findDirectParentRewardType(userId, tx)),
+  };
   const clock = config.clock ?? new SystemClock();
 
   // --- 共享 ports 实现（装配内构建一次，用例共享，不各自 new） ---
@@ -201,14 +217,21 @@ export function createWalletModule(deps: WalletModuleDeps): WalletModule {
   const summary = new WalletSummaryUseCase(ledger);
   const activity = new WalletActivityUseCase(ledger);
   const transfer = new CoinTransferUseCase(ledger, configReader, clock, systemIdentity);
-  const exchange = new CoinExchangeUseCase(ledger, configReader, clock, systemIdentity);
-  const giftGrant = new GrantWelcomeGiftUseCase(ledger, systemIdentity, clock, defaultOutbox, sequelize);
   const turnoverGate = new TurnoverGateUseCase(ledger);
+  const exchange = new CoinExchangeUseCase(ledger, configReader, clock, systemIdentity, turnoverGate, referralPolicy);
+  const giftGrant = new GrantWelcomeGiftUseCase(ledger, systemIdentity, clock, defaultOutbox, sequelize);
 
   // identity WelcomeGiftPort 适配（任务硬约定 8；替换 identity 首步 null 注入）。
   const welcomeGiftPort: WelcomeGiftPort = {
-    grantWelcomeGift(userId: string): Promise<void> {
-      return giftGrant.grantWelcomeGift(userId);
+    async grantWelcomeGift(userId: string, tx?: Tx): Promise<void> {
+      if (tx === undefined) return giftGrant.grantWelcomeGift(userId);
+      const outbox = await module.withTx({ transaction: tx.transaction as Transaction | null }, (port) => port);
+      await giftGrant.grantWelcomeGift(userId, tx, outbox);
+    },
+  };
+  const playerAssetAccounts = {
+    async ensure(userId: string, tx: Tx): Promise<void> {
+      await ledger.ensurePlayerAccounts(userId, tx);
     },
   };
 
@@ -225,6 +248,7 @@ export function createWalletModule(deps: WalletModuleDeps): WalletModule {
     giftGrant,
     turnoverGate,
     welcomeGiftPort,
+    playerAssetAccounts,
 
     async withTx<T>(scope: { transaction: Transaction | null }, fn: (outbox: OutboxPort) => T | Promise<T>): Promise<T> {
       // 同事务 outbox（§6.3）：把 scope.transaction 传入 outbox.append，随事务提交/回滚。

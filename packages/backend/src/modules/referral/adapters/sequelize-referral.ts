@@ -51,6 +51,7 @@ import { ActiveStatus, RecordStatus, ReferralRewardStatus } from '../../../infra
 import type { AgentDomainModel } from '../../../infrastructure/database/models/admin.js';
 import { AgentDomainStatus } from '../../../infrastructure/database/models/admin.js';
 import type { UserModel } from '../../../infrastructure/database/models/identity.js';
+import { UserModel as UserModelClass } from '../../../infrastructure/database/models/identity.js';
 import type {
   ReferralBindingRepo,
   BindingEventRepo,
@@ -90,7 +91,10 @@ function formatCursor(item: { createdAt: Date | string; id: string }): string {
  * 按直属上级列出（游标分页）+ 上级返点投影 read-then-write 更新。
  */
 export class SequelizeReferralBindingRepo implements ReferralBindingRepo {
-  constructor(private readonly model: typeof ReferralBindingModel) {}
+  constructor(
+    private readonly model: typeof ReferralBindingModel,
+    private readonly userModel: typeof UserModelClass = UserModelClass,
+  ) {}
 
   async createBinding(input: {
     userId: string;
@@ -129,6 +133,25 @@ export class SequelizeReferralBindingRepo implements ReferralBindingRepo {
       { transaction: txq } as never,
     )) as ReferralBindingModel;
     return { inserted: true, binding };
+  }
+
+  async findDirectParentRewardType(userId: string, tx: Tx): Promise<1 | 2 | null> {
+    const txq = txOf(tx);
+    const binding = await this.model.findOne({
+      where: { userId: userId as never, status: ActiveStatus.ACTIVE },
+      attributes: ['parent1UserId'],
+      transaction: txq,
+    } as never);
+    if (binding === null) return null;
+
+    const parent = await this.userModel.findByPk(binding.parent1UserId, {
+      attributes: ['rewardType'],
+      transaction: txq,
+    } as never);
+    if (parent === null || (parent.rewardType !== 1 && parent.rewardType !== 2)) {
+      throw new Error('direct parent record or reward_type is missing or invalid');
+    }
+    return parent.rewardType;
   }
 
   async lockBinding(bindingId: string, tx: Tx): Promise<ReferralBindingModel | null> {

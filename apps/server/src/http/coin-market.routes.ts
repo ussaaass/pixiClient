@@ -180,7 +180,11 @@ function parseCursorParam(ctx: Context): string | null {
 
 // --- 路由工厂 ---
 
-export function createCoinMarketRoutes(module: CoinMarketModule, identityModule: IdentityModule, _sequelize: Sequelize): Router {
+async function submitInTx<T>(sequelize: Sequelize, fn: (tx: Tx) => Promise<T>): Promise<T> {
+  return sequelize.transaction(async (transaction) => fn({ transaction }));
+}
+
+export function createCoinMarketRoutes(module: CoinMarketModule, identityModule: IdentityModule, sequelize: Sequelize): Router {
   const router = new Router({ prefix: '' });
   const auth = createPlayerAuthMiddleware(identityModule);
 
@@ -216,16 +220,18 @@ export function createCoinMarketRoutes(module: CoinMarketModule, identityModule:
       paymentMethods?: number[];
       paymentInstructions?: string;
     };
-    const result = await module.listingCreate.run({
-      sellerUserId: userId,
-      coins: req.coins,
-      priceCentsPer1000Coins: req.priceCentsPer1000Coins,
-      listingKey: req.idempotencyKey,
-      receiveMethod: 1, // 首版默认 BANK_TRANSFER（登记决策点：收款方式经 configuration 模块注入）
-      receiveSnapshot: req.paymentInstructions !== undefined ? { instructions: req.paymentInstructions } : null,
-      paymentMethods: req.paymentMethods ?? [],
-      tx: noTx,
-    });
+    const result = await submitInTx(sequelize, (tx) =>
+      module.listingCreate.run({
+        sellerUserId: userId,
+        coins: req.coins,
+        priceCentsPer1000Coins: req.priceCentsPer1000Coins,
+        listingKey: req.idempotencyKey,
+        receiveMethod: 1, // 首版默认 BANK_TRANSFER（登记决策点：收款方式经 configuration 模块注入）
+        receiveSnapshot: req.paymentInstructions !== undefined ? { instructions: req.paymentInstructions } : null,
+        paymentMethods: req.paymentMethods ?? [],
+        tx,
+      }),
+    );
     setSuccess(ctx, {
       message: result.inserted ? '挂牌已创建' : '挂牌已存在（幂等重放）',
       data: result,
@@ -250,7 +256,7 @@ export function createCoinMarketRoutes(module: CoinMarketModule, identityModule:
   router.post('/me/coin-market/listings/:id/cancel', auth, async (ctx) => {
     const userId = requireUserId(ctx.state as AuthState);
     const listingId = ctx.params.id as string;
-    const result = await module.listingCancel.run(userId, listingId, noTx);
+    const result = await submitInTx(sequelize, (tx) => module.listingCancel.run(userId, listingId, tx));
     setSuccess(ctx, {
       message: result.inserted ? '挂牌已取消' : '挂牌已取消（幂等重放）',
       data: result,
@@ -268,14 +274,16 @@ export function createCoinMarketRoutes(module: CoinMarketModule, identityModule:
       throw new ApiError('REQUEST_VALIDATION_FAILED', '成交入参非法。', { status: 400 });
     }
     const req = body as { coins: string; paymentMethod: number; idempotencyKey: string };
-    const result = await module.trade.create({
-      buyerUserId: userId,
-      listingId,
-      tradeKey: req.idempotencyKey,
-      coins: req.coins,
-      paymentMethod: req.paymentMethod,
-      tx: noTx,
-    });
+    const result = await submitInTx(sequelize, (tx) =>
+      module.trade.create({
+        buyerUserId: userId,
+        listingId,
+        tradeKey: req.idempotencyKey,
+        coins: req.coins,
+        paymentMethod: req.paymentMethod,
+        tx,
+      }),
+    );
     setSuccess(ctx, {
       message: result.isNew ? '成交已创建' : '成交已存在（幂等重放）',
       data: result,
@@ -289,7 +297,7 @@ export function createCoinMarketRoutes(module: CoinMarketModule, identityModule:
   router.post('/me/coin-market/trades/:id/confirm-receipt', auth, async (ctx) => {
     const userId = requireUserId(ctx.state as AuthState);
     const tradeId = ctx.params.id as string;
-    const result = await module.tradeConfirm.run(userId, tradeId, noTx);
+    const result = await submitInTx(sequelize, (tx) => module.tradeConfirm.run(userId, tradeId, tx));
     setSuccess(ctx, {
       message: result.replay ? '成交已确认（幂等重放）' : '成交已确认',
       data: result,
@@ -302,7 +310,7 @@ export function createCoinMarketRoutes(module: CoinMarketModule, identityModule:
   router.get('/me/coin-market/trades', auth, async (ctx) => {
     const userId = requireUserId(ctx.state as AuthState);
     const cursor = parseCursorParam(ctx);
-    const page = await module.tradeList.listTrades(userId, cursor, noTx);
+    const page = await submitInTx(sequelize, (tx) => module.tradeList.listTrades(userId, cursor, tx));
     setSuccess(ctx, {
       message: '成交列表',
       data: page,

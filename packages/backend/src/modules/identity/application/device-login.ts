@@ -6,10 +6,9 @@
  * 数据库设计 SDD §5.1 device（"凭证轮换时更新本行摘要和状态；旧凭证因与当前摘要
  * 不符而拒绝"）。
  *
- * 约定：device-login 请求体为空对象（contracts `IdentityEndpoint.deviceLogin.request`
- * = `Type.Object({}, ...)`），设备凭证（device_digest + credential_key）由传输层
- * 从设备本地持久存储读取后经路由层注入 `ctx`（App 平台安全存储策略，§2），用例
- * 不读 body。
+ * 约定：共享请求 body 必须为空；HTTP adapter 从 HttpOnly `device=<credentialKey>.<secret>`
+ * cookie 解析 key 并计算 secret 的 SHA-256。`device_digest` 与 `credential_secret_hash`
+ * 均存该摘要，use-case 分别做 timing-safe 比对；credential_key 只用于定位 device 行。
  *
  * 错误码映射（IdentityErrorCode → 触发条件）：
  * - `DEVICE_CREDENTIAL_MISSING`：device 行 credential_key 为空（从未签发凭证）。
@@ -22,7 +21,7 @@
  * - 成功 → `OK`（200，SessionResponse）。
  */
 
-import type { SessionResponseSchema, Static } from '@gameing/contracts/identity';
+import { timingSafeEqual } from 'node:crypto';
 import { CredentialStatus, UserStatus } from '../../../infrastructure/database/models/identity.js';
 import { DomainError, I } from '../domain/errors.js';
 import type { Clock } from '../ports/clock.js';
@@ -35,18 +34,24 @@ import { ACCESS_TOKEN_TTL_MS } from '../../../infrastructure/redis/session-store
 import { buildNewSession } from '../adapters/redis-session-port.js';
 import { toDeviceSession, toPlayerUser } from '../adapters/row-mappers.js';
 import type { SecurityEventService } from './security-events.js';
+import type { SessionResult } from './session-result.js';
+
+export function matchesDeviceDigest(stored: Uint8Array | null, suppliedHex: string): boolean {
+  if (stored === null || !/^[a-fA-F0-9]{64}$/.test(suppliedHex) || stored.byteLength !== 32) return false;
+  const storedBuffer = Buffer.from(stored);
+  const suppliedBuffer = Buffer.from(suppliedHex, 'hex');
+  return suppliedBuffer.byteLength === 32 && timingSafeEqual(storedBuffer, suppliedBuffer);
+}
 
 export interface DeviceLoginInput {
-  /** 传输层注入的设备上下文（device_digest 由 App 本地持久化的设备秘密现算摘要）。 */
+  /** 由 HttpOnly `credentialKey.secret` cookie 解析出的凭证材料；secret 本身不会传入用例或事件。 */
   ctx: {
-    userId: string;
-    /** 设备提交值 sha256 hex（与 device.device_digest BINARY(32) 比对）。 */
     deviceDigestHex: string;
     credentialKey: string;
     principalType: 'PLAYER' | 'ADMIN';
     audience: string;
   };
-  /** 限频 subject（userId，§4 刷新按 userId 计数；设备登录按设备归属 userId）。 */
+  /** 匿名凭证查找前的限频 subject，HTTP 层传 credentialKey。 */
   rateLimitSubject?: string;
 }
 
@@ -60,65 +65,23 @@ export class DeviceLoginUseCase {
     private readonly securityEvents: SecurityEventService,
   ) {}
 
-  async run(input: DeviceLoginInput, tx: Tx): Promise<Static<typeof SessionResponseSchema>> {
+  async run(input: DeviceLoginInput, tx: Tx): Promise<SessionResult> {
     const now = this.clock.now();
     const nowMs = now.getTime();
 
-    // 限频（§4 AUTH_RATE_LIMITED；设备登录按 userId 计数）。
-    const rate = await this.rateLimit.check(input.rateLimitSubject ?? input.ctx.userId, nowMs);
-    if (rate.limited) {
-      await this.securityEvents.append(
-        this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
-          identifier: null,
-          sessionKey: null,
-          deviceId: null,
-          result: 2, // DENIED
-          failureCode: I.AUTH_RATE_LIMITED,
-          eventKey: `device-login:limited:${input.ctx.userId}:${nowMs}`,
-        }),
-        tx,
-      );
-      throw new DomainError(I.AUTH_RATE_LIMITED, 'rate limit exceeded', { retryable: true });
-    }
+    // Cookie credentials are unauthenticated input until matched; rate-limit on the opaque key first.
+    const rate = await this.rateLimit.check(input.rateLimitSubject ?? input.ctx.credentialKey, nowMs);
+    if (rate.limited) throw new DomainError(I.AUTH_RATE_LIMITED, 'rate limit exceeded', { retryable: true });
 
-    // 设备凭证门禁（§4 错误码常量化，区分过期/已撤销/无凭证）。
+    // Cookie key selects the stored device; the corresponding user identity comes only from this row.
     const device = await this.repo.findDeviceByCredentialKey(input.ctx.credentialKey, tx);
     if (device === null || device.credentialKey !== input.ctx.credentialKey) {
-      await this.securityEvents.append(
-        this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
-          identifier: null,
-          sessionKey: null,
-          deviceId: null,
-          result: 2,
-          failureCode: I.DEVICE_CREDENTIAL_MISSING,
-          eventKey: `device-login:missing:${input.ctx.credentialKey}`,
-        }),
-        tx,
-      );
       throw new DomainError(I.DEVICE_CREDENTIAL_MISSING, 'device credential not found');
-    }
-    if (device.userId !== input.ctx.userId) {
-      // 设备归属校验：credential_key 指向的设备不属于该用户（防止跨用户凭证使用）。
-      await this.securityEvents.append(
-        this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
-          identifier: null,
-          sessionKey: null,
-          deviceId: device.id,
-          result: 2,
-          failureCode: I.INVALID_CREDENTIALS,
-          eventKey: `device-login:mismatch:${device.id}`,
-        }),
-        tx,
-      );
-      throw new DomainError(I.INVALID_CREDENTIALS, 'device does not belong to user');
     }
     if (device.credentialStatus === CredentialStatus.REVOKED) {
       await this.securityEvents.append(
         this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
+          userId: device.userId,
           identifier: null,
           sessionKey: null,
           deviceId: device.id,
@@ -132,11 +95,12 @@ export class DeviceLoginUseCase {
     }
     if (
       device.credentialStatus === CredentialStatus.EXPIRED ||
-      (device.credentialExpiresAt !== null && new Date(device.credentialExpiresAt).getTime() < nowMs)
+      (device.credentialExpiresAt !== null &&
+        (!Number.isFinite(new Date(device.credentialExpiresAt).getTime()) || new Date(device.credentialExpiresAt).getTime() <= nowMs))
     ) {
       await this.securityEvents.append(
         this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
+          userId: device.userId,
           identifier: null,
           sessionKey: null,
           deviceId: device.id,
@@ -149,13 +113,19 @@ export class DeviceLoginUseCase {
       throw new DomainError(I.DEVICE_CREDENTIAL_EXPIRED, 'device credential expired');
     }
 
-    // device_digest 比对（§device 实体规则 "旧凭证因与当前摘要不符而拒绝"；
-    // device_digest 为 BINARY(32) 摘要列，hex 字符串比对）。
-    const rowDigestHex = Buffer.from(device.deviceDigest ?? new Uint8Array()).toString('hex');
-    if (rowDigestHex !== input.ctx.deviceDigestHex) {
+    // Cookie secret 的 SHA-256 必须同时匹配当前设备摘要；只接受激活且保存了 hash 的凭证。
+    const hasActiveStoredCredential =
+      device.credentialStatus === CredentialStatus.ACTIVE &&
+      device.credentialKey !== null &&
+      device.credentialSecretHash !== null &&
+      device.credentialSecretHash.byteLength === 32;
+    // Evaluate both stored-hash comparisons independently rather than short-circuiting after the first mismatch.
+    const deviceDigestMatches = matchesDeviceDigest(device.deviceDigest, input.ctx.deviceDigestHex);
+    const credentialSecretHashMatches = matchesDeviceDigest(device.credentialSecretHash, input.ctx.deviceDigestHex);
+    if (!hasActiveStoredCredential || !deviceDigestMatches || !credentialSecretHashMatches) {
       await this.securityEvents.append(
         this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
+          userId: device.userId,
           identifier: null,
           sessionKey: null,
           deviceId: device.id,
@@ -169,17 +139,17 @@ export class DeviceLoginUseCase {
     }
 
     // 账号状态门禁（§4 不建会话给非 ACTIVE）。
-    const user = await this.repo.findUserById(input.ctx.userId, tx);
+    const user = await this.repo.findUserById(device.userId, tx);
     if (user === null || user.status !== UserStatus.ACTIVE) {
       await this.securityEvents.append(
         this.securityEvents.loginEvent({
-          userId: input.ctx.userId,
+          userId: device.userId,
           identifier: null,
           sessionKey: null,
           deviceId: device.id,
           result: 2,
           failureCode: I.ACCOUNT_LOCKED,
-          eventKey: `device-login:locked:${input.ctx.userId}`,
+          eventKey: `device-login:locked:${device.userId}`,
         }),
         tx,
       );
@@ -239,6 +209,8 @@ export class DeviceLoginUseCase {
       expiresAt: expiresAtIso,
       user: toPlayerUser(user),
       device: toDeviceSession(device),
+      sid,
+      refreshToken,
     };
   }
 }

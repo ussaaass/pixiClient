@@ -50,6 +50,45 @@ export interface JoinRoomResultDto {
   replay: boolean;
 }
 
+function assertGameEntrySnapshot(entry: GameEntryModel, userId: string, roomId: string, replay: boolean): void {
+  if (
+    typeof entry.id !== 'string' ||
+    !/^[1-9][0-9]{0,19}$/.test(entry.id) ||
+    entry.userId !== userId ||
+    (replay && (entry.status !== EntryStatus.SEATED || entry.roomId !== roomId)) ||
+    (!replay && entry.status === EntryStatus.SEATED && entry.roomId !== roomId)
+  ) {
+    throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'game entry snapshot is inconsistent');
+  }
+}
+
+function assertValidEntryExpiry(expiresAt: string | Date): Date {
+  const expiry = new Date(expiresAt);
+  if (!Number.isFinite(expiry.getTime())) {
+    throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'game entry expiry snapshot is invalid');
+  }
+  return expiry;
+}
+
+function assertMembershipSnapshot(
+  membership: { id: string; roomId: string; userId: string; seatNo: number },
+  roomId: string,
+  userId: string,
+  capacity: number,
+): void {
+  if (
+    membership.roomId !== roomId ||
+    membership.userId !== userId ||
+    typeof membership.id !== 'string' ||
+    !/^[1-9][0-9]{0,19}$/.test(membership.id) ||
+    !Number.isInteger(membership.seatNo) ||
+    membership.seatNo < 1 ||
+    membership.seatNo > capacity
+  ) {
+    throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'room membership snapshot is inconsistent');
+  }
+}
+
 export class RoomJoinUseCase {
   constructor(
     private readonly roomRepo: RoomRepo,
@@ -77,14 +116,46 @@ export class RoomJoinUseCase {
     if (room.status !== RoomStatus.WAITING && room.status !== RoomStatus.ACTIVE) {
       throw new RoomDomainError(R.ROOM_CLOSED, 'room not in joinable state');
     }
+    if (!Number.isInteger(room.capacity) || room.capacity < 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'room capacity snapshot is invalid');
+    }
 
-    // 2) 满员判定（有效入座数 < capacity；active_marker = 1 的行数）。
+    // 2) 入座尝试先查既有有效 membership。并发重试可能发生在房间已满后；
+    // 精确重复仍应返回原座位，不可被满员检查误报 ROOM_FULL。
+    const existingMembership = await this.roomRepo.findSeatedMembership(roomId, userId, tx);
+    if (existingMembership !== null) {
+      assertMembershipSnapshot(existingMembership, roomId, userId, room.capacity);
+      const entry = await this.findActiveEntry(userId, tx);
+      if (entry === null) {
+        throw new RoomDomainError(R.GAME_ENTRY_NOT_FOUND, 'seated membership has no matching active entry');
+      }
+      assertGameEntrySnapshot(entry, userId, roomId, true);
+      if (entry.status !== EntryStatus.SEATED || entry.roomId !== roomId) {
+        throw new RoomDomainError(R.GAME_ENTRY_NOT_FOUND, 'seated membership has no matching active entry');
+      }
+      const now = this.clock.now();
+      if (assertValidEntryExpiry(entry.expiresAt).getTime() <= now.getTime()) {
+        throw new RoomDomainError(R.GAME_ENTRY_EXPIRED, 'game entry expired');
+      }
+      return {
+        roomId,
+        seatNo: existingMembership.seatNo,
+        membershipId: existingMembership.id,
+        roundPlayerId: null,
+        replay: true,
+      };
+    }
+
+    // 3) 满员判定（有效入座数 < capacity；active_marker = 1 的行数）。
     const seated = await this.roomRepo.seatedCount(roomId, tx);
+    if (!Number.isInteger(room.capacity) || room.capacity < 1 || !Number.isInteger(seated) || seated < 0 || seated > room.capacity) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'room capacity or seated count snapshot is invalid');
+    }
     if (seated >= room.capacity) {
       throw new RoomDomainError(R.ROOM_FULL, 'room is full');
     }
 
-    // 3) 入座（U(user, active_marker) 防重复；命中既有 SEATED → 幂等重放）。
+    // 4) 入座（U(user, active_marker) 防重复；命中既有 SEATED → 幂等重放）。
     const joinResult = await this.roomRepo.joinRoom({
       roomId,
       userId,
@@ -94,19 +165,37 @@ export class RoomJoinUseCase {
 
     const replay = !joinResult.inserted;
     const membership = joinResult.membership;
+    assertMembershipSnapshot(membership, roomId, userId, room.capacity);
+    if (membership.seatNo !== seated + 1) {
+      throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'joined membership seat does not match allocated seat');
+    }
 
     // 4) game_entry claim（QUEUED → SEATED + room_id 回填；幂等重放）。
     const entry = await this.findActiveEntry(userId, tx);
     if (entry === null) {
-      throw new RoomDomainError(replay ? R.GAME_ENTRY_NOT_FOUND : R.GAME_ENTRY_NOT_FOUND, 'no active game entry');
+      throw new RoomDomainError(R.GAME_ENTRY_NOT_FOUND, 'no active game entry');
     }
+    assertGameEntrySnapshot(entry, userId, roomId, false);
     const now = this.clock.now();
-    if (new Date(entry.expiresAt).getTime() <= now.getTime()) {
+    if (assertValidEntryExpiry(entry.expiresAt).getTime() <= now.getTime()) {
       throw new RoomDomainError(R.GAME_ENTRY_EXPIRED, 'game entry expired');
     }
     if (entry.status === EntryStatus.QUEUED) {
-      // 入座认领（同事务；幂等：已 SEATED 同 room → 静默继续）。
-      await this.gameEntryRepo.claimEntry({ entryId: entry.id, roomId, tx });
+      // 条件更新结果必须明确成功；未成功表示状态/归属并发变化，不可回报成功入座。
+      const claim = await this.gameEntryRepo.claimEntry({ entryId: entry.id, roomId, tx });
+      if (!claim.claimed) {
+        throw new RoomDomainError(R.GAME_ENTRY_NOT_FOUND, 'game entry claim lost to another room or status change');
+      }
+      if (claim.entry === null) {
+        throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'claimed game entry row is missing');
+      }
+      assertGameEntrySnapshot(claim.entry, userId, roomId, false);
+      if (claim.entry.status !== EntryStatus.SEATED || claim.entry.roomId !== roomId) {
+        throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'claimed game entry did not persist requested room');
+      }
+      if (assertValidEntryExpiry(claim.entry.expiresAt).getTime() <= now.getTime()) {
+        throw new RoomDomainError(R.GAME_ENTRY_EXPIRED, 'game entry expired during claim');
+      }
     } else if (entry.status !== EntryStatus.SEATED) {
       // FINISHED / CANCELLED / EXPIRED 不可再入座。
       throw new RoomDomainError(R.GAME_ENTRY_NOT_FOUND, 'game entry not in joinable state');

@@ -19,7 +19,12 @@ import type {
   UserModel,
   UserSecurityEventModel,
 } from '../../../infrastructure/database/models/identity.js';
-import { CredentialStatus, RecoveryStatus, RecordStatus } from '../../../infrastructure/database/models/identity.js';
+import {
+  CredentialStatus,
+  RecoveryStatus,
+  RecordStatus,
+  RegistrationOperationModel,
+} from '../../../infrastructure/database/models/identity.js';
 import type { IdentityRepository, SecurityEventInput, Tx, UserIdentifier } from '../ports/identity-repository.js';
 
 /** 取事务（Sequelize Transaction 鸭子类型）。 */
@@ -34,8 +39,96 @@ export class SequelizeIdentityRepository implements IdentityRepository {
       DeviceModel: typeof DeviceModel;
       RecoveryCredentialModel: typeof RecoveryCredentialModel;
       UserSecurityEventModel: typeof UserSecurityEventModel;
+      RegistrationOperationModel?: typeof RegistrationOperationModel;
     },
   ) {}
+
+  private get registrationOperationModel(): typeof RegistrationOperationModel {
+    return this.models.RegistrationOperationModel ?? RegistrationOperationModel;
+  }
+
+  async findRegistrationOperation(idempotencyKey: string, tx: Tx): Promise<RegistrationOperationModel | null> {
+    const options = {
+      where: { idempotencyKey },
+      transaction: txOf(tx),
+      ...(tx.transaction ? { lock: txOf(tx).LOCK.UPDATE } : {}),
+    };
+    return await this.registrationOperationModel.findOne(options as never);
+  }
+
+  async insertRegistrationOperation(
+    input: Parameters<IdentityRepository['insertRegistrationOperation']>[0],
+    tx: Tx,
+  ): Promise<RegistrationOperationModel> {
+    if (input.requestHash.byteLength !== 32) throw new RangeError('requestHash must be exactly 32 bytes');
+    // Unique-key violations deliberately propagate. The application layer reloads the winner
+    // in its transaction and compares requestHash; this adapter never declares a hash conflict.
+    return await this.registrationOperationModel.create(
+      { idempotencyKey: input.idempotencyKey, requestHash: input.requestHash } as never,
+      { transaction: txOf(tx) } as never,
+    );
+  }
+
+  async updateRegistrationOperation(
+    idempotencyKey: string,
+    patch: Parameters<IdentityRepository['updateRegistrationOperation']>[1],
+    tx: Tx,
+    expectedStatus?: number,
+  ): Promise<number> {
+    const where: Record<string, unknown> = { idempotencyKey };
+    if (expectedStatus !== undefined) where.status = expectedStatus;
+    const [affected] = await this.registrationOperationModel.update(patch as Record<string, unknown>, {
+      where,
+      transaction: txOf(tx),
+    });
+    return affected;
+  }
+
+  async findRegistrationOperationByKey(key: string, tx: Tx): Promise<RegistrationOperationModel | null> {
+    return await this.findRegistrationOperation(key, tx);
+  }
+
+  async completeRegistrationOperation(
+    key: string,
+    input: { userId: string; deviceId: string; sessionId: string; replayCiphertext: string; replayExpiresAt: Date },
+    tx: Tx,
+  ): Promise<number> {
+    return await this.updateRegistrationOperation(
+      key,
+      {
+        status: 2, // RegistrationOperationStatus.COMPLETED per migration 0021.
+        userId: input.userId,
+        deviceId: input.deviceId,
+        sessionId: input.sessionId,
+        replayCiphertext: input.replayCiphertext,
+        replayExpiresAt: input.replayExpiresAt,
+      },
+      tx,
+      1, // PENDING only; this is an atomic state transition.
+    );
+  }
+
+  async clearRegistrationReplayForSession(sessionId: string, tx: Tx): Promise<number> {
+    const [affected] = await this.registrationOperationModel.update(
+      { replayCiphertext: null, replayExpiresAt: null },
+      { where: { sessionId, replayCiphertext: { [Op.ne]: null } }, transaction: txOf(tx) },
+    );
+    return affected;
+  }
+
+  async clearExpiredRegistrationReplay(now: Date, tx: Tx): Promise<number> {
+    const [affected] = await this.registrationOperationModel.update(
+      { replayCiphertext: null, replayExpiresAt: null },
+      {
+        where: {
+          replayCiphertext: { [Op.ne]: null },
+          replayExpiresAt: { [Op.lte]: now },
+        },
+        transaction: txOf(tx),
+      },
+    );
+    return affected;
+  }
 
   async findUserByIdentifier(identifier: UserIdentifier, tx: Tx): Promise<UserModel | null> {
     const table = this.models.UserModel;

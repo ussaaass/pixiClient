@@ -17,6 +17,7 @@ import type {
   UserModel,
   RecoveryCredentialModel,
   UserSecurityEventModel,
+  RegistrationOperationModel,
 } from '../../../infrastructure/database/models/identity.js';
 
 /** 事务句柄（Sequelize Transaction 鸭子类型；用例内所有写操作共享同一事务）。 */
@@ -44,7 +45,33 @@ export interface SecurityEventInput {
   snapshot: Record<string, unknown>;
 }
 
+export interface RegistrationOperationInput {
+  idempotencyKey: string;
+  /** SHA-256 of canonical request content; exactly 32 bytes. */
+  requestHash: Uint8Array;
+}
+
+export interface RegistrationOperationPatch {
+  status?: number;
+  userId?: string | null;
+  deviceId?: string | null;
+  sessionId?: string | null;
+  /** Authenticated ciphertext only; never pass the plaintext response. */
+  replayCiphertext?: string | null;
+  replayExpiresAt?: Date | null;
+}
+
 export interface IdentityRepository {
+  /** Find the unique registration idempotency record within the caller's transaction. */
+  findRegistrationOperation(idempotencyKey: string, tx: Tx): Promise<RegistrationOperationModel | null>;
+  /** INSERT only; duplicate-key errors are intentionally surfaced to let callers reload and compare hashes. */
+  insertRegistrationOperation(input: RegistrationOperationInput, tx: Tx): Promise<RegistrationOperationModel>;
+  /** Conditional atomic update; optional expected status is used for state-transition CAS. */
+  updateRegistrationOperation(idempotencyKey: string, patch: RegistrationOperationPatch, tx: Tx, expectedStatus?: number): Promise<number>;
+  /** Lazily clear expired replay ciphertext and expiry together, preserving the tombstone. */
+  clearExpiredRegistrationReplay(now: Date, tx: Tx): Promise<number>;
+  /** Permanently invalidate encrypted registration replay for one revoked session. */
+  clearRegistrationReplayForSession(sessionId: string, tx: Tx): Promise<number>;
   /** 按 username/email/phone 精确查（identifier 规范化由用例层负责）。 */
   findUserByIdentifier(identifier: UserIdentifier, tx: Tx): Promise<UserModel | null>;
   findUserById(userId: string, tx: Tx): Promise<UserModel | null>;
@@ -122,6 +149,15 @@ export interface IdentityRepository {
   ): Promise<RecoveryCredentialModel>;
   /** 标记恢复凭证使用（last_used_at；不消费不撤销，§3 "使用不消费或撤销"）。 */
   markRecoveryCredentialUsed(credentialId: string, usedAt: Date, tx: Tx): Promise<number>;
+
+  /** Find the permanent registration tombstone by idempotency key. */
+  findRegistrationOperationByKey(key: string, tx: Tx): Promise<RegistrationOperationModel | null>;
+  /** Persist completed replay ciphertext and the created identity records in the caller transaction. */
+  completeRegistrationOperation(
+    key: string,
+    input: { userId: string; deviceId: string; sessionId: string; replayCiphertext: string; replayExpiresAt: Date },
+    tx: Tx,
+  ): Promise<number>;
 
   /** 追加安全事件（append-only；model hooks 拦截 update/delete）。 */
   createSecurityEvent(input: SecurityEventInput, tx: Tx): Promise<UserSecurityEventModel>;

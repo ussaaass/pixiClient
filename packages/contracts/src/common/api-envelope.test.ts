@@ -5,6 +5,7 @@ import {
   ApiErrorCode,
   API_ERROR_HTTP_STATUS,
   GameErrorCode,
+  RoomErrorCode,
   TransportErrorCode,
   httpStatusForErrorCode,
   isKnownErrorCode,
@@ -60,6 +61,19 @@ describe('错误码注册表', () => {
     expect(httpStatusForErrorCode(TransportErrorCode.SERVICE_UNAVAILABLE)).toBe(503);
     expect(httpStatusForErrorCode(TransportErrorCode.GATEWAY_TIMEOUT)).toBe(504);
     expect(httpStatusForErrorCode(GameErrorCode.GAME_NOT_FOUND)).toBe(404);
+    expect(httpStatusForErrorCode(RoomErrorCode.ROOM_NOT_FOUND)).toBe(404);
+    expect(httpStatusForErrorCode(RoomErrorCode.ROUND_NOT_FOUND)).toBe(404);
+    expect(httpStatusForErrorCode(RoomErrorCode.ROUND_PLAYER_NOT_FOUND)).toBe(403);
+    expect(httpStatusForErrorCode(RoomErrorCode.ROOM_FULL)).toBe(409);
+    expect(httpStatusForErrorCode(RoomErrorCode.FENCING_CONFLICT)).toBe(409);
+    expect(httpStatusForErrorCode(RoomErrorCode.WALLET_INSUFFICIENT)).toBe(422);
+    expect(httpStatusForErrorCode(RoomErrorCode.INVALID_SUBMISSION)).toBe(422);
+    expect(httpStatusForErrorCode(RoomErrorCode.STORAGE_UNAVAILABLE)).toBe(503);
+  });
+
+  test('领域存储故障码不自动标记可重试，交由场景显式决定', () => {
+    expect(isRetryableErrorCode(RoomErrorCode.STORAGE_UNAVAILABLE)).toBe(false);
+    expect(isRetryableErrorCode(RoomErrorCode.ROOM_FULL)).toBe(false);
   });
 
   test('只有依赖类故障被标记为可重试', () => {

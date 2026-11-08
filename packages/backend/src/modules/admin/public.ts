@@ -64,6 +64,13 @@ export {
   supportAdminRouteOf,
   type SupportAdminAction,
 } from './application/support-capability-authorize.js';
+export {
+  AdminPermissionsManageUseCase,
+  ADMIN_PERMISSIONS_MANAGE_CODE,
+  ADMIN_PERMISSIONS_MANAGE_ROUTE,
+  type ManagedAdminPermissionDto,
+  type AdminPermissionAuditDto,
+} from './application/admin-permissions-manage.js';
 
 // ---------------------------------------------------------------------------
 // 装配工厂（inject 全部 ports 的 AdminModule 对象，供 server 装配调用一次）

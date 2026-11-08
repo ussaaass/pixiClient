@@ -10,7 +10,7 @@
 # 运行：docker run --rm -p 10300:3000 -e PORT=3000 gameing-hall-api:prod
 
 # ---------- 构建阶段 ----------
-FROM node:24.21.0-bookworm-slim AS builder
+FROM node:26.13.0-bookworm-slim AS builder
 
 RUN npm install --global --allow-scripts=pnpm pnpm@12.10.1
 
@@ -35,7 +35,7 @@ COPY packages packages
 RUN pnpm --filter @gameing/server build
 
 # ---------- 运行阶段 ----------
-FROM node:24.21.0-bookworm-slim AS runtime
+FROM node:26.13.0-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
     PORT=3000 \

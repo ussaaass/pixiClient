@@ -160,7 +160,7 @@ type ApiFailure = {
 | `503 Service Unavailable` | 服务临时不可用或维护 | DB/Redis 短暂不可用、系统维护；仅明确安全时标记 `retryable=true` |
 | `504 Gateway Timeout` | 上游等待超时 | 结果可能未知时必须用原幂等键查询，不能盲目创建第二个操作 |
 
-同一失败语义必须由 error registry 固定映射，不能让每个 controller 自选 status。支付渠道状态未知、数据库提交 ACK 不确定等需保留领域细分 code，并提供按 `operationId/idempotencyKey` 查询结果的 endpoint；客户端对资金命令超时不得生成新幂等键自动重试。
+同一失败语义必须由 error registry 固定映射，不能让每个 controller 自选 status。rooms 领域码 ROOM_NOT_FOUND/ROUND_NOT_FOUND/ROUND_PLAYER_NOT_FOUND、ROOM_FULL/ROOM_CLOSED/ROUND_NOT_ACTIVE/ROUND_ALREADY_SETTLED/FENCING_CONFLICT/ROUND_IN_PROGRESS/GAME_ENTRY_EXPIRED、WALLET_INSUFFICIENT/INVALID_SUBMISSION、STORAGE_UNAVAILABLE 分别固定映射为 404/403/409/422/503；STORAGE_UNAVAILABLE 是否可重试由领域错误实例显式标记。支付渠道状态未知、数据库提交 ACK 不确定等需保留领域细分 code，并提供按 `operationId/idempotencyKey` 查询结果的 endpoint；客户端对资金命令超时不得生成新幂等键自动重试。
 
 ## 6. HTTP request 与幂等
 
@@ -346,3 +346,4 @@ endpoint registry 与 TypeBox schema 生成 OpenAPI 3.x 文档；CI 检查生成
 | 2026-10-16 | 登记直属邀请/返佣查询端点与免短信手机号绑定/旧号校验 DTO，标明生产服务端未闭环部分。 |
 | 2026-10-18 | 增加邮箱联系方式更新 DTO/API，邮箱/手机统一免验证码换绑并精确校验旧值；同步共享协议说明。 |
 | 2026-10-21 | 建立 `packages/contracts/src/common/` 公共 schema（统一 envelope、错误码注册表与 HTTP status 映射、共享标量），并落地 Koa envelope/error middleware、requestId 贯通、结构化访问日志与 `/health/ready`；施工 Checklist 同步更新进度。 |
+| 2026-11-05 | 将 rooms 领域错误码和状态映射接入共享 registry，所有 rooms 事务路由保留可预期业务错误码和正确 HTTP 语义；错误消息不回显领域内部 message。 |

@@ -38,6 +38,8 @@ export interface OutboxSettleInput {
   leaseMs: number;
   /** 当前失败次数（claim 行读到的 attempts，从 0 起）。 */
   attempts: number;
+  /** 领取时写入的 lease_until；作为 fencing token 防过期旧 worker 结算新租约。 */
+  leaseUntil: Date;
 }
 
 export interface OutboxWorkerRepo {
@@ -50,15 +52,17 @@ export interface OutboxWorkerRepo {
    */
   claim(input: OutboxClaimInput): Promise<OutboxModel[]>;
 
-  /** 投递成功：PROCESSING → SENT（sent_at = now；attempts+1）。 */
-  markSent(input: OutboxSettleInput): Promise<void>;
+  /** 投递成功：PROCESSING → SENT（sent_at = now；attempts+1）；true 表示 fencing 更新获胜。 */
+  markSent(input: OutboxSettleInput): Promise<boolean>;
 
   /**
    * 投递失败：attempts+1；attempts 达 deadAfter → DEAD（终态，停止重试，
    * 人工介入），否则回 PENDING（available_at = now + backoff，指数退避
-   * 由实现经 attempts 计算：1s,2s,4s...2min 封顶）。
+   * 由实现经 attempts 计算：1s,2s,4s...2min 封顶），同时释放旧租约。
+   * 结算 UPDATE 必须带 lockedBy + leaseUntil fencing 条件，防止过期 worker
+   * 覆盖新租约持有者的状态。
    */
-  markFailed(input: OutboxSettleInput & { deadAfter: number; lastErrorCode: string }): Promise<void>;
+  markFailed(input: OutboxSettleInput & { deadAfter: number; lastErrorCode: string }): Promise<boolean>;
 
   /**
    * 过期恢复：lease_until < now 且 status=PROCESSING 的行回 PENDING

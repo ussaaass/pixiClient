@@ -199,17 +199,23 @@ function normalizeRoundPlayers(value: unknown, requireCompleteRows: boolean): Se
         const ownKeys = Reflect.ownKeys(row);
         const allowedKeys = [...requiredKeys, ...allowedOptionalKeys];
         if (
-          ownKeys.length < requiredKeys.length || ownKeys.length > allowedKeys.length ||
-          !requiredKeys.every((key) => ownKeys.includes(key)) || ownKeys.some((key) => !allowedKeys.includes(String(key)))
-        ) return null;
+          ownKeys.length < requiredKeys.length ||
+          ownKeys.length > allowedKeys.length ||
+          !requiredKeys.every((key) => ownKeys.includes(key)) ||
+          ownKeys.some((key) => !allowedKeys.includes(String(key)))
+        )
+          return null;
       }
       const userId = values.userId;
       const status = values.status;
       if (
-        typeof userId !== 'string' || !/^[1-9][0-9]{0,19}$/.test(userId) || typeof status !== 'number' ||
+        typeof userId !== 'string' ||
+        !/^[1-9][0-9]{0,19}$/.test(userId) ||
+        typeof status !== 'number' ||
         (requireCompleteRows ? !Object.values(RoundPlayerStatus).includes(status as never) : status !== RoundPlayerStatus.SETTLED) ||
         seen.has(userId)
-      ) return null;
+      )
+        return null;
       const copy = Object.assign(Object.create(null), values) as Record<string, unknown>;
       rows.push(copy as unknown as SettlementRoundPlayer);
       seen.add(userId);
@@ -672,9 +678,12 @@ export class RoundSettleUseCase {
       const heldCardsDescriptor = fields.heldCards;
       const arrangementDescriptor = fields.arrangement;
       if (
-        !heldCardsDescriptor || !('value' in heldCardsDescriptor) ||
-        !arrangementDescriptor || !('value' in arrangementDescriptor) ||
-        !Array.isArray(heldCardsDescriptor.value) || heldCardsDescriptor.value.length !== 13 ||
+        !heldCardsDescriptor ||
+        !('value' in heldCardsDescriptor) ||
+        !arrangementDescriptor ||
+        !('value' in arrangementDescriptor) ||
+        !Array.isArray(heldCardsDescriptor.value) ||
+        heldCardsDescriptor.value.length !== 13 ||
         Reflect.ownKeys(heldCardsDescriptor.value).length !== 14 ||
         heldCardsDescriptor.value.some((card) => typeof card !== 'number' || !Number.isInteger(card) || card < 0 || card >= 52) ||
         new Set(heldCardsDescriptor.value).size !== 13
@@ -691,13 +700,24 @@ export class RoundSettleUseCase {
       }
       const readPile = (key: 'front' | 'middle' | 'back', length: number): number[] => {
         const descriptor = Object.getOwnPropertyDescriptor(candidate, key);
-        if (!descriptor || !('value' in descriptor) || !Array.isArray(descriptor.value) || descriptor.value.length !== length || Reflect.ownKeys(descriptor.value).length !== length + 1) {
+        if (
+          !descriptor ||
+          !('value' in descriptor) ||
+          !Array.isArray(descriptor.value) ||
+          descriptor.value.length !== length ||
+          Reflect.ownKeys(descriptor.value).length !== length + 1
+        ) {
           throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'settled arrangement pile is invalid');
         }
         const cards: number[] = [];
         for (let i = 0; i < length; i += 1) {
           const cardDescriptor = Object.getOwnPropertyDescriptor(descriptor.value, String(i));
-          if (!cardDescriptor || !('value' in cardDescriptor) || typeof cardDescriptor.value !== 'number' || !Number.isInteger(cardDescriptor.value)) {
+          if (
+            !cardDescriptor ||
+            !('value' in cardDescriptor) ||
+            typeof cardDescriptor.value !== 'number' ||
+            !Number.isInteger(cardDescriptor.value)
+          ) {
             throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'settled arrangement card is invalid');
           }
           cards.push(cardDescriptor.value);

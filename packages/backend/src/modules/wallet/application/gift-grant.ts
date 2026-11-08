@@ -62,19 +62,23 @@ export class GrantWelcomeGiftUseCase implements WelcomeGiftPort {
   ) {}
 
   /** `WelcomeGiftPort` 契约实现：按账号一次（U(grant_key) 幂等兜底）。 */
-  async grantWelcomeGift(userId: string): Promise<void> {
+  async grantWelcomeGift(userId: string, outerTx?: Tx, outbox: OutboxPort = this.outbox): Promise<void> {
+    if (outerTx !== undefined) {
+      await this.runCore(userId, outerTx, outbox);
+      return;
+    }
     await this.sequelize.transaction(async (txRaw) => {
       const tx: Tx = { transaction: txRaw };
-      await this.runCore(userId, tx);
+      await this.runCore(userId, tx, outbox);
     });
   }
 
   /** 同事务变体（外层已持 tx 时调用；identity 注册流未来同事务挂接点）。 */
-  async runInTx(userId: string, tx: Tx): Promise<void> {
-    await this.runCore(userId, tx);
+  async runInTx(userId: string, tx: Tx, outbox: OutboxPort = this.outbox): Promise<void> {
+    await this.runCore(userId, tx, outbox);
   }
 
-  private async runCore(userId: string, tx: Tx): Promise<void> {
+  private async runCore(userId: string, tx: Tx, outbox: OutboxPort = this.outbox): Promise<void> {
     const grantKey = `welcome:${userId}`;
 
     // 幂等前置（U(grant_key) 双保险；命中 = 已赠，静默返回，不重复入账）。
@@ -169,7 +173,7 @@ export class GrantWelcomeGiftUseCase implements WelcomeGiftPort {
       },
       tx,
     );
-    await this.outbox.append({
+    await outbox.append({
       topic: 'wallet.gift-grant',
       userId,
       assetOperationId: operationId,

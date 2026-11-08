@@ -94,6 +94,7 @@ export const DeviceSummarySchema = Type.Object(
   { additionalProperties: false },
 );
 
+/** Anonymous registration identity metadata only; none of these fields authenticate the caller. */
 export const DeviceRegisterRequestSchema = Type.Object(
   {
     fingerprintVersion: Type.String({ minLength: 1, maxLength: 16 }),
@@ -103,6 +104,9 @@ export const DeviceRegisterRequestSchema = Type.Object(
   { additionalProperties: false },
 );
 
+/** Device login credentials are carried only by the HttpOnly device cookie. */
+export const DeviceLoginRequestSchema = Type.Object({}, { additionalProperties: false });
+
 export const PasswordLoginRequestSchema = Type.Object(
   {
     identifier: Type.String({ minLength: 1, maxLength: 128 }),
@@ -110,6 +114,11 @@ export const PasswordLoginRequestSchema = Type.Object(
     challengeId: Type.Optional(Type.String({ minLength: 1, maxLength: 128 })),
     totp: Type.Optional(TotpOrRecoveryCodeSchema),
   },
+  { additionalProperties: false },
+);
+
+export const RefreshRequestSchema = Type.Object(
+  { operationId: Type.String({ pattern: '^[A-Za-z0-9_-]{16,128}$' }) },
   { additionalProperties: false },
 );
 
@@ -280,8 +289,10 @@ export const RecoveryCredentialActivateRequestSchema = Type.Object({}, { additio
 export type IdentityErrorCodeValue = (typeof IdentityErrorCode)[keyof typeof IdentityErrorCode];
 export type ApiFailureDto = Static<typeof ApiFailureSchema>;
 export type DeviceRegisterRequestDto = Static<typeof DeviceRegisterRequestSchema>;
+export type DeviceLoginRequestDto = Static<typeof DeviceLoginRequestSchema>;
 export type PasswordLoginRequestDto = Static<typeof PasswordLoginRequestSchema>;
 export type AccountRecoveryRequestDto = Static<typeof AccountRecoveryRequestSchema>;
+export type RefreshRequestDto = Static<typeof RefreshRequestSchema>;
 export type SessionResponseDto = Static<typeof SessionResponseSchema>;
 export type LoginChallengeResponseDto = Static<typeof LoginChallengeResponseSchema>;
 export type DeviceCredentialResponseDto = Static<typeof DeviceCredentialResponseSchema>;
@@ -338,11 +349,16 @@ export const IdentityEndpoint = {
   deviceLogin: {
     method: 'POST',
     path: '/api/v1/auth/device-login',
-    request: Type.Object({}, { additionalProperties: false }),
+    request: DeviceLoginRequestSchema,
     response: SessionResponseSchema,
     successStatus: 200,
   },
-  deviceCredential: { method: 'GET', path: '/api/v1/auth/device-credential', response: DeviceCredentialResponseSchema, successStatus: 200 },
+  deviceCredential: {
+    method: 'GET',
+    path: '/api/v1/auth/device-credential',
+    response: DeviceCredentialResponseSchema,
+    successStatus: 200,
+  },
   passwordLogin: {
     method: 'POST',
     path: '/api/v1/auth/password-login',
@@ -360,7 +376,7 @@ export const IdentityEndpoint = {
   refresh: {
     method: 'POST',
     path: '/api/v1/auth/refresh',
-    request: Type.Object({}, { additionalProperties: false }),
+    request: RefreshRequestSchema,
     response: SessionResponseSchema,
     successStatus: 200,
   },

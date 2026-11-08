@@ -22,6 +22,9 @@ import * as createCoinMarket from './migrations/0016-create-coin-market.js';
 import * as createAssets from './migrations/0017-create-assets.js';
 import * as createOutbox from './migrations/0018-create-outbox.js';
 import * as seedSupportAdminPermissions from './migrations/0019-seed-support-admin-permissions.js';
+import * as uniqueAdminAuditRequestKey from './migrations/0020-unique-admin-audit-request-key.js';
+import * as createRegistrationOperation from './migrations/0021-create-registration-operation.js';
+import * as registrationReplaySessionFence from './migrations/0022-registration-replay-session-fence.js';
 import { getSequelize } from './sequelize.js';
 
 /**
@@ -68,6 +71,21 @@ const MIGRATIONS = [
     name: '0019-seed-support-admin-permissions',
     up: seedSupportAdminPermissions.up,
     down: seedSupportAdminPermissions.down,
+  },
+  {
+    name: '0020-unique-admin-audit-request-key',
+    up: uniqueAdminAuditRequestKey.up,
+    down: uniqueAdminAuditRequestKey.down,
+  },
+  {
+    name: '0021-create-registration-operation',
+    up: createRegistrationOperation.up,
+    down: createRegistrationOperation.down,
+  },
+  {
+    name: '0022-registration-replay-session-fence',
+    up: registrationReplaySessionFence.up,
+    down: registrationReplaySessionFence.down,
   },
 ];
 

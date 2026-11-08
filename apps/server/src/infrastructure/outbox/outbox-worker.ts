@@ -66,6 +66,7 @@ export function createOutboxWorker(options: {
   let timer: ReturnType<typeof setInterval> | null = null;
   let stopped = false;
   let inFlight = false;
+  let activeRun: Promise<unknown> | null = null;
   let tickCount = 0;
 
   async function runOnce(): Promise<{ claimed: number; sent: number; failed: number }> {
@@ -80,21 +81,42 @@ export function createOutboxWorker(options: {
     let sent = 0;
     let failed = 0;
     for (const row of rows) {
-      const ok = await dispatcher.deliver(row);
-      if (ok) {
-        await repo.markSent({ outboxId: row.id, lockedBy: workerId, now: new Date(), leaseMs, attempts: row.attempts });
-        sent += 1;
-      } else {
-        await repo.markFailed({
+      try {
+        const leaseUntil = row.leaseUntil instanceof Date ? row.leaseUntil : new Date(row.leaseUntil as string);
+        const ok = await dispatcher.deliver(row);
+        if (ok) {
+          const settled = await repo.markSent({
+            outboxId: row.id,
+            lockedBy: workerId,
+            now: new Date(),
+            leaseMs,
+            attempts: row.attempts,
+            leaseUntil,
+          });
+          if (settled) sent += 1;
+          else logger.warn('outbox 成功结算被租约 fencing 拒绝', { workerId, outboxId: row.id });
+        } else {
+          const settled = await repo.markFailed({
+            outboxId: row.id,
+            lockedBy: workerId,
+            now: new Date(),
+            leaseMs,
+            attempts: row.attempts,
+            leaseUntil,
+            deadAfter,
+            lastErrorCode: 'DELIVERY_FAILED',
+          });
+          if (settled) failed += 1;
+          else logger.warn('outbox 失败结算被租约 fencing 拒绝', { workerId, outboxId: row.id });
+        }
+      } catch {
+        // Per-row failure must not strand later claimed rows in this batch.
+        // If settlement itself failed, leave this row PROCESSING for lease reclaim.
+        logger.error('outbox 单行处理/结算异常（租约恢复）', {
+          workerId,
           outboxId: row.id,
-          lockedBy: workerId,
-          now: new Date(),
-          leaseMs,
-          attempts: row.attempts,
-          deadAfter,
-          lastErrorCode: 'DELIVERY_FAILED',
+          errorCode: 'ROW_PROCESSING_FAILED',
         });
-        failed += 1;
       }
     }
     tickCount += 1;
@@ -111,7 +133,7 @@ export function createOutboxWorker(options: {
       timer = setInterval(() => {
         if (inFlight) return; // 上轮未完成则跳过（防堆叠）。
         inFlight = true;
-        void runOnce()
+        const running = runOnce()
           .catch((error) => {
             logger.error('outbox 消费轮次异常', {
               workerId,
@@ -120,7 +142,9 @@ export function createOutboxWorker(options: {
           })
           .finally(() => {
             inFlight = false;
+            activeRun = null;
           });
+        activeRun = running;
       }, tickMs);
       // 不阻止进程退出（server 正常关闭时 shutdown 钩子调 stop）。
       if (typeof (timer as { unref?: () => void }).unref === 'function') {
@@ -133,6 +157,7 @@ export function createOutboxWorker(options: {
         clearInterval(timer);
         timer = null;
       }
+      if (activeRun !== null) await activeRun;
       logger.info('outbox worker 停止');
     },
     runOnce,

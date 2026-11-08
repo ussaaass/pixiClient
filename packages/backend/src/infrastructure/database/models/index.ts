@@ -4,7 +4,7 @@
  * 职责：
  * 1. 聚合 11 个 model 文件导出的全部 Model 类（共 63 张表）；
  * 2. `addModels(sequelize)` 统一调用各文件的 `init*` 做 `Model.init`
- *    （各 Model 文件不自行注册 instance，避免循环依赖）；
+ *    并从 `sequelize.models` 填充类映射后再声明关联（各 Model 文件不自行注册 instance，避免循环依赖）；
  * 3. 各文件的 `associate*` 声明同文件内跨表关联；跨文件关联（FK 目标位于
  *    另一文件）在本文件 `associateAll` 内集中补全，一律 `foreignKey` 显式 +
  *    `constraints: false`（FK 约束全部由迁移 DDL 管理，A.12 第 2 条）。
@@ -37,7 +37,7 @@ import { associateEvents, initEvents, type EventModels } from './events.js';
 import { associateAssets, initAssets, type AssetModels } from './assets.js';
 import { associateCoinMarket, initCoinMarket, type CoinMarketModels } from './coin-market.js';
 
-/** 全部 63 张表的 Model 类映射（11 个文件聚合）。 */
+/** 全部 64 张表的 Model 类映射（11 个文件聚合；含 registration_operation）。 */
 export interface AllModels
   extends
     IdentityModels,
@@ -65,7 +65,7 @@ export function addModels(sequelize: Sequelize): void {
   const models = {} as AllModels;
 
   // 1. 各文件 init*（按批次依赖顺序注册，被引用表先于引用表）。
-  initIdentity(sequelize, models); // 0002 user / 0007 device, recovery_credential, user_security_event
+  initIdentity(sequelize, models); // 0002 user / 0007 identity extensions / 0021 registration_operation
   initWallet(sequelize, models); // 0003-0006 asset_* / 0010 coin_exchange, gift_grant, turnover_state
   initPayments(sequelize, models); // 0010 payment_provider ~ payout_attempt
   initChain(sequelize, models); // 0011 chain_*
@@ -78,7 +78,9 @@ export function addModels(sequelize: Sequelize): void {
   initAssets(sequelize, models); // 0017 asset, asset_release*, ai_asset_*
   initCoinMarket(sequelize, models); // 0016 coin_market_listing, coin_market_trade
 
-  // 2. 各文件内关联。
+  // 2. Each init* registers classes on Sequelize but does not mutate the map.
+  // Populate by registered model names before declaring associations.
+  Object.assign(models, sequelize.models);
   associateIdentity(models);
   associateWallet(models);
   associatePayments(models);
@@ -111,6 +113,7 @@ export function allModels(sequelize: Sequelize): Array<typeof Model & (new () =>
   initEvents(sequelize, models);
   initAssets(sequelize, models);
   initCoinMarket(sequelize, models);
+  Object.assign(models, sequelize.models);
   return collectClasses(models);
 }
 
@@ -121,7 +124,6 @@ export function allModels(sequelize: Sequelize): Array<typeof Model & (new () =>
 function associateAll(models: AllModels): void {
   const {
     UserModel,
-    DeviceModel,
     UserSecurityEventModel,
     AssetAccountModel,
     AssetOperationModel,
@@ -175,12 +177,7 @@ function associateAll(models: AllModels): void {
   const _AssetReleaseItemModel = models.AssetReleaseItemModel;
 
   // ---- identity 侧 ----
-  // user_security_event.device_id 在 0007 批次内已建 RESTRICT 外键，读模型 join 登记。
-  UserSecurityEventModel.belongsTo(DeviceModel, {
-    foreignKey: 'device_id',
-    as: 'device',
-    constraints: false,
-  });
+  // user_security_event.device_id association is declared in identity.ts.
   UserSecurityEventModel.belongsTo(SupportConversationModel, {
     foreignKey: 'support_conversation_id',
     as: 'supportConversation',

@@ -1168,11 +1168,22 @@ describe('RoundSettleUseCase player authorization and fencing', () => {
       roomMembershipId: `m-${id}`,
       netCoinDelta: '0',
     }));
-    const replayInputHash = new Uint8Array(settlementInputHashOf({}, completePlayers.map((player) => player.submissionSnapshot)));
+    const replayInputHash = new Uint8Array(
+      settlementInputHashOf(
+        {},
+        completePlayers.map((player) => player.submissionSnapshot),
+      ),
+    );
     const replaySnapshot = { players: [1, 2, 3, 4].map((id) => ({ playerId: String(id), water: 0, foul: false })) };
-    const replayRow = { ...makeSettlement(replayInputHash, resultHashOf(replaySnapshot), SettlementStatus.COMMITTED), resultSnapshot: replaySnapshot };
+    const replayRow = {
+      ...makeSettlement(replayInputHash, resultHashOf(replaySnapshot), SettlementStatus.COMMITTED),
+      resultSnapshot: replaySnapshot,
+    };
     const useCase = new RoundSettleUseCase(
-      { lockRound: async () => ({ ...makeRound(RoundStatus.SETTLED), rulesSnapshot: {} }), listRoundPlayers: async () => completePlayers } as never,
+      {
+        lockRound: async () => ({ ...makeRound(RoundStatus.SETTLED), rulesSnapshot: {} }),
+        listRoundPlayers: async () => completePlayers,
+      } as never,
       {} as never,
       { findSettlementByRoundId: async () => replayRow } as never,
       {} as never,
@@ -1184,28 +1195,39 @@ describe('RoundSettleUseCase player authorization and fencing', () => {
     await expect(useCase.run({ userId: '1', roundId: '10', tx } as never)).resolves.toMatchObject({ replay: true, roundId: '10' });
   });
 
-  it.each([{}, null, { heldCards: [], arrangement: {} }])('rejects settled replay with a malformed hand snapshot %o', async (submissionSnapshot) => {
-    const players = [1, 2, 3, 4].map((id) => ({
-      ...makePlayer(String(id), RoundPlayerStatus.SETTLED),
-      id: `rp-${id}`,
-      roomMembershipId: `m-${id}`,
-      submissionSnapshot: id === 1 ? submissionSnapshot : makePlayer(String(id)).submissionSnapshot,
-    }));
-    const useCase = new RoundSettleUseCase(
-      { lockRound: async () => ({ ...makeRound(RoundStatus.SETTLED), rulesSnapshot: {} }), listRoundPlayers: async () => players } as never,
-      {} as never,
-      { findSettlementByRoundId: async () => makeSettlement() } as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-      {} as never,
-    );
-    await expect(useCase.run({ userId: '1', roundId: '10', tx } as never)).rejects.toMatchObject({ code: R.STORAGE_UNAVAILABLE });
-  });
+  it.each([{}, null, { heldCards: [], arrangement: {} }])(
+    'rejects settled replay with a malformed hand snapshot %o',
+    async (submissionSnapshot) => {
+      const players = [1, 2, 3, 4].map((id) => ({
+        ...makePlayer(String(id), RoundPlayerStatus.SETTLED),
+        id: `rp-${id}`,
+        roomMembershipId: `m-${id}`,
+        submissionSnapshot: id === 1 ? submissionSnapshot : makePlayer(String(id)).submissionSnapshot,
+      }));
+      const useCase = new RoundSettleUseCase(
+        {
+          lockRound: async () => ({ ...makeRound(RoundStatus.SETTLED), rulesSnapshot: {} }),
+          listRoundPlayers: async () => players,
+        } as never,
+        {} as never,
+        { findSettlementByRoundId: async () => makeSettlement() } as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+        {} as never,
+      );
+      await expect(useCase.run({ userId: '1', roundId: '10', tx } as never)).rejects.toMatchObject({ code: R.STORAGE_UNAVAILABLE });
+    },
+  );
 
   it('rejects settled replay with a round player that is not SETTLED', async () => {
-    const players = [makePlayer('1', RoundPlayerStatus.SETTLED), makePlayer('2', RoundPlayerStatus.SETTLED), makePlayer('3', RoundPlayerStatus.SETTLED), makePlayer('4', RoundPlayerStatus.SETTLED)];
+    const players = [
+      makePlayer('1', RoundPlayerStatus.SETTLED),
+      makePlayer('2', RoundPlayerStatus.SETTLED),
+      makePlayer('3', RoundPlayerStatus.SETTLED),
+      makePlayer('4', RoundPlayerStatus.SETTLED),
+    ];
     players[3]!.status = RoundPlayerStatus.SUBMITTED;
     const useCase = new RoundSettleUseCase(
       { lockRound: async () => makeRound(RoundStatus.SETTLED), listRoundPlayers: async () => players } as never,
@@ -1279,7 +1301,12 @@ describe('RoundSettleUseCase player authorization and fencing', () => {
       id: `rp-${userId}`,
       roomMembershipId: `m-${userId}`,
     }));
-    const inputHash = new Uint8Array(settlementInputHashOf({}, players.map((player) => player.submissionSnapshot)));
+    const inputHash = new Uint8Array(
+      settlementInputHashOf(
+        {},
+        players.map((player) => player.submissionSnapshot),
+      ),
+    );
     const calls = { findSettlement: 0, settle: 0, ledger: 0, rules: 0, turnover: 0, appendEvent: 0, outbox: 0 };
     const expectedSnapshot = { players: players.map(({ userId }) => ({ playerId: userId, water: 0, foul: false })) };
     const useCase = new RoundSettleUseCase(

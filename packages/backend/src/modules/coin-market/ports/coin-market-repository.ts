@@ -63,6 +63,9 @@ export interface ListingRepo {
     tx: Tx;
   }): Promise<{ inserted: boolean; listing: CoinMarketListingModel }>;
 
+  /** 按幂等 listing_key 行锁读取挂牌（操作已提交重放路径）。 */
+  lockListingByKey(listingKey: string, tx: Tx): Promise<CoinMarketListingModel | null>;
+
   /** 行锁读挂牌行（成交 / 取消前置校验；status + 守恒经用例层校验）。 */
   lockListing(listingId: string, tx: Tx): Promise<CoinMarketListingModel | null>;
 
@@ -102,7 +105,7 @@ export interface TradeRepo {
   /**
    * 创建交易行（coin_market_trade PAYMENT_PENDING=1，U(trade_key) 幂等兜底：
    * 命中 → 返回既有行 `inserted: false`；payment_deadline_at = now +
-   * PAYMENT_DEADLINE_SECONDS（首版 1800s，登记决策点）；同事务锁读
+   * 权威 SDD 已确认的 48 小时期限由用例计算并传入；同事务锁读
    * listing availableCoins 预占（reserved += coins，available -= coins，
    * 守恒经 `isValidListingInvariant` 前置校验 + DB CHECK 兜底）。
    * @param input.coins 预占金币数量（string wire，BigInt 全链路）；
@@ -117,6 +120,7 @@ export interface TradeRepo {
     grossCents: string;
     sellerNetCents: string;
     paymentMethod: number;
+    paymentDeadlineAt: Date;
     tx: Tx;
   }): Promise<{
     inserted: boolean;
@@ -125,7 +129,10 @@ export interface TradeRepo {
     isNew: boolean;
   }>;
 
-  /** 行锁读交易行（确认 / 取消前置；11 态状态机前置校验经用例层）。 */
+  /** 读取交易引用用于按统一顺序锁 listing → trade；不取得行锁。 */
+  getTrade(tradeId: string, tx: Tx): Promise<CoinMarketTradeModel | null>;
+
+  /** 行锁读交易行（listing 已锁后调用，确保统一 listing → trade 顺序）。 */
   lockTrade(tradeId: string, tx: Tx): Promise<CoinMarketTradeModel | null>;
 
   /**
@@ -142,7 +149,7 @@ export interface TradeRepo {
    * 付款超时推进（PAYMENT_PENDING=1 → PAYMENT_EXPIRED=9；同事务释放
    * listing reserved（reserved -= coins，available += coins，守恒变更）+
    * 释放 asset_hold（经 walletModule.ledger releaseHold，用例层同事务调用）；
-   * worker 未建（§6.3 管线登记），首版由用例层在成交列表读路径按
+   * 到期处理由读路径或有界 PAYMENT_EXPIRED worker 调用；不再由列表轮询逻辑单独驱动。
    * payment_deadline_at < now 触发本方法（登记决策点：Lead 确认首版
    * worker vs 读路径触发超时推进）。
    * @returns 更新后的行（影响行数 0 → null，由用例层映射 TRADE_DEADLINE_PASSED）。
@@ -172,6 +179,9 @@ export interface TradeRepo {
     limit: number;
     tx: Tx;
   }): Promise<{ items: CoinMarketTradeModel[]; nextCursor: string | null }>;
+
+  /** Bounded, deterministic due-trade selection; MySQL adapter uses FOR UPDATE SKIP LOCKED. */
+  listDuePaymentPendingTradeIds(input: { dueAt: Date; limit: number; tx: Tx }): Promise<string[]>;
 
   /**
    * 卖家取消（PAYMENT_PENDING=1 → CANCELLED=11；同事务释放

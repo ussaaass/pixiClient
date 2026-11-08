@@ -20,6 +20,8 @@
 // 用例工厂（每个文件一个用例；构造注入 ports，不用全局）
 // ---------------------------------------------------------------------------
 export { DeviceRegisterUseCase, type DeviceRegisterInput } from './application/device-register.js';
+export { AnonymousDeviceRegistrationUseCase, type AnonymousDeviceRegistrationInput } from './application/anonymous-device-registration.js';
+export { toPublicSession, type SessionResult } from './application/session-result.js';
 export { DeviceLoginUseCase, type DeviceLoginInput } from './application/device-login.js';
 export { PasswordLoginUseCase, type PasswordLoginInput, type PasswordLoginResult } from './application/password-login.js';
 export { RecoveryUseCase, type RecoveryInput } from './application/recovery.js';
@@ -33,6 +35,8 @@ export { RecoveryCredentialUseCase, type RecoverySettingsCtx } from './applicati
 
 // 共享服务（application 层；用例经构造注入，不直接 create model 行）。
 export { SecurityEventService, type SecurityResultTypeValue, maskIdentifier } from './application/security-events.js';
+// 会话记录构造策略：跨模块经 public.ts 复用，不直接依赖 identity adapter。
+export { buildNewSession } from './adapters/redis-session-port.js';
 
 // ---------------------------------------------------------------------------
 // 装配工厂（inject 全部 ports 的 IdentityModule 对象，供 server 装配调用一次）
@@ -95,13 +99,7 @@ export { DomainError, I } from './domain/errors.js';
 // ---------------------------------------------------------------------------
 export type { SessionRecord, PrincipalType } from '../../infrastructure/redis/session-store.js';
 export { SESSION_LIFETIME, ACCESS_TOKEN_TTL_MS } from '../../infrastructure/redis/session-store.js';
-export type {
-  RotationOk,
-  RotationReuse,
-  RotationResult,
-  ReplayCacheEntry,
-  ScriptOutcome,
-} from '../../infrastructure/redis/refresh-rotation.js';
+export type { RotationOk, RotationReuse, RotationResult, ScriptOutcome } from '../../infrastructure/redis/refresh-rotation.js';
 export { REPLAY_WINDOW_MS } from '../../infrastructure/redis/refresh-rotation.js';
 export type { RateCheck } from '../../infrastructure/redis/auth-rate-limit.js';
 export { AUTH_RATE_LIMIT } from '../../infrastructure/redis/auth-rate-limit.js';

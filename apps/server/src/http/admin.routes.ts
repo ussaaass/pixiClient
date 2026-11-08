@@ -43,11 +43,12 @@
  * identityModule + adminModule + sequelize 均就绪。
  */
 
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import type { Sequelize } from 'sequelize';
 import Router from '@koa/router';
-import type { Context } from 'koa';
+import type { Context, ParameterizedContext } from 'koa';
 import { Type } from '@sinclair/typebox';
+import { Value } from '@sinclair/typebox/value';
 import type { AdminModule, Tx } from '@gameing/backend/modules/admin/public';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
 import { setSuccess } from '../infrastructure/http/response.js';
@@ -85,14 +86,52 @@ const TimestampSchema = Type.String({
   pattern: '^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$',
 });
 const IdSchema = Type.String({ pattern: '^[1-9][0-9]{0,19}$' });
+const PermissionCodeSchema = Type.String({ pattern: '^[a-z][a-z0-9_.-]{2,127}$' });
+const ManagedPermissionUserSchema = Type.Object(
+  {
+    userId: IdSchema,
+    username: Type.String({ minLength: 1, maxLength: 64 }),
+    roleType: Type.Literal(4),
+    status: Type.Union([Type.Literal(1), Type.Literal(2)]),
+    permissions: Type.Array(PermissionCodeSchema, { uniqueItems: true, maxItems: 128 }),
+    authVersion: Type.Integer({ minimum: 1 }),
+    source: Type.Literal(2),
+  },
+  { additionalProperties: false },
+);
+const ManagedPermissionAuditSchema = Type.Object(
+  {
+    auditId: IdSchema,
+    adminUserId: IdSchema,
+    targetAdminUserId: IdSchema,
+    requestKey: Type.String({ minLength: 8, maxLength: 128 }),
+    action: Type.Literal('PERMISSIONS_UPDATED'),
+    previousPermissions: Type.Array(PermissionCodeSchema),
+    nextPermissions: Type.Array(PermissionCodeSchema),
+    previousAuthVersion: Type.Integer({ minimum: 1 }),
+    nextAuthVersion: Type.Integer({ minimum: 2 }),
+    reason: Type.String({ minLength: 3, maxLength: 500 }),
+    source: Type.Literal(2),
+    createdAt: TimestampSchema,
+  },
+  { additionalProperties: false },
+);
+const ManagedPermissionUpdateResponseSchema = Type.Object(
+  {
+    user: ManagedPermissionUserSchema,
+    audit: ManagedPermissionAuditSchema,
+    replayed: Type.Boolean(),
+  },
+  { additionalProperties: false },
+);
 
 const AdminLoginResponseSchema = Type.Object(
   {
     adminUserId: IdSchema,
     accessToken: Type.String({ minLength: 1 }),
-    refreshToken: Type.String({ minLength: 1 }),
     sessionKey: Type.String({ minLength: 1 }),
     expiresAt: TimestampSchema,
+    expiresInSecs: Type.Integer({ minimum: 0 }),
   },
   { additionalProperties: false },
 );
@@ -100,13 +139,7 @@ const AdminLoginResponseSchema = Type.Object(
 const AgentDomainActionResponseSchema = Type.Object(
   {
     domainId: IdSchema,
-    status: Type.Union([
-      Type.Literal(1),
-      Type.Literal(2),
-      Type.Literal(3),
-      Type.Literal(4),
-      Type.Literal(5),
-    ]),
+    status: Type.Union([Type.Literal(1), Type.Literal(2), Type.Literal(3), Type.Literal(4), Type.Literal(5)]),
     approvedAt: Type.Union([TimestampSchema, Type.Null()]),
     suspendedAt: Type.Union([TimestampSchema, Type.Null()]),
     revokedAt: Type.Union([TimestampSchema, Type.Null()]),
@@ -242,7 +275,7 @@ const WithdrawalRejectedResponseSchema = Type.Object(
 export function createAdminRoutes(
   module: AdminModule,
   identityModule: IdentityModule,
-  _sequelize: Sequelize,
+  sequelize: Sequelize,
 ): { login: Router; admin: Router } {
   const noTx: Tx = { transaction: null };
 
@@ -263,12 +296,31 @@ export function createAdminRoutes(
       totpCode,
       tx: noTx,
     });
-    // 登记决策点：Admin audience JWT 签发 + Redis admin session +
-    // HttpOnly refresh cookie 经路由层调用 identity ports（首版占位，
-    // 经 §9 第 9 步后续运维闭环）
+    // accessToken 放在响应体由客户端存入 sessionStorage；refresh token
+    // 仅经 HttpOnly cookie 发回（与 /api/v1/auth 约定隔离 admin path）。
+    ctx.cookies.set('admin_refresh_token', result.refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/admin-api/v1',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
+    ctx.cookies.set('admin_sid', result.sessionKey, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      path: '/admin-api/v1',
+      maxAge: 7 * 24 * 60 * 60 * 1000,
+    });
     setSuccess(ctx, {
       message: 'Admin 已登录',
-      data: result,
+      data: {
+        adminUserId: result.adminUserId,
+        accessToken: result.accessToken,
+        sessionKey: result.sessionKey,
+        expiresAt: result.expiresAt,
+        expiresInSecs: result.expiresInSecs,
+      },
       schema: AdminLoginResponseSchema,
       status: 200,
     });
@@ -278,14 +330,185 @@ export function createAdminRoutes(
   const admin = new Router({ prefix: '' });
   const auth = createAdminAuthMiddleware(identityModule, module);
 
+  const runAdminPermissionChange = async (ctx: ParameterizedContext<AdminAuthState>, pathTargetUserId: string) => {
+    const state = ctx.state;
+    const actorUserId = requireAdminId(state);
+    const body = getBody(ctx);
+    const requestKey = typeof body.requestKey === 'string' ? body.requestKey : '';
+    const targetUserId = pathTargetUserId;
+    const permissionCodes =
+      Array.isArray(body.permissionCodes) && body.permissionCodes.every((code) => typeof code === 'string')
+        ? (body.permissionCodes as string[])
+        : [];
+    const reason = typeof body.reason === 'string' ? body.reason : '';
+    const ipHashSecret = process.env.ADMIN_AUDIT_IP_HASH_SECRET;
+    if (!ipHashSecret || ipHashSecret.length < 32) {
+      throw new ApiError('INTERNAL_ERROR', 'Admin 审计 IP 哈希密钥未配置。', { status: 503 });
+    }
+    const ipHashHex = createHash('sha256').update(`${ctx.ip}:${ipHashSecret}`).digest('hex');
+    try {
+      return await sequelize.transaction(async (transaction) =>
+        module.adminPermissionsManage.update({
+          actorUserId,
+          actorSessionKey: state.sid ?? null,
+          targetUserId,
+          permissionCodes,
+          requestKey,
+          reason,
+          ipHashHex,
+          tx: { transaction },
+        }),
+      );
+    } catch (error) {
+      if (error instanceof Error && 'code' in error && String((error as { code: unknown }).code).startsWith('AD_')) {
+        const code = String((error as { code: unknown }).code);
+        throw new ApiError(code, error.message, {
+          status: code === 'AD_USER_NOT_FOUND' ? 404 : code === 'AD_PERMISSION_DENIED' ? 403 : 400,
+          cause: error,
+        });
+      }
+      throw error;
+    }
+  };
+
+  admin.get('/admin-api/v1/admin-permissions/permissions', auth, async (ctx) => {
+    const data = await module.adminPermissionsManage.listPaths({ tx: noTx });
+    const schema = Type.Array(
+      Type.Object(
+        {
+          permissionCode: PermissionCodeSchema,
+          name: Type.String({ minLength: 1, maxLength: 100 }),
+          httpMethod: Type.Union(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].map((method) => Type.Literal(method))),
+          pathPattern: Type.String({ pattern: '^/api/v1/(?:admin|support)(?:/[a-z0-9:_-]+)*$' }),
+          status: Type.Literal(1),
+        },
+        { additionalProperties: false },
+      ),
+    );
+    setSuccess(ctx, { message: '已启用的 Admin 权限目录', data, schema, status: 200 });
+  });
+  admin.get('/admin-api/v1/admin-permissions/users', auth, async (ctx) => {
+    const data = await module.adminPermissionsManage.listUsers({
+      ...(typeof ctx.query.keyword === 'string' ? { query: ctx.query.keyword } : {}),
+      ...(typeof ctx.query.status === 'string' ? { status: Number(ctx.query.status) } : {}),
+      ...(typeof ctx.query.permissionCode === 'string' ? { permissionCode: ctx.query.permissionCode } : {}),
+      tx: noTx,
+    });
+    setSuccess(ctx, { message: 'Admin 权限账号列表', data, schema: Type.Array(ManagedPermissionUserSchema), status: 200 });
+  });
+  admin.get('/admin-api/v1/admin-permissions/users/:id', auth, async (ctx) => {
+    const data = await module.adminPermissionsManage.getUser({ userId: paramId(ctx), tx: noTx });
+    setSuccess(ctx, { message: 'Admin 权限账号详情', data, schema: ManagedPermissionUserSchema, status: 200 });
+  });
+  admin.get('/admin-api/v1/admin-permissions/audits', auth, async (ctx) => {
+    const targetAdminUserId = typeof ctx.query.targetAdminUserId === 'string' ? ctx.query.targetAdminUserId : '';
+    if (!/^[1-9][0-9]{0,19}$/.test(targetAdminUserId))
+      throw new ApiError('REQUEST_VALIDATION_FAILED', 'targetAdminUserId 格式不合法。', { status: 400 });
+    const data = await module.adminPermissionsManage.listUserAuditEvents({ targetAdminUserId, tx: noTx });
+    const schema = Type.Array(
+      Type.Object(
+        {
+          auditId: IdSchema,
+          adminUserId: IdSchema,
+          targetAdminUserId: IdSchema,
+          requestKey: Type.String({ minLength: 8, maxLength: 128 }),
+          action: Type.Literal('PERMISSIONS_UPDATED'),
+          previousPermissions: Type.Array(PermissionCodeSchema),
+          nextPermissions: Type.Array(PermissionCodeSchema),
+          previousAuthVersion: Type.Integer({ minimum: 1 }),
+          nextAuthVersion: Type.Integer({ minimum: 2 }),
+          reason: Type.String({ minLength: 3, maxLength: 500 }),
+          source: Type.Literal(2),
+          createdAt: TimestampSchema,
+        },
+        { additionalProperties: false },
+      ),
+    );
+    const normalizedAudits = data.map((audit) => ({
+      auditId: audit.auditId,
+      requestKey: audit.requestKey,
+      adminUserId: audit.adminUserId,
+      targetAdminUserId: audit.targetAdminUserId,
+      action: 'PERMISSIONS_UPDATED' as const,
+      previousPermissions: audit.previousPermissions,
+      nextPermissions: audit.nextPermissions,
+      previousAuthVersion: Number(audit.previousAuthVersion),
+      nextAuthVersion: Number(audit.nextAuthVersion),
+      reason: audit.reason,
+      source: 2 as const,
+      createdAt: audit.createdAt,
+    }));
+    setSuccess(ctx, { message: 'Admin 权限变更审计', data: normalizedAudits, schema, status: 200 });
+  });
+  admin.get('/admin-api/v1/admin-permissions/audits/request/:requestKey', auth, async (ctx) => {
+    const requestKey = (ctx.params as Record<string, string | undefined>).requestKey;
+    if (!requestKey || requestKey.length < 8 || requestKey.length > 128)
+      throw new ApiError('REQUEST_VALIDATION_FAILED', 'requestKey 格式不合法。', { status: 400 });
+    const event = await module.auditRepo.findPermissionAuditByRequestKey(requestKey, noTx);
+    if (!event || event.actionCode !== 'ADMIN_PERMISSIONS_UPDATED') throw new ApiError('NOT_FOUND', '权限审计不存在。', { status: 404 });
+    const snapshot = event.snapshot as Record<string, unknown>;
+    const data = {
+      auditId: event.id,
+      requestKey: event.requestKey,
+      adminUserId: event.adminUserId,
+      targetAdminUserId: event.targetAdminUserId,
+      action: 'PERMISSIONS_UPDATED',
+      previousPermissions: snapshot.previousPermissions,
+      nextPermissions: snapshot.nextPermissions,
+      previousAuthVersion: Number(snapshot.previousAuthVersion),
+      nextAuthVersion: Number(snapshot.nextAuthVersion),
+      reason: event.reason,
+      source: 2,
+      createdAt: typeof event.createdAt === 'string' ? event.createdAt : event.createdAt.toISOString(),
+    };
+    const schema = Type.Object(
+      {
+        auditId: IdSchema,
+        requestKey: Type.String({ minLength: 8, maxLength: 128 }),
+        adminUserId: IdSchema,
+        targetAdminUserId: IdSchema,
+        action: Type.Literal('PERMISSIONS_UPDATED'),
+        previousPermissions: Type.Array(PermissionCodeSchema),
+        nextPermissions: Type.Array(PermissionCodeSchema),
+        previousAuthVersion: Type.Integer({ minimum: 1 }),
+        nextAuthVersion: Type.Integer({ minimum: 2 }),
+        reason: Type.String({ minLength: 3, maxLength: 500 }),
+        source: Type.Literal(2),
+        createdAt: TimestampSchema,
+      },
+      { additionalProperties: false },
+    );
+    setSuccess(ctx, { message: '权限变更审计', data, schema, status: 200 });
+  });
+  admin.patch('/admin-api/v1/admin-permissions/users/:id/permissions', auth, async (ctx) => {
+    const body = getBody(ctx);
+    const requestSchema = Type.Object(
+      {
+        targetAdminUserId: IdSchema,
+        permissionCodes: Type.Array(PermissionCodeSchema, { uniqueItems: true, maxItems: 128 }),
+        reason: Type.String({ minLength: 3, maxLength: 500 }),
+        requestKey: Type.String({ minLength: 8, maxLength: 128 }),
+      },
+      { additionalProperties: false },
+    );
+    if (!Value.Check(requestSchema, body)) throw new ApiError('REQUEST_VALIDATION_FAILED', '权限变更请求格式不合法。', { status: 400 });
+    if (typeof body.targetAdminUserId !== 'string' || body.targetAdminUserId !== paramId(ctx)) {
+      throw new ApiError('REQUEST_VALIDATION_FAILED', '路径目标与请求目标不一致。', { status: 400 });
+    }
+    const result = await runAdminPermissionChange(ctx, paramId(ctx));
+    setSuccess(ctx, {
+      message: result.replayed ? '权限变更幂等重放' : '权限已更新',
+      data: result,
+      schema: ManagedPermissionUpdateResponseSchema,
+      status: 200,
+    });
+  });
+
   // POST /admin-api/v1/audit（201 新写 / 200 幂等重放；request_key 幂等）
   admin.post('/admin-api/v1/audit', auth, async (ctx) => {
     const adminUserId = requireAdminId(ctx.state as AdminAuthState);
     const body = getBody(ctx);
-    const requestKey =
-      typeof body.requestKey === 'string' && body.requestKey !== ''
-        ? body.requestKey
-        : `admin:${randomUUID()}`;
+    const requestKey = typeof body.requestKey === 'string' && body.requestKey !== '' ? body.requestKey : `admin:${randomUUID()}`;
     const result = await module.adminAudit.run({
       adminUserId,
       adminSessionKey: ctx.state.sid ?? null,
@@ -413,10 +636,7 @@ export function createAdminRoutes(
       jobId,
       adminUserId,
       decision: decision as 1 | 2,
-      requestKey:
-        typeof body.requestKey === 'string' && body.requestKey !== ''
-          ? body.requestKey
-          : `ai-asset:${jobId}:review:${decision}`,
+      requestKey: typeof body.requestKey === 'string' && body.requestKey !== '' ? body.requestKey : `ai-asset:${jobId}:review:${decision}`,
       snapshot: (typeof body.snapshot === 'object' && body.snapshot !== null ? body.snapshot : {}) as Record<string, unknown>,
       tx: noTx,
     });
@@ -475,10 +695,7 @@ export function createAdminRoutes(
       // asset_operation.operated_by_admin_user_id（首版经路由层传 null，
       // 登记 DDL CHECK ck_asset_operation_reviewer 兜底）
       operatedBy: typeof body.operatedBy === 'string' ? body.operatedBy : null,
-      requestKey:
-        typeof body.requestKey === 'string' && body.requestKey !== ''
-          ? body.requestKey
-          : `withdrawal:${withdrawalId}:approve`,
+      requestKey: typeof body.requestKey === 'string' && body.requestKey !== '' ? body.requestKey : `withdrawal:${withdrawalId}:approve`,
       snapshot: (typeof body.snapshot === 'object' && body.snapshot !== null ? body.snapshot : {}) as Record<string, unknown>,
       tx: noTx,
     });
@@ -499,10 +716,7 @@ export function createAdminRoutes(
       withdrawalId,
       approvedBy: adminUserId,
       failureReason: typeof body.failureReason === 'string' ? body.failureReason : '',
-      requestKey:
-        typeof body.requestKey === 'string' && body.requestKey !== ''
-          ? body.requestKey
-          : `withdrawal:${withdrawalId}:reject`,
+      requestKey: typeof body.requestKey === 'string' && body.requestKey !== '' ? body.requestKey : `withdrawal:${withdrawalId}:reject`,
       snapshot: (typeof body.snapshot === 'object' && body.snapshot !== null ? body.snapshot : {}) as Record<string, unknown>,
       tx: noTx,
     });

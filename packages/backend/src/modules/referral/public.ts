@@ -51,7 +51,6 @@ export { AgentDomainUseCase, type AgentDomainDto, type AgentDomainApplyResultDto
 // 装配工厂（inject 全部 ports 的 ReferralModule 对象，供 server 装配调用一次）
 // ---------------------------------------------------------------------------
 export { createReferralModule, type ReferralModule, type ReferralModuleDeps, type ReferralModuleConfig } from './assembly.js';
-
 // ---------------------------------------------------------------------------
 // ports（供其他模块 / 测试 mock；不直接 import adapters）
 // ---------------------------------------------------------------------------

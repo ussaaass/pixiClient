@@ -87,6 +87,8 @@ export interface TurnoverState {
  * 全部方法要求在同一事务 scope 内调用（`tx` 显式传入，用例不隐式持库）。
  */
 export interface AssetLedger {
+  /** Ensure the two PLAYER accounts exist inside an active transaction; never changes existing balances. */
+  ensurePlayerAccounts(userId: string, tx: Tx): Promise<AssetAccountModel[]>;
   /**
    * 幂等抢键：INSERT asset_operation（operation_key 唯一约束先抢，§4）。
    * - 新键成功 → `{ inserted: true }`（同事务后续记账，最后 setCommitted）。

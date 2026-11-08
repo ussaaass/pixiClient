@@ -80,6 +80,9 @@ export interface RoomRepo {
    * 入座（room_membership SEATED=1；U(user, active_marker) 防重复；
    * 返回既有 membership 行时 inserted=false，幂等重放）。
    */
+  /** 查找用户在该房间的有效入座，用于满员前识别安全幂等重放。 */
+  findSeatedMembership(roomId: string, userId: string, tx: Tx): Promise<RoomMembershipModel | null>;
+
   joinRoom(input: {
     roomId: string;
     userId: string;
@@ -242,7 +245,7 @@ export interface GameEntryRepo {
    * 入座认领（game_entry QUEUED=1 → SEATED=2 + room_id 回填；
    * 幂等：已 SEATED 同 room 重放返回既有行）。
    */
-  claimEntry(input: { entryId: string; roomId: string; tx: Tx }): Promise<GameEntryModel>;
+  claimEntry(input: { entryId: string; roomId: string; tx: Tx }): Promise<{ claimed: boolean; entry: GameEntryModel | null }>;
 
   /** 按主键锁读。 */
   lockEntry(entryId: string, tx: Tx): Promise<GameEntryModel | null>;

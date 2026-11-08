@@ -154,7 +154,7 @@ export class SequelizeAgentDomainRepo implements AgentDomainRepo {
 }
 
 // ---------------------------------------------------------------------------
-// AdminAuditEventRepo（admin_audit_event append-only；U(request_key) 幂等）
+// AdminAuditEventRepo（admin_audit_event append-only；权限变更按 action+request_key 幂等）
 // ---------------------------------------------------------------------------
 
 export class SequelizeAdminAuditEventRepo implements AdminAuditEventRepo {
@@ -183,8 +183,8 @@ export class SequelizeAdminAuditEventRepo implements AdminAuditEventRepo {
   }): Promise<{ inserted: boolean; event: AdminAuditEventModel }> {
     const txq = txOf(input.tx);
 
-    // U(request_key) 幂等兜底：命中 → 读回既有行（append-only 不可改写，
-    // 不产生第二行，验收红线"审计幂等"）
+    // 权限变更审计的 action_code+request_key 唯一索引是并发幂等兜底；
+    // 其他审计仍可复用 request_key（如批量配置逐键记录）。
     try {
       const event = await this.model.create(
         {
@@ -213,11 +213,33 @@ export class SequelizeAdminAuditEventRepo implements AdminAuditEventRepo {
       return { inserted: true, event };
     } catch (err) {
       if (isDuplicateKeyError(err)) {
-        const existing = await this.findAuditEventByRequestKey(input.requestKey, input.tx);
+        const existing =
+          input.actionCode === 'ADMIN_PERMISSIONS_UPDATED' ? await this.findPermissionAuditByRequestKey(input.requestKey, input.tx) : null;
         if (existing !== null) return { inserted: false, event: existing };
       }
       throw err;
     }
+  }
+
+  async listPermissionAuditsForTarget(targetAdminUserId: string, tx: Tx): Promise<AdminAuditEventModel[]> {
+    const txq = txOf(tx);
+    return this.model.findAll({
+      where: { targetAdminUserId, actionCode: 'ADMIN_PERMISSIONS_UPDATED' } as never,
+      order: [
+        ['createdAt', 'DESC'],
+        ['id', 'DESC'],
+      ],
+      limit: 100,
+      transaction: txq,
+    } as never);
+  }
+
+  async findPermissionAuditByRequestKey(requestKey: string, tx: Tx): Promise<AdminAuditEventModel | null> {
+    const txq = txOf(tx);
+    return this.model.findOne({
+      where: { requestKey, actionCode: 'ADMIN_PERMISSIONS_UPDATED' } as never,
+      transaction: txq,
+    } as never);
   }
 
   async findAuditEventByRequestKey(requestKey: string, tx: Tx): Promise<AdminAuditEventModel | null> {
@@ -240,6 +262,24 @@ export class SequelizeAdminPermissionRepo implements AdminPermissionRepo {
     const txq = txOf(tx);
     return this.model.findOne({
       where: { permissionCode } as never,
+      transaction: txq,
+    } as never);
+  }
+
+  async findPermissionsByCodes(permissionCodes: readonly string[], tx: Tx): Promise<AdminPermissionModel[]> {
+    if (permissionCodes.length === 0) return [];
+    const txq = txOf(tx);
+    return this.model.findAll({
+      where: { permissionCode: { [Op.in as unknown as string]: [...permissionCodes] } } as never,
+      transaction: txq,
+    } as never);
+  }
+
+  async listActivePermissions(tx: Tx): Promise<AdminPermissionModel[]> {
+    const txq = txOf(tx);
+    return this.model.findAll({
+      where: { status: 1, deletedAt: null } as never,
+      order: [['permissionCode', 'ASC']],
       transaction: txq,
     } as never);
   }
@@ -453,5 +493,24 @@ export class SequelizeAdminUserRepo implements AdminUserRepo {
       where: { username } as never,
       transaction: txq,
     } as never);
+  }
+
+  async lockPermissionTargetUser(userId: string, tx: Tx): Promise<UserModel | null> {
+    const txq = txOf(tx);
+    return this.model.findByPk(userId, { lock: 'FOR UPDATE', transaction: txq } as never);
+  }
+
+  async updateUserPermissions(input: {
+    userId: string;
+    expectedAuthVersion: string;
+    permissions: readonly string[];
+    tx: Tx;
+  }): Promise<number> {
+    const txq = txOf(input.tx);
+    const [affected] = await this.model.update(
+      { permissions: [...input.permissions], authVersion: String(BigInt(input.expectedAuthVersion) + 1n) } as never,
+      { where: { id: input.userId, authVersion: input.expectedAuthVersion, deletedAt: null } as never, transaction: txq } as never,
+    );
+    return affected;
   }
 }

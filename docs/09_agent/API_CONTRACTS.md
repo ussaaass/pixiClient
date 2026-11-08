@@ -31,7 +31,8 @@ ApiFailure    = { requestId, code: ApiErrorCode, message, data: null, serverNow 
 | `GET /platform/announcements/active` | `contracts/platform-events/announcement.ts` | ✅ 返回空列表 stub | 持久化/受众过滤/详情未实现，不得视为公告闭环 |
 | `GET /games`、`/games/experience`、`/games/:gameKey/experience`、`/games/:gameKey/difficulties/:difficultyKey/preflight` | `contracts/game-catalog.ts`、`game-experience.ts` | ✅ 代码内 LOCAL_DEMO 快照 | preflight 只对 `LOCAL_PRACTICE` 且可玩游戏返回 READY |
 | wallet 摘要/明细/转账/兑换/提现 | `contracts/wallet.ts` | ❌ 仅浏览器 LOCAL 适配器 | 生产 Koa/事务待接 |
-| identity（登录/设备/TOTP/恢复凭证） | `contracts/identity.ts` | ❌ 仅 LOCAL_BROWSER_SERVER | 服务端 JWT 签发待接 |
+| identity（登录/设备/TOTP/恢复凭证） | `contracts/identity.ts` | ⚠️ `apps/server/src/http/auth.routes.ts` 已挂载认证与身份设置路由；GET `/me/identity-settings` 与契约对齐 | 仅后端端点代码不代表生产身份闭环：device-register 仍要求 caller 提供既有 userId、缺少安全设备秘密与 durable 幂等/SQL-Redis恢复设计，refresh 缺少 refresh_token cookie；Web production identity composition 未接入。详见 `PROJECT_STATUS.md` 阶段0审查。 |
+| 房间与牌局（me/rooms、join、rounds、submit、settlement、game-entries） | `contracts/game-room.ts` 与 rooms use-cases | ⚠️ Koa 已挂载 | 业务码/HTTP status 已进入 shared error registry，路由事务边界映射预期 rooms errors；Web production composition、Socket.IO/快照恢复仍待接。 |
 | social / support / invite-agent / coin-market / notifications | 各 subpath | ❌ 仅浏览器 LOCAL | 服务端 handler、Socket.IO、限流待接 |
 
 ## 4. 新增 DTO 的规则
@@ -47,3 +48,5 @@ ApiFailure    = { requestId, code: ApiErrorCode, message, data: null, serverNow 
 | 日期 | 变更 |
 | --- | --- |
 | 2026-11-02 | 新建：登记 envelope/幂等/分页/兼容约定、Koa 已实现端点与契约差距、新增 DTO 流程；全文口径以 HTTP SDD 为准。 |
+| 2026-11-05 | 更新 identity 端点现状：登记 Koa auth routes 已有实现、identity-settings 路径已对齐；明确实现路由不等同生产闭环，注册凭证/幂等/恢复、refresh cookie 和 production web composition 仍未解决。 |
+| 2026-11-05 | 登记 rooms 领域码接入共享 error registry 与事务路由映射；join/create/start/submit/settle 预期业务拒绝不再统一降级为 500。 |

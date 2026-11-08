@@ -3,22 +3,38 @@ import { PlayerEntryOutcome, type PlayerIdentityPort } from '@gameing/domain/pla
 import type { PlayerEntryResultDto } from '@gameing/contracts/player-entry';
 import { ApiRequestError, createApiClient, type ApiFetchPort } from '../http/api-client';
 import type { SessionResponseDto } from '@gameing/contracts/identity';
-import type { ContactChallengeResponseDto, IdentitySettingsResponseDto, TotpConfirmRequestDto, TotpDisableRequestDto, TotpDisabledResponseDto, TotpEnabledResponseDto, TotpSetupRequestDto, TotpSetupResponseDto } from '@gameing/contracts/identity';
+import type {
+  ContactChallengeResponseDto,
+  IdentitySettingsResponseDto,
+  TotpConfirmRequestDto,
+  TotpDisableRequestDto,
+  TotpDisabledResponseDto,
+  TotpEnabledResponseDto,
+  TotpSetupRequestDto,
+  TotpSetupResponseDto,
+} from '@gameing/contracts/identity';
 import { decryptRecoveryQrPayload, encryptRecoveryQrPayload, randomToken } from './crypto';
 
 export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
   private session: SessionResponseDto | undefined;
   private refreshInFlight: Promise<SessionResponseDto> | undefined;
+  private pendingRefreshOperationId: string | undefined;
   private readonly api;
 
-  constructor(fetchPort: ApiFetchPort, private readonly onSession?: (session: SessionResponseDto | undefined) => void) {
+  constructor(
+    fetchPort: ApiFetchPort,
+    private readonly onSession?: (session: SessionResponseDto | undefined) => void,
+  ) {
     this.api = createApiClient(fetchPort);
   }
 
-  get currentSession(): SessionResponseDto | undefined { return this.session; }
+  get currentSession(): SessionResponseDto | undefined {
+    return this.session;
+  }
 
   acceptSession(session: SessionResponseDto): void {
     this.session = session;
+    this.clearRefreshOperationId();
     localStorage.removeItem('gameing-hall.browser-device-login-suppressed');
     this.onSession?.(session);
   }
@@ -33,7 +49,13 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
   async passwordLogin(request: Parameters<PlayerIdentityPort['passwordLogin']>[0]): Promise<PlayerEntryResultDto> {
     try {
       const response = await this.api.passwordLogin(request);
-      if ('challengeType' in response) return { source: 'BROWSER_DEV', outcome: PlayerEntryOutcome.TOTP_CHALLENGE_REQUIRED, challengeId: response.challengeId, expiresAt: response.expiresAt };
+      if ('challengeType' in response)
+        return {
+          source: 'BROWSER_DEV',
+          outcome: PlayerEntryOutcome.TOTP_CHALLENGE_REQUIRED,
+          challengeId: response.challengeId,
+          expiresAt: response.expiresAt,
+        };
       this.acceptSession(response);
       return { source: 'BROWSER_DEV', outcome: PlayerEntryOutcome.PASSWORD_AUTHENTICATED };
     } catch (error) {
@@ -50,11 +72,13 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
       throw new ApiRequestError(400, 'RECOVERY_QR_INVALID', 'The local recovery QR could not be decrypted.');
     }
     try {
-      this.acceptSession(await this.api.recovery({
-        credentialId: credential.credentialId,
-        recoverySecret: credential.recoverySecret,
-        ...(request.totp ? { totp: request.totp } : {}),
-      }));
+      this.acceptSession(
+        await this.api.recovery({
+          credentialId: credential.credentialId,
+          recoverySecret: credential.recoverySecret,
+          ...(request.totp ? { totp: request.totp } : {}),
+        }),
+      );
     } catch (error) {
       if (error instanceof ApiRequestError) throw error;
       throw error;
@@ -65,6 +89,7 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
   async logout(): Promise<void> {
     await this.api.logout();
     this.session = undefined;
+    this.clearRefreshOperationId();
     this.onSession?.(undefined);
     localStorage.setItem('gameing-hall.browser-device-login-suppressed', 'true');
   }
@@ -93,7 +118,10 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
     return this.withValidAccessToken((accessToken) => this.api.setEmailContact(request, accessToken));
   }
 
-  async confirmContactChallenge(challengeId: string, request: Parameters<PlayerIdentityPort['confirmContactChallenge']>[1]): Promise<IdentitySettingsResponseDto> {
+  async confirmContactChallenge(
+    challengeId: string,
+    request: Parameters<PlayerIdentityPort['confirmContactChallenge']>[1],
+  ): Promise<IdentitySettingsResponseDto> {
     return this.withValidAccessToken((accessToken) => this.api.confirmContactChallenge(challengeId, request, accessToken));
   }
 
@@ -113,10 +141,20 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
     return this.withValidAccessToken((accessToken) => this.api.rotateTotpRecoveryCodes(request, accessToken));
   }
 
-  async prepareRecoveryCredential(request: Parameters<PlayerIdentityPort['prepareRecoveryCredential']>[0]): Promise<Awaited<ReturnType<PlayerIdentityPort['prepareRecoveryCredential']>>> {
+  async prepareRecoveryCredential(
+    request: Parameters<PlayerIdentityPort['prepareRecoveryCredential']>[0],
+  ): Promise<Awaited<ReturnType<PlayerIdentityPort['prepareRecoveryCredential']>>> {
     const recoverySecret = randomToken(32);
-    const issued = await this.withValidAccessToken((accessToken) => this.api.prepareRecoveryCredential({ password: request.password, recoverySecret, ...(request.totp ? { totp: request.totp } : {}) }, accessToken));
-    const qrPayload = await encryptRecoveryQrPayload({ formatVersion: 1, credentialId: issued.credentialId, recoverySecret, expiresAt: issued.expiresAt }, request.qrPassword);
+    const issued = await this.withValidAccessToken((accessToken) =>
+      this.api.prepareRecoveryCredential(
+        { password: request.password, recoverySecret, ...(request.totp ? { totp: request.totp } : {}) },
+        accessToken,
+      ),
+    );
+    const qrPayload = await encryptRecoveryQrPayload(
+      { formatVersion: 1, credentialId: issued.credentialId, recoverySecret, expiresAt: issued.expiresAt },
+      request.qrPassword,
+    );
     return { ...issued, qrPayload };
   }
 
@@ -139,10 +177,16 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
 
     let refreshed: SessionResponseDto;
     try {
-      this.refreshInFlight ??= this.api.refresh().then((session) => {
-        this.acceptSession(session);
-        return session;
-      }).finally(() => { this.refreshInFlight = undefined; });
+      this.refreshInFlight ??= this.api
+        .refresh({ operationId: this.getRefreshOperationId() })
+        .then((session) => {
+          this.pendingRefreshOperationId = undefined;
+          this.acceptSession(session);
+          return session;
+        })
+        .finally(() => {
+          this.refreshInFlight = undefined;
+        });
       refreshed = await this.refreshInFlight;
     } catch (error) {
       if (error instanceof ApiRequestError && error.status === 401) {
@@ -160,13 +204,36 @@ export class BrowserPlayerIdentityAdapter implements PlayerIdentityPort {
     }
   }
 
+  private getRefreshOperationId(): string {
+    if (this.pendingRefreshOperationId) return this.pendingRefreshOperationId;
+    const key = 'gameing-hall.pending-refresh-operation-id';
+    const stored = localStorage.getItem(key);
+    this.pendingRefreshOperationId = stored && /^[A-Za-z0-9_-]{16,128}$/.test(stored) ? stored : randomToken(18);
+    localStorage.setItem(key, this.pendingRefreshOperationId);
+    return this.pendingRefreshOperationId;
+  }
+
+  private clearRefreshOperationId(): void {
+    this.pendingRefreshOperationId = undefined;
+    localStorage.removeItem('gameing-hall.pending-refresh-operation-id');
+  }
+
   private invalidateSession(): void {
     this.session = undefined;
+    this.clearRefreshOperationId();
     this.onSession?.(undefined);
     localStorage.setItem('gameing-hall.browser-device-login-suppressed', 'true');
   }
 
-  async createTestAccount(): Promise<{ userId: string; displayName: string; identifier: string; password: string; recoveryQrPayload: string; recoveryQrPassword: string; recoveryExpiresAt: string }> {
+  async createTestAccount(): Promise<{
+    userId: string;
+    displayName: string;
+    identifier: string;
+    password: string;
+    recoveryQrPayload: string;
+    recoveryQrPassword: string;
+    recoveryExpiresAt: string;
+  }> {
     const { createDevelopmentTestAccount } = await import('./dispatcher');
     return createDevelopmentTestAccount();
   }

@@ -16,7 +16,7 @@
  * 用例文件之间不互相 import 内部类；跨用例共享经本文件。
  * `GrantWelcomeGiftUseCase` 实现 identity `WelcomeGiftPort` 接口
  * （modules/identity/ports/welcome-gift-port.ts），装配时替换 identity 的
- * `welcomeGift: null`，打通 SDD §4 "注册 workflow 幂等调用新用户赠币"。
+ * `walletModule.welcomeGiftPort`，打通 SDD §4 "注册 workflow 幂等调用新用户赠币"。
  */
 
 // ---------------------------------------------------------------------------
@@ -32,7 +32,14 @@ export { TurnoverGateUseCase, type TurnoverGateResult, type TurnoverView } from 
 // ---------------------------------------------------------------------------
 // 装配工厂（inject 全部 ports 的 WalletModule 对象，供 server 装配调用一次）
 // ---------------------------------------------------------------------------
-export { createWalletModule, outboxFor, type WalletModule, type WalletModuleDeps, type WalletModuleConfig } from './assembly.js';
+export {
+  createWalletModule,
+  outboxFor,
+  type WalletModule,
+  type WalletModuleDeps,
+  type WalletModuleConfig,
+  type PlayerAssetAccountsPort,
+} from './assembly.js';
 
 // ---------------------------------------------------------------------------
 // ports（供其他模块 / 测试 mock；不直接 import adapters）

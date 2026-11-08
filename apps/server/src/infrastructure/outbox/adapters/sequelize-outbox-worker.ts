@@ -27,7 +27,7 @@ export const OUTBOX_BACKOFF_CAP_MS = 120_000;
 /** 退避毫秒（attempts 为**当前**失败次数，从 0 起；0 失败 → 1s 起步）。 */
 export function outboxBackoffMs(attempts: number): number {
   const exp = Math.max(0, attempts);
-  const ms = 1000 * 2 ** Math.min(exp, 6);
+  const ms = 1000 * 2 ** Math.min(exp, 7);
   return Math.min(ms, OUTBOX_BACKOFF_CAP_MS);
 }
 
@@ -71,8 +71,8 @@ export class SequelizeOutboxWorkerRepo implements OutboxWorkerRepo {
     return leased;
   }
 
-  async markSent(input: OutboxSettleInput): Promise<void> {
-    await this.model.update(
+  async markSent(input: OutboxSettleInput): Promise<boolean> {
+    const [affected] = await this.model.update(
       {
         status: OutboxStatus.SENT as never,
         sentAt: input.now as never,
@@ -81,27 +81,40 @@ export class SequelizeOutboxWorkerRepo implements OutboxWorkerRepo {
         leaseUntil: null,
       } as never,
       {
-        where: { id: input.outboxId as never, status: OutboxStatus.PROCESSING as never } as never,
+        where: {
+          id: input.outboxId as never,
+          status: OutboxStatus.PROCESSING as never,
+          lockedBy: input.lockedBy as never,
+          leaseUntil: input.leaseUntil as never,
+        } as never,
       } as never,
     );
+    return affected > 0;
   }
 
-  async markFailed(input: OutboxSettleInput & { deadAfter: number; lastErrorCode: string }): Promise<void> {
+  async markFailed(input: OutboxSettleInput & { deadAfter: number; lastErrorCode: string }): Promise<boolean> {
     const nextAttempts = input.attempts + 1;
     const dead = nextAttempts >= input.deadAfter;
-    await this.model.update(
+    const [affected] = await this.model.update(
       {
         status: (dead ? OutboxStatus.DEAD : OutboxStatus.PENDING) as never,
         attempts: nextAttempts as never,
         lastErrorCode: input.lastErrorCode as never,
         availableAt: dead ? null : (new Date(input.now.getTime() + outboxBackoffMs(input.attempts)) as never),
-        lockedBy: dead ? null : (input.lockedBy as never),
-        leaseUntil: dead ? null : (new Date(input.now.getTime() + input.leaseMs) as never),
+        // available_at alone enforces retry backoff; release the lease now.
+        lockedBy: null,
+        leaseUntil: null,
       } as never,
       {
-        where: { id: input.outboxId as never, status: OutboxStatus.PROCESSING as never } as never,
+        where: {
+          id: input.outboxId as never,
+          status: OutboxStatus.PROCESSING as never,
+          lockedBy: input.lockedBy as never,
+          leaseUntil: input.leaseUntil as never,
+        } as never,
       } as never,
     );
+    return affected > 0;
   }
 
   async reclaimStale(input: { now: Date }): Promise<number> {

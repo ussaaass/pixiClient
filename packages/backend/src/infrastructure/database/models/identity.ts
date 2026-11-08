@@ -29,6 +29,102 @@ import {
 } from './_shared.js';
 
 // ---------------------------------------------------------------------------
+// registration_operation
+// ---------------------------------------------------------------------------
+
+/** Registration idempotency tombstone and short-lived encrypted response replay state. */
+export interface RegistrationOperationModelAttributes {
+  id: string;
+  status: number;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  deletedAt: Date | string | null;
+  idempotencyKey: string;
+  requestHash: Uint8Array;
+  userId: string | null;
+  deviceId: string | null;
+  sessionId: string | null;
+  replayCiphertext: string | null;
+  replayExpiresAt: Date | string | null;
+}
+
+export type RegistrationOperationModelCreationAttributes = Optional<
+  RegistrationOperationModelAttributes,
+  'id' | 'status' | 'createdAt' | 'updatedAt' | 'deletedAt'
+>;
+
+export class RegistrationOperationModel
+  extends Model<RegistrationOperationModelAttributes, RegistrationOperationModelCreationAttributes>
+  implements RegistrationOperationModelAttributes
+{
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare idempotencyKey: string;
+  declare requestHash: Uint8Array;
+  declare userId: string | null;
+  declare deviceId: string | null;
+  declare sessionId: string | null;
+  declare replayCiphertext: string | null;
+  declare replayExpiresAt: Date | string | null;
+
+  static associate(models: {
+    UserModel: typeof UserModel;
+    DeviceModel: typeof DeviceModel;
+    RegistrationOperationModel: typeof RegistrationOperationModel;
+  }): void {
+    RegistrationOperationModel.belongsTo(models.UserModel, {
+      foreignKey: 'user_id',
+      as: 'user',
+      constraints: false,
+    });
+    RegistrationOperationModel.belongsTo(models.DeviceModel, {
+      foreignKey: 'device_id',
+      as: 'device',
+      constraints: false,
+    });
+  }
+}
+
+export function register_RegistrationOperationModel(sequelize: Sequelize): void {
+  (RegistrationOperationModel.init as unknown as ModelInitFn)(
+    {
+      id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, allowNull: false, comment: '此表主键，对外以十进制字符串表示' },
+      status: { type: DataTypes.SMALLINT, allowNull: false, defaultValue: 1, comment: '注册操作状态：PENDING=1/COMPLETED=2/FAILED=3' },
+      idempotencyKey: { field: 'key', type: DataTypes.STRING(160), allowNull: false, comment: '注册请求唯一幂等键，不含可复用秘密' },
+      requestHash: {
+        field: 'request_hash',
+        type: binaryDataType(32),
+        allowNull: false,
+        comment: '注册请求规范化内容的 SHA-256 摘要，不保存请求明文',
+      },
+      userId: { field: 'user_id', type: DataTypes.BIGINT, allowNull: true, comment: '注册成功创建的用户，引用 user.id' },
+      deviceId: { field: 'device_id', type: DataTypes.BIGINT, allowNull: true, comment: '注册成功建立的设备，引用 device.id' },
+      sessionId: {
+        field: 'session_id',
+        type: DataTypes.STRING(160),
+        allowNull: true,
+        comment: '注册响应对应 Redis sid；登出时用于清除重放密文',
+      },
+      replayCiphertext: {
+        field: 'replay_ciphertext',
+        type: DataTypes.TEXT,
+        allowNull: true,
+        comment: '注册响应认证加密密文；只存密文，不存明文',
+      },
+      replayExpiresAt: { field: 'replay_expires_at', type: DataTypes.DATE, allowNull: true, comment: '响应密文过期时间，UTC' },
+    },
+    {
+      ...standardTableOptions('registration_operation'),
+      comment: '注册幂等操作账本；永久保留键与请求摘要，响应仅短期加密保留',
+      sequelize,
+    } as unknown as ModelInitOptions<RegistrationOperationModel>,
+  );
+}
+
+// ---------------------------------------------------------------------------
 // user
 // ---------------------------------------------------------------------------
 
@@ -82,34 +178,34 @@ export interface UserModelAttributes {
 export type UserModelCreationAttributes = Optional<UserModelAttributes, 'id' | 'status' | 'createdAt' | 'updatedAt' | 'deletedAt'>;
 
 export class UserModel extends Model<UserModelAttributes, UserModelCreationAttributes> implements UserModelAttributes {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  roleType!: number;
-  rewardType!: number;
-  publicCode!: string;
-  username!: string | null;
-  passwordHash!: string | null;
-  passwordSetAt!: Date | string | null;
-  email!: string | null;
-  emailVerifiedAt!: Date | string | null;
-  phone!: string | null;
-  phoneVerifiedAt!: Date | string | null;
-  totpSecretCiphertext!: Uint8Array | null;
-  totpEnabledAt!: Date | string | null;
-  totpLastAcceptedCounter!: string | null;
-  totpRecoveryCodeHashes!: string[] | null;
-  nickname!: string;
-  assetId!: string | null;
-  authVersion!: string;
-  permissions!: string[];
-  lastLoginAt!: Date | string | null;
-  inviteCode!: string | null;
-  inviteCodeExpiresAt!: Date | string | null;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare roleType: number;
+  declare rewardType: number;
+  declare publicCode: string;
+  declare username: string | null;
+  declare passwordHash: string | null;
+  declare passwordSetAt: Date | string | null;
+  declare email: string | null;
+  declare emailVerifiedAt: Date | string | null;
+  declare phone: string | null;
+  declare phoneVerifiedAt: Date | string | null;
+  declare totpSecretCiphertext: Uint8Array | null;
+  declare totpEnabledAt: Date | string | null;
+  declare totpLastAcceptedCounter: string | null;
+  declare totpRecoveryCodeHashes: string[] | null;
+  declare nickname: string;
+  declare assetId: string | null;
+  declare authVersion: string;
+  declare permissions: string[];
+  declare lastLoginAt: Date | string | null;
+  declare inviteCode: string | null;
+  declare inviteCodeExpiresAt: Date | string | null;
   /** 生成列，只读（见 interface 注释）。 */
-  systemMarker!: number | null;
+  declare systemMarker: number | null;
   static associate(models: { UserModel: typeof UserModel }): void {
     // user 为聚合根；身份扩展表在本文件 associateIdentity 中挂接。
     void models.UserModel;
@@ -670,6 +766,7 @@ export type SecurityResultTypeValue = (typeof SecurityResultType)[keyof typeof S
 export interface IdentityModels {
   UserModel: typeof UserModel;
   DeviceModel: typeof DeviceModel;
+  RegistrationOperationModel: typeof RegistrationOperationModel;
   RecoveryCredentialModel: typeof RecoveryCredentialModel;
   UserSecurityEventModel: typeof UserSecurityEventModel;
 }
@@ -678,6 +775,7 @@ export interface IdentityModels {
 export function initIdentity(sequelize: Sequelize, models: IdentityModels): void {
   register_UserModel(sequelize);
   register_DeviceModel(sequelize);
+  register_RegistrationOperationModel(sequelize);
   register_RecoveryCredentialModel(sequelize);
   register_UserSecurityEventModel(sequelize);
   void models;
@@ -685,6 +783,7 @@ export function initIdentity(sequelize: Sequelize, models: IdentityModels): void
 
 /** 声明 identity 文件内的跨表关联（FK 全部 constraints: false，由迁移管理）。 */
 export function associateIdentity(models: IdentityModels): void {
+  RegistrationOperationModel.associate(models);
   DeviceModel.associate(models);
   RecoveryCredentialModel.associate(models);
   UserSecurityEventModel.associate(models);

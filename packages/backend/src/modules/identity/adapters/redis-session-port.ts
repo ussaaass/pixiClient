@@ -9,7 +9,7 @@
 import type { RedisClient } from '../../../infrastructure/redis/client.js';
 import { RedisSessionStore, SESSION_LIFETIME, type SessionRecord } from '../../../infrastructure/redis/session-store.js';
 import { AuthRateLimiter } from '../../../infrastructure/redis/auth-rate-limit.js';
-import { RefreshRotationStore, type ReplayCacheEntry, type ScriptOutcome } from '../../../infrastructure/redis/refresh-rotation.js';
+import { RefreshRotationStore, type ScriptOutcome } from '../../../infrastructure/redis/refresh-rotation.js';
 import type { RateCheck } from '../../../infrastructure/redis/auth-rate-limit.js';
 import type { AuthRateLimitPort, RefreshRotationPort } from '../ports/refresh-rotation-port.js';
 import type { NewSessionRecordInput, SessionPort } from '../ports/session-port.js';
@@ -94,13 +94,11 @@ export class RedisRefreshRotationPortAdapter implements RefreshRotationPort {
     sid: string,
     presentedHash: string,
     newHash: string,
+    encryptedRefreshToken: string,
     operationId: string,
     nowMs: number,
   ): Promise<ScriptOutcome | { kind: 'MISS' } | { kind: 'EXPIRED' }> {
-    return this.store.rotateRefresh(sid, presentedHash, newHash, operationId, nowMs);
-  }
-  async isReplayHit(sid: string, presentedHash: string, operationId: string, nowMs: number): Promise<ReplayCacheEntry | null> {
-    return this.store.isReplayHit(sid, presentedHash, operationId, nowMs);
+    return this.store.rotateRefresh(sid, presentedHash, newHash, encryptedRefreshToken, operationId, nowMs);
   }
 }
 

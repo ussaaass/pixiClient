@@ -36,12 +36,15 @@
  * 金币为枚，SDD §2 第 2 条）。
  */
 
+import type { CoinMarketListingModel } from '../../../infrastructure/database/models/coin-market.js';
 import type { ListingRepo, Tx } from '../ports/coin-market-repository.js';
 import type { Clock } from '../../wallet/ports/clock.js';
 import { CoinMarketDomainError, CM } from '../domain/errors.js';
 import { priceQuote } from '../domain/listing-rules.js';
-import { HoldType } from '../../../infrastructure/database/models/wallet.js';
-import type { WalletModule } from '../../wallet/assembly.js';
+import { HoldType, AssetType, AccountType } from '../../../infrastructure/database/models/wallet.js';
+import { WalletOperationType, WalletEntryType } from '../../wallet/ports/wallet-repository.js';
+import type { AssetLedger, EntryIntent } from '../../wallet/ports/wallet-repository.js';
+import { assertAvailableBalance, requestHashOf } from '../../wallet/domain/ledger-rules.js';
 
 /** 挂牌创建入参（路由层经 contracts CoinMarketListingCreateRequestDto 校验后传入）。 */
 export interface ListingCreateInput {
@@ -75,12 +78,16 @@ export interface ListingCreatedDto {
 export class ListingCreateUseCase {
   constructor(
     private readonly listingRepo: ListingRepo,
-    private readonly walletModule: WalletModule,
+    private readonly ledger: AssetLedger,
     private readonly clock: Clock,
   ) {}
 
   async run(input: ListingCreateInput): Promise<ListingCreatedDto> {
     const { sellerUserId, coins, priceCentsPer1000Coins, listingKey, tx } = input;
+    const transaction = tx.transaction as { finished?: string | undefined } | null | undefined;
+    if (transaction == null || transaction.finished != null) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌创建资金处理必须在活动事务中运行。', { retryable: true });
+    }
 
     // 1. 金额 BigInt 全链路校验（coins > 0，price > 0）
     const coinsB = BigInt(coins);
@@ -105,20 +112,55 @@ export class ListingCreateUseCase {
     }
     void quote; // 首版报价经 listing 行 priceCentsPer1000Coins 读回，本处校验入参合法性
 
-    // 3. 占款（asset_hold COIN_MARKET_LISTING=5）经 wallet ledger 同事务
-    //    U(hold_key = listing_key) 幂等兜底：命中 → 既有 hold 行
-    const ledger = this.walletModule.ledger;
-    void this.walletModule.systemIdentity; // 占款不经系统账户，登记决策点：首版占款只锁玩家金币账户
-
-    // 首版简化：只读 ledger.createHold（占款行幂等 U(hold_key) 兜底），
-    // 不强制 claimOperation（登记决策点：Lead 确认占款是否需同事务
-    // COIN_MARKET_HOLD=12 分录，首版只写 hold 行，分录经 §9 第 7 步
-    // 后续运维闭环）。
+    // 3. 主操作先抢键，并定位规范 asset_account.id；所有资金与 listing 写入
+    //    由路由层同一 Sequelize transaction 包围。
+    const ledger = this.ledger;
+    const sellerAccount = await ledger.readAccount(sellerUserId, AssetType.COIN, AccountType.PLAYER, tx);
+    if (sellerAccount === null) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '卖家金币账户未开户。', { retryable: true });
+    }
+    const operationKey = `coin-market:listing:${listingKey}:hold`;
+    const requestHash = requestHashOf({ sellerUserId, listingKey, coins, priceCentsPer1000Coins });
+    const claimed = await ledger.claimOperation({
+      operationKey,
+      operationType: WalletOperationType.COIN_MARKET_HOLD,
+      requestHash,
+      initiatedByUserId: sellerUserId,
+      extra: { listingKey, coins, assetAccountId: sellerAccount.id },
+      reason: 'coin-market listing hold',
+      tx,
+    });
+    if (!claimed.inserted) {
+      const existing = await this.listingRepo.lockListingByKey(listingKey, tx);
+      if (existing === null || existing === undefined) {
+        throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌幂等操作已有账本结果但挂牌行缺失。', { retryable: true });
+      }
+      const snapshot = await ledger.getOperationResultSnapshot(claimed.operation.id, tx);
+      if (snapshot === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌幂等操作缺少结果快照。', { retryable: true });
+      const hold = await ledger.readHoldForOperation(
+        existing.assetHoldId,
+        {
+          accountId: sellerAccount.id,
+          holdType: HoldType.COIN_MARKET_LISTING,
+          amount: BigInt(existing.availableCoins) + BigInt(existing.reservedCoins),
+        },
+        tx,
+      );
+      if (hold === null) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌幂等结果的占款关联不一致。', { retryable: true });
+      return { ...(snapshot as unknown as ListingCreatedDto), inserted: false };
+    }
+    const operationId = claimed.operation.id;
+    const account = (await ledger.lockAccountsByIds([sellerAccount.id], tx))[0];
+    if (account === undefined) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '卖家金币账户锁定失败。');
+    try {
+      assertAvailableBalance(BigInt(account.amount), BigInt(account.frozenAmount), coinsB);
+    } catch {
+      throw new CoinMarketDomainError(CM.COINS_INSUFFICIENT, '可用金币不足以挂牌。', { retryable: false });
+    }
     const holdKey = `coin_market_list:${listingKey}`;
-    // 占款 amount = listedCoins（金币枚，BigInt wire 十进制字符串）
     const holdResult = await ledger.createHold({
-      assetOperationId: '0', // 首版占款无独立 asset_operation（登记决策点）
-      assetAccountId: sellerUserId, // 简化：用户 id 代账户 id（登记决策点：需读 asset_account 定位账户）
+      assetOperationId: operationId,
+      assetAccountId: account.id,
       holdKey,
       holdType: HoldType.COIN_MARKET_LISTING,
       amount: coins,
@@ -126,6 +168,20 @@ export class ListingCreateUseCase {
       tx,
     });
     const assetHoldId = holdResult.hold.id;
+    if (!holdResult.inserted) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌 hold key 已存在但资金操作未提交。', { retryable: true });
+    }
+    const intents: EntryIntent[] = [
+      {
+        accountId: account.id,
+        delta: 0n,
+        frozenDelta: coinsB,
+        entryType: WalletEntryType.HOLD,
+        assetHoldId,
+        memo: `coin-market listing hold +${coins} coins frozen`,
+      },
+    ];
+    await ledger.postEntries(operationId, intents, tx);
 
     // 4. 写挂牌行（U(listing_key) 幂等兜底：并发命中 → 返回既有行）
     const listingResult = await this.listingRepo.createListing({
@@ -141,16 +197,33 @@ export class ListingCreateUseCase {
     });
 
     const listing = listingResult.listing;
-    const inserted = listingResult.inserted;
-    return {
-      listingId: listing.id,
-      listingKey,
-      coins: listing.listedCoins,
-      availableCoins: listing.availableCoins,
-      priceCentsPer1000Coins: listing.priceCentsPer1000Coins,
-      status: listing.status,
-      createdAt: typeof listing.createdAt === 'string' ? listing.createdAt : listing.createdAt.toISOString(),
-      inserted,
-    };
+    if (!listingResult.inserted) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌幂等键冲突但资金 hold 已为新操作创建；请回滚并重试。', {
+        retryable: true,
+      });
+    }
+    const inserted = true;
+    const result = toListingDto(listing, listingKey, inserted);
+    await ledger.setCommitted(operationId, await this.clock.now(), { ...result }, tx);
+    return result;
   }
+}
+
+function toIsoTimestamp(value: unknown): string {
+  if (typeof value === 'string') return value;
+  if (value instanceof Date) return value.toISOString();
+  throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '挂牌创建时间戳缺失。', { retryable: true });
+}
+
+function toListingDto(listing: CoinMarketListingModel, listingKey: string, inserted: boolean): ListingCreatedDto {
+  return {
+    listingId: listing.id,
+    listingKey,
+    coins: listing.listedCoins,
+    availableCoins: listing.availableCoins,
+    priceCentsPer1000Coins: listing.priceCentsPer1000Coins,
+    status: listing.status,
+    createdAt: toIsoTimestamp(listing.createdAt ?? listing.get('created_at' as never) ?? listing.getDataValue('createdAt')),
+    inserted,
+  };
 }

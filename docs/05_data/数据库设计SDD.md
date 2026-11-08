@@ -999,7 +999,7 @@ TOTP 使用 RFC 6238 兼容认证器，建议默认 30 秒时间步。启用时�
 | snapshot | JSON | 否 | 无 | 脱敏前后数据与关联对象 |
 | ip_hash | BINARY(32) | 否 | 无 | 访问 IP 带密钥摘要 |
 
-**索引/约束：** I(admin_user_id,created_at,id)；I(admin_session_key)；I(user_id,created_at,id)；I(target_admin_user_id,created_at,id)；I(request_key)；I(asset_operation_id)；I(withdrawal_id)；I(system_config_id)；I(game_config_id)；I(agent_domain_id,created_at,id)；I(referral_binding_event_id)；I(support_conversation_id)；I(coin_market_trade_id,created_at,id)；CHECK(system_config_id IS NULL OR game_config_id IS NULL)
+**索引/约束：** I(admin_user_id,created_at,id)；I(admin_session_key)；I(user_id,created_at,id)；I(target_admin_user_id,created_at,id)；U(action_code,request_key)（migration 0020 仅对 ADMIN_PERMISSIONS_UPDATED 强制唯一；保留其他 Admin 审计的 request_key 重用语义）；I(asset_operation_id)；I(withdrawal_id)；I(system_config_id)；I(game_config_id)；I(agent_domain_id,created_at,id)；I(referral_binding_event_id)；I(support_conversation_id)；I(coin_market_trade_id,created_at,id)；CHECK(system_config_id IS NULL OR game_config_id IS NULL)
 **实体规则：** 配置变更必须且只能关联 system_config_id 或 game_config_id 之一，并与前后值审计同事务；普通审计事件两者均为空。CHECK 防止同时关联两种配置，配置动作必须有一个关联由应用用例校验。一次批量配置修改逐键写多条审计，共用 request_key。Admin 权限授予/撤销同时记录操作者 admin_user_id 与 target_admin_user_id、前后 permission code 快照，并递增目标账号 auth_version。集市争议的工作人员裁决、Admin 延期和复核分别写独立审计，包含 trade ID、操作前后状态/截止时间、理由及关联 asset_operation；不以 `user.permissions` 代替操作审计。拒绝/失败在业务事务回滚后单独记审计。
 
 #### user_security_event
@@ -1752,3 +1752,5 @@ Redis 租约负责短期房间进程所有权；每次接管先递增 `room.fenc
 | 2026-10-18 | 明确未设置密码账号可通过已认证会话直接打开并绑定联系方式；有密码时仍验证密码，TOTP 启用时始终验证 TOTP，匹配前台编辑入口和身份 API DTO。 |
 | 2026-10-18 | 邮箱/手机绑定统一免验证码；换绑输入完整旧值，成功后清除 verified_at 并立即释放旧值。 |
 | 2026-11-03 | 校准 §3 状态常量草案 `SupportMessageType` 与 §5.9 `support_message` 逐表定义的一致性：由 TEXT=1/IMAGE=2/SYSTEM_NOTICE=3 改为 TEXT=1/IMAGE=2/ATTACHMENT=3/SYSTEM_NOTICE=4（图片与附件分列两值，§5.9 为语义权威）。 |
+| 2026-11-08 | 更新 API-GAP-034 实施状态：权限 grant 与 auth_version 更新、append-only admin audit 在同一事务；迁移 0020 仍待执行，生产账号 provisioning 不在本实现范围。 |
+| 2026-11-08 | Admin 权限管理实现记录：user.permissions 与 auth_version 同事务更新、append-only audit，migration 0020 action-scoped request key unique index 尚未执行；未改生产用户数据。 |

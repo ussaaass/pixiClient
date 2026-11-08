@@ -7,7 +7,7 @@
  * 30s 弱网重放窗口）、§4（AUTH_RATE_LIMITED 错误码）。
  */
 
-import type { ReplayCacheEntry, RotationResult, ScriptOutcome } from '../../../infrastructure/redis/refresh-rotation.js';
+import type { RotationResult, ScriptOutcome } from '../../../infrastructure/redis/refresh-rotation.js';
 import type { RateCheck } from '../../../infrastructure/redis/auth-rate-limit.js';
 
 /** 会话刷新轮换端口（Lua 原子轮换；用例不直接依赖 ioredis / 脚本细节）。 */
@@ -26,12 +26,10 @@ export interface RefreshRotationPort {
     sid: string,
     presentedHash: string,
     newHash: string,
+    encryptedRefreshToken: string,
     operationId: string,
     nowMs: number,
   ): Promise<ScriptOutcome | { kind: 'MISS' } | { kind: 'EXPIRED' }>;
-
-  /** 弱网重放命中判定（§3 30s 窗口；命中返回上一代结果，不生成新代）。 */
-  isReplayHit(sid: string, presentedHash: string, operationId: string, nowMs: number): Promise<ReplayCacheEntry | null>;
 }
 
 /** 认证限频端口（`rate:auth:{subject}` 60s 滑动窗口）。 */

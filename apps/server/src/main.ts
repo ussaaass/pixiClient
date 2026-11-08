@@ -6,7 +6,7 @@ import { getSequelize } from './infrastructure/database/sequelize.js';
 import { getRedis, closeRedis } from '@gameing/backend/infrastructure/redis';
 import { addModels } from '@gameing/backend/infrastructure/database/models';
 import { createIdentityModule } from '@gameing/backend/modules/identity/public';
-import { createWalletModule } from '@gameing/backend/modules/wallet/public';
+import { createWalletModule, type WalletModule } from '@gameing/backend/modules/wallet/public';
 import { createPaymentsModule } from '@gameing/backend/modules/payments/public';
 import { createRoomsModule } from '@gameing/backend/modules/rooms/public';
 import { createSocialModule } from '@gameing/backend/modules/social/public';
@@ -68,10 +68,23 @@ const port = readPort();
 // Sequelize 实例 + addModels（注册全部 63 张表的 Model 定义，含 identity 四表 + outbox）
 // 在装配前完成；Redis 连接 lazyConnect=true（首用才握手），纯读路由阶段不影响。
 let identityModule;
+let walletModule: WalletModule | undefined;
+let referralModule: ReturnType<typeof createReferralModule> | undefined;
 let sequelizeInstance: Sequelize | undefined;
 try {
   sequelizeInstance = getSequelize();
   addModels(sequelizeInstance);
+  // Wallet gift implementation is independent of identity, so construct it first and
+  // inject its narrow port into device registration. Without system identity, auth can
+  // still run but welcome gift is intentionally unavailable.
+  referralModule = createReferralModule({ sequelize: sequelizeInstance, config: {} });
+  const systemUserId = process.env.SYSTEM_USER_ID ?? '';
+  if (systemUserId) {
+    walletModule = createWalletModule({ sequelize: sequelizeInstance, config: { systemUserId }, referralModule });
+    logger.info('wallet 模块装配完成', { systemUserId });
+  } else {
+    logger.warn('SYSTEM_USER_ID env 未设置，wallet 路由不挂载（资金端点不可用）');
+  }
   const redis = getRedis();
   identityModule = await createIdentityModule({
     sequelize: sequelizeInstance,
@@ -81,39 +94,18 @@ try {
       audiences: ['player'],
       accessTtlSeconds: 600,
       kid: 'identity-dev',
+      welcomeGift: walletModule?.welcomeGiftPort ?? null,
+      playerAssetAccounts: walletModule?.playerAssetAccounts ?? null,
     },
   });
   await identityModule.init();
   logger.info('identity 模块装配完成', { issuer: 'gameing-hall-api' });
 } catch (error) {
-  logger.warn('identity 模块装配失败（auth 路由不挂载；MySQL/Redis 未配置或连接失败）', {
+  logger.warn('身份/钱包基础装配失败（auth 路由不挂载；MySQL/Redis 未配置或连接失败）', {
     errorCode: error instanceof Error ? error.name : 'UnknownError',
   });
   identityModule = undefined;
-}
-
-// --- wallet 模块装配（资金用例；需 identity 模块就绪） ---
-// systemUserId 通过 env var 注入（SYSTEM 行 user.id，首版由 bootstrap 脚本解析，
-// 未设置时 wallet 路由不挂载，不影响 identity 路由可用）。
-let walletModule;
-if (identityModule && sequelizeInstance) {
-  try {
-    const systemUserId = process.env.SYSTEM_USER_ID ?? '';
-    if (!systemUserId) {
-      logger.warn('SYSTEM_USER_ID env 未设置，wallet 路由不挂载（资金端点不可用）');
-    } else {
-      walletModule = createWalletModule({
-        sequelize: sequelizeInstance,
-        config: { systemUserId },
-      });
-      logger.info('wallet 模块装配完成', { systemUserId });
-    }
-  } catch (error) {
-    logger.warn('wallet 模块装配失败（wallet 路由不挂载）', {
-      errorCode: error instanceof Error ? error.name : 'UnknownError',
-    });
-    walletModule = undefined;
-  }
+  walletModule = undefined;
 }
 
 // --- payments 模块装配（资金用例；需 wallet 模块就绪 + sequelize） ---
@@ -220,8 +212,7 @@ if (sequelizeInstance) {
 }
 
 // --- referral 模块装配（需 sequelize；归因无资金操作，不依赖 wallet） ---
-let referralModule;
-if (sequelizeInstance) {
+if (sequelizeInstance && !referralModule) {
   try {
     referralModule = createReferralModule({
       sequelize: sequelizeInstance,
@@ -288,14 +279,19 @@ if (sequelizeInstance) {
   }
 }
 
+const identityModuleOpt = identityModule ?? undefined;
+const walletModuleOpt = walletModule ?? undefined;
+
 // --- admin 模块装配（需 sequelize；审计/审批无资金操作，不依赖 wallet；
-//     出账经 payout worker 闭环，登记决策点） ---
+//     出账经 payout worker 闭环，登记决策点；
+//     Admin 登录经 identity jwtIssuer + sessionPort 闭环） ---
 let adminModule;
 if (sequelizeInstance) {
   try {
     adminModule = createAdminModule({
       sequelize: sequelizeInstance,
       config: {},
+      ...(identityModuleOpt ? { jwtIssuer: identityModuleOpt.jwtIssuer, sessionPort: identityModuleOpt.sessionPort } : {}),
     });
     logger.info('admin 模块装配完成');
   } catch (error) {
@@ -305,9 +301,6 @@ if (sequelizeInstance) {
     adminModule = undefined;
   }
 }
-
-const identityModuleOpt = identityModule ?? undefined;
-const walletModuleOpt = walletModule ?? undefined;
 const paymentsModuleOpt = paymentsModule ?? undefined;
 const roomsModuleOpt = roomsModule ?? undefined;
 const socialModuleOpt = socialModule ?? undefined;

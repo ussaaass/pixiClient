@@ -2,7 +2,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { createApp, nextTick, type App as VueApp } from 'vue';
 import { AgentCapabilityCode, AgentDomainStatus } from '@gameing/contracts/invite-agent';
 import AgentDomainListPage from './AgentDomainListPage.vue';
-import { createAgentDomainReviewApplication, createLocalAgentDomainDemoApplication } from '../platform/agent-domain-review/agent-domain-review-application';
+import {
+  createAgentDomainReviewApplication,
+  createLocalAgentDomainDemoApplication,
+} from '../platform/agent-domain-review/agent-domain-review-application';
 import { IndexedDbAgentDomainReviewAdapter } from '../platform/agent-domain-review/indexeddb-agent-domain-review-adapter';
 
 describe('AgentDomainListPage', () => {
@@ -43,13 +46,14 @@ describe('AgentDomainListPage', () => {
 
     expect(host.querySelector('.agent-domain-empty')?.textContent).toContain('暂无本机演练记录');
     host.querySelector<HTMLButtonElement>('.agent-domain-demo-button')!.click();
-    await settle();
-    expect(host.querySelectorAll('.agent-domain-record')).toHaveLength(1);
+    await vi.waitFor(() => expect(host?.querySelectorAll('.agent-domain-record')).toHaveLength(1));
     expect(host.textContent).toContain('待审核');
 
     host.querySelector<HTMLButtonElement>('.agent-domain-approve')!.click();
     await settle();
-    const permission = document.querySelector<HTMLInputElement>(`.agent-domain-capability-picker input[value="${AgentCapabilityCode.DASHBOARD_READ}"]`)!;
+    const permission = document.querySelector<HTMLInputElement>(
+      `.agent-domain-capability-picker input[value="${AgentCapabilityCode.DASHBOARD_READ}"]`,
+    )!;
     permission.click();
     const reason = document.querySelector<HTMLTextAreaElement>('.agent-domain-review-reason textarea')!;
     reason.value = '批准本机演练申请';
@@ -63,11 +67,22 @@ describe('AgentDomainListPage', () => {
     expect(host.textContent).toContain('运营中');
     expect(host.textContent).toContain('1 项 capability');
     expect(host.querySelector('.agent-domain-audit-list')?.textContent).toContain('批准');
-    expect((await application.listDomains())).toMatchObject({ ok: true, value: [{ status: AgentDomainStatus.ACTIVE, capabilities: [AgentCapabilityCode.DASHBOARD_READ] }] });
+    expect(await application.listDomains()).toMatchObject({
+      ok: true,
+      value: [{ status: AgentDomainStatus.ACTIVE, capabilities: [AgentCapabilityCode.DASHBOARD_READ] }],
+    });
 
     const clickAction = async (label: string) => {
-      await vi.waitFor(() => expect([...host!.querySelectorAll<HTMLButtonElement>('.agent-domain-record-actions button')].some((button) => button.textContent?.trim() === label)).toBe(true));
-      [...host!.querySelectorAll<HTMLButtonElement>('.agent-domain-record-actions button')].find((button) => button.textContent?.trim() === label)!.click();
+      await vi.waitFor(() =>
+        expect(
+          [...host!.querySelectorAll<HTMLButtonElement>('.agent-domain-record-actions button')].some(
+            (button) => button.textContent?.trim() === label,
+          ),
+        ).toBe(true),
+      );
+      [...host!.querySelectorAll<HTMLButtonElement>('.agent-domain-record-actions button')]
+        .find((button) => button.textContent?.trim() === label)!
+        .click();
     };
     const submitAction = async (label: string, reasonText: string, expectedMessage: string) => {
       await clickAction(label);
@@ -87,6 +102,6 @@ describe('AgentDomainListPage', () => {
     expect(host.textContent).toContain('本机演练代理域已恢复');
     await submitAction('撤销权限', '演练撤销代理权限', '本机演练代理权限已撤销');
     expect(host.textContent).toContain('本机演练代理权限已撤销');
-    expect((await application.listDomains())).toMatchObject({ ok: true, value: [{ status: AgentDomainStatus.REVOKED, capabilities: [] }] });
+    expect(await application.listDomains()).toMatchObject({ ok: true, value: [{ status: AgentDomainStatus.REVOKED, capabilities: [] }] });
   });
 });

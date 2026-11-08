@@ -58,6 +58,7 @@ import { ListingCancelUseCase } from './application/listing-cancel.js';
 import { TradeUseCase } from './application/trade-create.js';
 import { TradeConfirmUseCase } from './application/trade-confirm.js';
 import { TradeListUseCase } from './application/trade-list.js';
+import { CoinMarketExpiryScanUseCase } from './application/coin-market-expiry-scan.js';
 
 /** 装配配置（时钟注入；测试可传固定时钟；缺省经 walletModule.clock 取）。 */
 export interface CoinMarketModuleConfig {
@@ -87,6 +88,7 @@ export interface CoinMarketModule {
   trade: TradeUseCase;
   tradeConfirm: TradeConfirmUseCase;
   tradeList: TradeListUseCase;
+  expiryScan: CoinMarketExpiryScanUseCase;
 
   /**
    * 在事务 scope 内构建同事务端口（§6.3 "所有分录 / outbox 同事务"约定；
@@ -124,12 +126,13 @@ export function createCoinMarketModule(deps: CoinMarketModuleDeps): CoinMarketMo
   const displayNameOf = async (userId: string): Promise<string> => `USER_${userId.slice(-8)}`;
 
   // 用例实例（构造注入 ports，不用全局，SDD §4；各 Repo 独立类按角色传入）。
-  const listingCreate = new ListingCreateUseCase(listingRepo, walletModule, clock);
+  const listingCreate = new ListingCreateUseCase(listingRepo, ledger, clock);
   const listingPage = new ListingPageUseCase(listingRepo, displayNameOf);
   const listingCancel = new ListingCancelUseCase(listingRepo, ledger, clock);
-  const trade = new TradeUseCase(tradeRepo, listingRepo, clock);
+  const trade = new TradeUseCase(tradeRepo, listingRepo, ledger, clock);
   const tradeConfirm = new TradeConfirmUseCase(tradeRepo, listingRepo, clock);
   const tradeList = new TradeListUseCase(tradeRepo, listingRepo, ledger, clock);
+  const expiryScan = new CoinMarketExpiryScanUseCase(tradeRepo, listingRepo, ledger, clock);
 
   const module: CoinMarketModule = {
     listingRepo,
@@ -142,8 +145,10 @@ export function createCoinMarketModule(deps: CoinMarketModuleDeps): CoinMarketMo
     trade,
     tradeConfirm,
     tradeList,
+    expiryScan,
 
     async withTx<T>(scope: { transaction: Transaction | null }, fn: (tx: Tx) => T | Promise<T>): Promise<T> {
+      if (scope.transaction === null) throw new TypeError('CoinMarket commands require an active transaction');
       // coin-market 写路径经 withTx 透传 tx（同事务约定，SDD §6.3；
       // 用例写 coin_market_listing / coin_market_trade 同事务提交 / 回滚，
       // asset_hold 释放经 walletModule.ledger 同事务调用）。

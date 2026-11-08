@@ -131,11 +131,19 @@ export class SequelizeListingRepo implements ListingRepo {
     return { inserted: true, listing };
   }
 
+  async lockListingByKey(listingKey: string, tx: Tx): Promise<CoinMarketListingModel | null> {
+    const txq = txOf(tx);
+    return await this.model.findOne({ where: { listingKey }, transaction: txq, lock: txq ? 'FOR UPDATE' : undefined } as never);
+  }
+
   async lockListing(listingId: string, tx: Tx): Promise<CoinMarketListingModel | null> {
     const txq = txOf(tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null) {
+      throw new TypeError('lockListing requires an active transaction');
+    }
     const row = await this.model.findByPk(listingId, {
       transaction: txq,
-      lock: txq ? 'FOR UPDATE' : undefined,
+      lock: txq.LOCK.UPDATE,
     } as never);
     return row;
   }
@@ -185,41 +193,25 @@ export class SequelizeListingRepo implements ListingRepo {
 
   async cancelListing(input: { listingId: string; cancelledAt: Date; tx: Tx }): Promise<CoinMarketListingModel | null> {
     const txq = txOf(input.tx);
+    const row = await this.model.findByPk(input.listingId, { transaction: txq, lock: txq ? 'FOR UPDATE' : undefined } as never);
+    if (row === null) throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${input.listingId}`);
+    if (row.status !== CoinMarketListingStatus.ACTIVE) return null;
+    const currentCancelled = BigInt(row.cancelledCoins);
+    const currentAvailable = BigInt(row.availableCoins);
+    const nextCancelled = (currentCancelled + currentAvailable).toString();
     const [affected] = await this.model.update(
       {
         status: CoinMarketListingStatus.CANCELLED,
         cancelledAt: input.cancelledAt,
-        // 守恒变更：available → cancelled（cancelled += available，available = 0）
-      } as never,
-      {
-        where: {
-          id: input.listingId,
-          status: CoinMarketListingStatus.ACTIVE,
-        },
-        transaction: txq,
-        lock: txq ? 'FOR UPDATE' : undefined,
-      } as never,
-    );
-    if (affected === 0) {
-      // 已 CANCELLED / COMPLETED / 非 ACTIVE → null（用例层映射 TRADE_NOT_ALLOWED /
-      // LISTING_NOT_CANCELLABLE；幂等重放由用例层读回既有值判定，本层只落库）
-      return null;
-    }
-    const row = await this.model.findByPk(input.listingId, { transaction: txq } as never);
-    if (row === null) {
-      throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${input.listingId}`);
-    }
-    // 守恒变更（read-then-write 经行锁保护）：cancelled += available，available = 0
-    const currentCancelled = BigInt(row.cancelledCoins);
-    const currentAvailable = BigInt(row.availableCoins);
-    const nextCancelled = (currentCancelled + currentAvailable).toString();
-    await this.model.update(
-      {
         cancelledCoins: nextCancelled,
         availableCoins: '0',
       } as never,
-      { where: { id: input.listingId }, transaction: txq } as never,
+      {
+        where: { id: input.listingId, status: CoinMarketListingStatus.ACTIVE },
+        transaction: txq,
+      } as never,
     );
+    if (affected === 0) return null;
     return this.model.findByPk(input.listingId, { transaction: txq } as never);
   }
 }
@@ -249,6 +241,7 @@ export class SequelizeTradeRepo implements TradeRepo {
     grossCents: string;
     sellerNetCents: string;
     paymentMethod: number;
+    paymentDeadlineAt: Date;
     tx: Tx;
   }): Promise<{ inserted: boolean; trade: CoinMarketTradeModel; isNew: boolean }> {
     const txq = txOf(input.tx);
@@ -304,7 +297,7 @@ export class SequelizeTradeRepo implements TradeRepo {
         paymentMode: input.paymentMethod,
         sellerNetCents: input.sellerNetCents,
         status: CoinMarketTradeStatus.PAYMENT_PENDING,
-        paymentDeadlineAt: new Date(now.getTime() + 1800 * 1000), // 首版 30 分钟（PAYMENT_DEADLINE_SECONDS，登记决策点）
+        paymentDeadlineAt: input.paymentDeadlineAt,
         createdAt: now,
       } as never,
       { transaction: txq } as never,
@@ -312,22 +305,56 @@ export class SequelizeTradeRepo implements TradeRepo {
     return { inserted: true, trade, isNew: true };
   }
 
+  async getTrade(tradeId: string, tx: Tx): Promise<CoinMarketTradeModel | null> {
+    return await this.model.findByPk(tradeId, { transaction: txOf(tx) } as never);
+  }
+
   async lockTrade(tradeId: string, tx: Tx): Promise<CoinMarketTradeModel | null> {
     const txq = txOf(tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null) {
+      throw new TypeError('lockTrade requires an active transaction');
+    }
     const row = await this.model.findByPk(tradeId, {
       transaction: txq,
-      lock: txq ? 'FOR UPDATE' : undefined,
+      lock: txq.LOCK.UPDATE,
     } as never);
     return row;
+  }
+
+  async listDuePaymentPendingTradeIds(input: { dueAt: Date; limit: number; tx: Tx }): Promise<string[]> {
+    if (!Number.isSafeInteger(input.limit) || input.limit < 1) {
+      throw new RangeError('limit must be a positive safe integer');
+    }
+    const txq = txOf(input.tx);
+    if (txq === null || (txq as unknown as { finished?: string | undefined }).finished != null) {
+      throw new TypeError('listDuePaymentPendingTradeIds requires an active transaction');
+    }
+    // The repository is configured exclusively for MySQL (config.ts). Sequelize 6
+    // supports skipLocked with an active transaction; MySQL 8/InnoDB emits
+    // FOR UPDATE SKIP LOCKED. Order by deadline then PK for deterministic batches.
+    const rows = await this.model.findAll({
+      attributes: ['id'],
+      where: {
+        status: CoinMarketTradeStatus.PAYMENT_PENDING,
+        paymentDeadlineAt: { [Op.lte as unknown as string]: input.dueAt },
+      },
+      order: [
+        ['paymentDeadlineAt', 'ASC'],
+        ['id', 'ASC'],
+      ],
+      limit: input.limit,
+      transaction: txq,
+      lock: txq.LOCK.UPDATE,
+      skipLocked: true,
+    } as never);
+    return rows.map((row) => row.id);
   }
 
   async confirmPayment(input: { tradeId: string; confirmedAt: Date; tx: Tx }): Promise<CoinMarketTradeModel | null> {
     const txq = txOf(input.tx);
     // 卖家确认收款（PAYMENT_PENDING=1 → SELLER_CONFIRMATION_PENDING=2）
-    // 同事务 listing reserved → filled（reserved -= coins，filled += coins，守恒变更）
-    // trade 表无 confirmed_at 列（DDL 权威：paid_at 记录凭证提交时间，
-    // 本处 status 推进 + listing 守恒变更；时间戳经 status 列隐含，
-    // 登记决策点：Lead 确认是否需 0017 迁移补 confirmed_at 列）
+    // 仅推进收款确认状态；金币 hold 与 listing reserved 保持不变，
+    // 结算必须由独立且幂等的放币资金用例原子消费。
     const [affected] = await this.model.update(
       {
         status: CoinMarketTradeStatus.SELLER_CONFIRMATION_PENDING,
@@ -344,34 +371,21 @@ export class SequelizeTradeRepo implements TradeRepo {
     if (affected === 0) {
       return null; // 用例层映射 TRADE_NOT_ALLOWED / TRADE_DEADLINE_PASSED（读回既有值判定）
     }
-    // 同事务 listing 守恒变更：reserved -= coins，filled += coins
-    const trade = await this.model.findByPk(input.tradeId, { transaction: txq } as never);
-    if (trade === null) {
-      throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
-    }
-    const listing = await this.listingModel.findByPk(trade.coinMarketListingId, {
-      transaction: txq,
-      lock: txq ? 'FOR UPDATE' : undefined,
-    } as never);
-    if (listing !== null) {
-      const coinsB = BigInt(trade.coins);
-      await this.listingModel.update(
-        {
-          reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
-          filledCoins: (BigInt(listing.filledCoins) + coinsB).toString(),
-        } as never,
-        { where: { id: listing.id }, transaction: txq } as never,
-      );
-    }
+    // 仅确认收到款项，不结算金币，也不将挂牌库存转为 filled；最终放币在
+    // releaseToBuyer / AUTO_RELEASED / adjudication 资金操作中完成。
     return this.model.findByPk(input.tradeId, { transaction: txq } as never);
   }
 
   async expireTrade(input: { tradeId: string; expiredAt: Date; tx: Tx }): Promise<CoinMarketTradeModel | null> {
     const txq = txOf(input.tx);
+    if (txq === null) throw new TypeError('expireTrade requires an active transaction');
     // 付款超时推进（PAYMENT_PENDING=1 → PAYMENT_EXPIRED=9）
     // 同事务 listing reserved → available（reserved -= coins，available += coins，释放预占）
-    // trade 表无 expired_at 列（DDL 权威：status 列隐含超时态，登记决策点：
-    // Lead 确认是否需 0017 迁移补 expired_at 列）
+    // Caller already holds the listing and trade row locks before validating and expiring.
+    const tradeLock = await this.model.findByPk(input.tradeId, { transaction: txq, lock: 'FOR UPDATE' } as never);
+    if (tradeLock === null) throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
+    const listing = await this.listingModel.findByPk(tradeLock.coinMarketListingId, { transaction: txq, lock: 'FOR UPDATE' } as never);
+    if (listing === null) throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${tradeLock.coinMarketListingId}`);
     const [affected] = await this.model.update(
       {
         status: CoinMarketTradeStatus.PAYMENT_EXPIRED,
@@ -392,29 +406,38 @@ export class SequelizeTradeRepo implements TradeRepo {
     if (trade === null) {
       throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
     }
-    const listing = await this.listingModel.findByPk(trade.coinMarketListingId, {
-      transaction: txq,
-      lock: txq ? 'FOR UPDATE' : undefined,
-    } as never);
-    if (listing !== null) {
+    {
       const coinsB = BigInt(trade.coins);
-      await this.listingModel.update(
-        {
-          reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
-          availableCoins: (BigInt(listing.availableCoins) + coinsB).toString(),
-        } as never,
-        { where: { id: listing.id }, transaction: txq } as never,
-      );
+      if (BigInt(listing.reservedCoins) < coinsB) {
+        throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '过期挂牌 reserved 数量不足。', { retryable: true });
+      }
+      const releaseToAvailable = listing.status === CoinMarketListingStatus.ACTIVE;
+      const values = releaseToAvailable
+        ? {
+            reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
+            availableCoins: (BigInt(listing.availableCoins) + coinsB).toString(),
+          }
+        : {
+            reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
+            cancelledCoins: (BigInt(listing.cancelledCoins) + coinsB).toString(),
+          };
+      const [listingAffected] = await this.listingModel.update(values as never, { where: { id: listing.id }, transaction: txq } as never);
+      if (listingAffected !== 1) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '过期挂牌库存更新失败。', { retryable: true });
     }
     return this.model.findByPk(input.tradeId, { transaction: txq } as never);
   }
 
   async releaseToBuyer(input: { tradeId: string; releasedAt: Date; tx: Tx }): Promise<CoinMarketTradeModel | null> {
     const txq = txOf(input.tx);
+    if (txq === null) throw new TypeError('releaseToBuyer requires an active transaction');
     // 买家确认放币（SELLER_CONFIRMATION_PENDING=2 → RELEASED=7）
     // 幂等重放：已 RELEASED → 静默返回既有值（不产生第二笔）
     // trade 表无 released_at 列（DDL 权威：status 列隐含放币态，登记决策点：
     // Lead 确认是否需 0017 迁移补 released_at 列）
+    const trade = await this.model.findByPk(input.tradeId, { transaction: txq } as never);
+    if (trade === null) throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
+    const listing = await this.listingModel.findByPk(trade.coinMarketListingId, { transaction: txq, lock: 'FOR UPDATE' } as never);
+    if (listing === null) throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${trade.coinMarketListingId}`);
     const [affected] = await this.model.update(
       {
         status: CoinMarketTradeStatus.RELEASED,
@@ -425,17 +448,25 @@ export class SequelizeTradeRepo implements TradeRepo {
           status: CoinMarketTradeStatus.SELLER_CONFIRMATION_PENDING,
         },
         transaction: txq,
-        lock: txq ? 'FOR UPDATE' : undefined,
       } as never,
     );
     if (affected === 0) {
-      // 已 RELEASED（幂等重放）→ 读回既有值返回；否则 → null（用例层映射 TRADE_NOT_ALLOWED）
       const row = await this.model.findByPk(input.tradeId, { transaction: txq } as never);
-      if (row !== null && row.status === CoinMarketTradeStatus.RELEASED) {
-        return row;
-      }
+      if (row !== null && row.status === CoinMarketTradeStatus.RELEASED) return row;
       return null;
     }
+    const coins = BigInt(trade.coins);
+    if (BigInt(listing.reservedCoins) < coins) {
+      throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币时挂牌 reserved 数量不足。', { retryable: true });
+    }
+    const [listingAffected] = await this.listingModel.update(
+      {
+        reservedCoins: (BigInt(listing.reservedCoins) - coins).toString(),
+        filledCoins: (BigInt(listing.filledCoins) + coins).toString(),
+      } as never,
+      { where: { id: listing.id }, transaction: txq } as never,
+    );
+    if (listingAffected !== 1) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '放币挂牌库存更新失败。', { retryable: true });
     return this.model.findByPk(input.tradeId, { transaction: txq } as never);
   }
 
@@ -477,18 +508,14 @@ export class SequelizeTradeRepo implements TradeRepo {
     // 幂等重放：已 CANCELLED → 静默返回既有值（不产生第二笔）
     // trade 表无 cancelled_at 列（DDL 权威：status 列隐含取消态，登记决策点：
     // Lead 确认是否需 0017 迁移补 cancelled_at 列）
+    if (txq === null) throw new TypeError('cancelTrade requires an active transaction');
+    const tradeLock = await this.model.findByPk(input.tradeId, { transaction: txq, lock: 'FOR UPDATE' } as never);
+    if (tradeLock === null) throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
+    const listing = await this.listingModel.findByPk(tradeLock.coinMarketListingId, { transaction: txq, lock: 'FOR UPDATE' } as never);
+    if (listing === null) throw new CoinMarketDomainError(CM.LISTING_NOT_FOUND, `挂牌不存在：${tradeLock.coinMarketListingId}`);
     const [affected] = await this.model.update(
-      {
-        status: CoinMarketTradeStatus.CANCELLED,
-      } as never,
-      {
-        where: {
-          id: input.tradeId,
-          status: CoinMarketTradeStatus.PAYMENT_PENDING,
-        },
-        transaction: txq,
-        lock: txq ? 'FOR UPDATE' : undefined,
-      } as never,
+      { status: CoinMarketTradeStatus.CANCELLED } as never,
+      { where: { id: input.tradeId, status: CoinMarketTradeStatus.PAYMENT_PENDING }, transaction: txq } as never,
     );
     if (affected === 0) {
       const row = await this.model.findByPk(input.tradeId, { transaction: txq } as never);
@@ -501,19 +528,23 @@ export class SequelizeTradeRepo implements TradeRepo {
     if (trade === null) {
       throw new CoinMarketDomainError(CM.TRADE_NOT_FOUND, `交易不存在：${input.tradeId}`);
     }
-    const listing = await this.listingModel.findByPk(trade.coinMarketListingId, {
-      transaction: txq,
-      lock: txq ? 'FOR UPDATE' : undefined,
-    } as never);
-    if (listing !== null) {
+    {
       const coinsB = BigInt(trade.coins);
-      await this.listingModel.update(
-        {
-          reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
-          availableCoins: (BigInt(listing.availableCoins) + coinsB).toString(),
-        } as never,
-        { where: { id: listing.id }, transaction: txq } as never,
-      );
+      if (BigInt(listing.reservedCoins) < coinsB) {
+        throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '取消成交时挂牌 reserved 数量不足。', { retryable: true });
+      }
+      const releaseToAvailable = listing.status === CoinMarketListingStatus.ACTIVE;
+      const values = releaseToAvailable
+        ? {
+            reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
+            availableCoins: (BigInt(listing.availableCoins) + coinsB).toString(),
+          }
+        : {
+            reservedCoins: (BigInt(listing.reservedCoins) - coinsB).toString(),
+            cancelledCoins: (BigInt(listing.cancelledCoins) + coinsB).toString(),
+          };
+      const [listingAffected] = await this.listingModel.update(values as never, { where: { id: listing.id }, transaction: txq } as never);
+      if (listingAffected !== 1) throw new CoinMarketDomainError(CM.STORAGE_UNAVAILABLE, '取消成交挂牌库存更新失败。', { retryable: true });
     }
     return this.model.findByPk(input.tradeId, { transaction: txq } as never);
   }

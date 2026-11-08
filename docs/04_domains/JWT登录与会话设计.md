@@ -22,9 +22,9 @@ Socket.IO 使用握手 auth.accessToken，不放 URL query。连接建立及恢�
 
 ## 3. 轮换、撤销与弱网
 
-玩家与 Admin 的短期 session/刷新令牌状态放 Redis，不在 MySQL 建 `session`、`refresh_credential`、`admin_session` 或 `admin_refresh_credential` 表。Redis session 保存统一的 `user_id`（Admin 同样使用该 ID）、`principal_type`、`device_id`（玩家会话）、令牌家族、authVersion、到期/状态和 refresh token 摘要；只保留高熵刷新令牌的 keyed hash，不存明文。所有 Redis key 有 TTL。每次刷新通过 Lua/原子操作比较当前摘要、原子轮换并推进序号；已消费凭证被不同操作再次使用时撤销该 session 并记持久安全事件。[RFC 9700 刷新令牌保护](https://www.rfc-editor.org/rfc/rfc9700.html)
+玩家与 Admin 的短期 session/刷新令牌状态放 Redis，不在 MySQL 建 `session`、`refresh_credential`、`admin_session` 或 `admin_refresh_credential` 表。Redis session 保存统一的 `user_id`（Admin 同样使用该 ID）、`principal_type`、`device_id`（玩家会话）、令牌家族、authVersion、到期/状态和 refresh token 摘要；session 只存 refresh token 的 keyed hash，不存明文。所有 Redis key 有 TTL。每次刷新通过 Lua/原子操作比较当前摘要、原子轮换并推进序号；已消费凭证被不同操作再次使用时撤销该 session 并记持久安全事件。弱网重放缓存仅在 30 秒窗口内保存新 refresh token 的 AES-256-GCM 密文，AAD 绑定 sid、旧凭证摘要和 operationId；部署注入 `AUTH_REFRESH_REPLAY_ENCRYPTION_KEY`（base64 编码 32 字节密钥），缺失或非法时刷新失败关闭，绝不降级存明文。HTTP 只在 Secure（生产）、HttpOnly、SameSite=Lax Cookie 传输 refresh token 与 sid，响应体不包含该凭证并设置 no-store。[RFC 9700 刷新令牌保护](https://www.rfc-editor.org/rfc/rfc9700.html)
 
-刷新采用客户端单飞：同一页面/多标签协调一个操作 ID，取消重复并发请求。弱网下服务器成功轮换但响应丢失不能直接判为攻击：推荐限定 30 秒的同凭证+同 operationId 重试记录，受保护保存原返回结果，只重放同一代，不生成多条后继。窗口外或不同 operationId 的复用按异常处理；重试记录单独限制权限、保留期限并隐藏日志。该机制是项目设计，不是标准自动提供的功能。
+刷新采用客户端单飞：同一页面/多标签协调一个操作 ID，取消重复并发请求。弱网下服务器成功轮换但响应丢失不能直接判为攻击：推荐限定 30 秒的同凭证+同 operationId 重试记录，受保护保存原返回结果，只重放同一代，不生成多条后继。窗口外或不同 operationId 的复用按异常处理；重试记录单独限制权限、保留期限并隐藏日志。该机制是项目设计，不是标准自动提供的功能。当前 Web adapter 仅保证单个 adapter instance 内单飞，并在 localStorage 保存重试 operationId；这不是跨 tab 互斥或 session 状态同步，不能视作满足多标签要求。后续跨 tab slice 应评估 Web Locks 序列化与 BroadcastChannel 的非敏感 session 更新，并验证真实浏览器 Cookie 更新时序及无 Web Locks 降级行为；不要使用无原子 CAS 的 localStorage lease 假装锁。
 
 Redis 是活动会话与刷新轮换状态的权威存储；user.auth_version 是 SQL 里的长期账号安全版本。创建 session 时复制版本；改密、账号恢复、全设备退出等操作递增 auth_version、更新 Redis 用户版本并撤销相关 session。凡保护请求验签后均检查 session 仍有效且版本相同；Socket 撤销主动断开。Redis 不可用时受保护请求失败关闭。Redis 完整丢失使所有活动 session 失效、用户重新登录，但账号、设备凭证、资产与安全审计不丢失。登出产生的 security event 写 SQL，session_key 是不透明 Redis 标识而不是 MySQL 外键。
 
@@ -36,7 +36,7 @@ Redis 是活动会话与刷新轮换状态的权威存储；user.auth_version �
 
 ## 4. 接口与验收
 
-规划 `POST /auth/device-register`、`/auth/device-login`、`/auth/password-login`、`/auth/refresh`、`/auth/logout`、`/auth/recovery` 和已授权的设备/会话列表撤销接口。首次访问没有设备凭证时自动注册并建立会话；注册 workflow 按每个账号一次、幂等调用新用户赠币用例，不增加设备/IP 级额外限制，也不承诺识别同一自然人跨账号重复注册。后续启动使用 device-login，不再次发奖。错误码常量化，区分过期、已撤销、刷新复用、无权限和重试结果未知。新密码默认最少 8 位，服务端身份领域负责验证。
+规划 `POST /auth/device-register`、`/auth/device-login`、`/auth/password-login`、`/auth/refresh`、`/auth/logout`、`/auth/recovery` 和已授权的设备/会话列表撤销接口。首次访问没有设备凭证时自动注册并建立会话；注册 workflow 按每个账号一次、幂等调用新用户赠币用例，不增加设备/IP 级额外限制，也不承诺识别同一自然人跨账号重复注册。匿名注册请求必须使用独立认证秘密，并通过 Idempotency-Key 固定注册结果；不得把 deviceCode 当认证秘密。后续启动的 production device-login 使用 HttpOnly `device` cookie，值为 `<credentialKey>.<secret>`；服务端按 key 查找 device，用 secret 的 SHA-256 与设备 `device_digest` 及当前凭证摘要进行 timing-safe 比对，不接受请求体携带 userId/digest/key。该协议已获用户确认：`device_digest` 与 `credential_secret_hash` 都保存该 secret 的同一个 SHA-256，并在 device-login 时分别恒时比对。API-GAP-032 已新增注册 operation migration/model、AES-256-GCM replay envelope、匿名 PLAYER/钱包/欢迎赠币用例、90 天设备 cookie 与 route；migration 0022 将注册操作持久关联至发出的 sid，登出时清除其加密 replay bundle，并由 Redis TTL sid tombstone 阻止同实例内已处理 logout 后 session 复活；这些措施不覆盖其他 session 创建源、Redis 数据丢失或全账户 fencing；HTTP 流程默认仍由 `AUTH_DEVICE_REGISTER_ENABLED` 关闸；只有完成生产 MySQL/Redis 故障注入、账户/赠币交易核验及浏览器 cookie 验收后，才可由部署配置显式启用。不得将当前实现称为已验收或生产可用。错误码常量化，区分过期、已撤销、刷新复用、无权限和重试结果未知。新密码默认最少 8 位，服务端身份领域负责验证。
 
 验证算法/issuer/audience 错误均拒绝；刷新响应丢失仅重放一次既有结果；多标签不触发随机登出；封禁和登出影响 HTTP 与 Socket；过期 Socket 不能继续提交资产命令；JWT 不进入日志、公开资源或二维码；旧 access token 不绕过资产操作的撤销门禁。时长和缓存窗口通过压测调整，不能以两万人在线为由省略撤销设计。
 
@@ -59,4 +59,16 @@ Redis 是活动会话与刷新轮换状态的权威存储；user.auth_version �
 | 2026-10-14 | 按用户决定加入首次访问自动设备注册、注册时幂等调用新用户赠币，并确定新密码默认最少 8 位。 |
 | 2026-10-14 | 明确新用户赠币按账号一次，不添加设备/IP 级额外限领或跨账号自然人识别。 |
 | 2026-10-16 | 手机号绑定不使用短信验证码；换绑要求输入旧手机号并按末三位提示，保留密码/TOTP 再认证。 |
+| 2026-11-08 | 登记 API-GAP-032 provisioning 组件与默认 route 闸门：当前实现需完成 SQL/Redis fault injection、赠币交易及浏览器 cookie 验收后才能部署显式启用。 |
 | 2026-10-18 | 邮箱绑定/换绑改为免验证码；换绑输入完整旧邮箱，按规范化值精确校验后原子替换并释放旧地址。 |
+| 2026-11-06 | 明确 session 响应仅公开 access token；refresh token 仅经 HttpOnly Cookie 传输，弱网 replay 使用部署密钥 AES-GCM 密文缓存并失败关闭；刷新要求 Origin 校验和 16–128 字符单飞 operationId；复用仅撤销该 session，Lua 刷新时间字段与 Redis ISO SessionRecord 对齐；Origin 比对须使用显式配置的 AUTH_PUBLIC_ORIGIN，避免信任转发头；Redis Lua opt-in 集成回归覆盖轮换、重放、复用和过期分支。 |
+| 2026-11-06 | device-login 对固定长度 device_digest 由普通字符串比较改为 node:crypto.timingSafeEqual，且在对比前拒绝非 32 字节 DB 摘要和非 64 位 hex 输入；这仅降低摘要比较的时序泄漏风险，device-register 首访匿名建号与密钥安全存储/认证协议仍未完成。新增 digest helper 边界测试。 |
+| 2026-11-06 | 新增注册赠币接线：server composition 在 wallet 可用时注入 WelcomeGiftPort，缺失时注册 fail closed；签名先执行，SQL 幂等赠币先于 Redis session；赠币失败不建会话，Redis 写失败可安全重试；新增 use-case 回归确认 last-login SQL 更新失败不建 session，且赠币成功后 session 写失败会向调用方报错并可按 grant_key 重试。当前 HTTP 路由仍是既有用户设备登记，不是匿名首次建号。 |
+| 2026-11-08 | 明确 Web refresh operationId 目前只提供同 adapter instance 单飞和 localStorage 弱网重试，不是跨 tab 锁或跨 tab session 同步；跨标签互斥与真实浏览器 Cookie 更新竞态另立切片，优先评估 Web Locks/BroadcastChannel。 |
+| 2026-11-08 | 按用户批准统一 production 与 local device-login 为严格空 body + HttpOnly `device=<credentialKey>.<secret>` cookie；server 从 cookie 计算 SHA-256，use-case 对同值存储于 `device_digest` 与 `credential_secret_hash` 的摘要分别做 timing-safe 比对，并 fail-closed 检查 ACTIVE/expiry；invalid/past/exact-now expiry 均拒绝。HTTP 将凭证拒绝统一映射为 401，限频映射 429，账户不可用 403，未知领域码 500。registration 仍 503，秘密签发、摘要同事务持久化及 device cookie 下发/撤销生命周期仍未实现，不代表 production device provisioning 可用。 |
+| 2026-11-06 | device-register use-case 增加设备归属和凭证有效性门禁：userId 必须匹配、credential key/secret hash/device digest 存在且 device digest 与 credential secret hash 均为 32 字节、凭证状态 ACTIVE、expiry 有效且晚于当前时钟；异常在签名/赠币/建 Redis session 前拒绝。该防御不等同匿名注册发凭证。 |
+| 2026-11-06 | round 38 发现 HTTP device-register adapter 仍构造空 device_digest/null credential_secret_hash，无法满足上述门禁，因而当前 route 不可成功注册；未以 deviceCode 派生认证秘密或绕过 use-case 校验。恢复生产入口须先实现独立随机设备秘密发放与保存、Idempotency-Key 和 SQL/Redis 故障恢复协议。 |
+| 2026-11-06 | round 40 将旧 HTTP device-register 既有用户路径改为显式 503 fail closed，避免已知用户的合法请求写入空设备凭证或误报注册；回归测试验证不触达设备仓储/注册 use-case。后续实现安全凭证签发和幂等协议后再恢复该入口。 |
+| 2026-11-06 | round 41 将上述 fail-closed 进一步提前到 route 入口：不解析 body、不查询 user、不触达 SQL/Redis；仍返回 503 IDENTITY_STORAGE_UNAVAILABLE。避免未经安全流程的调用产生查用户行为或误解为支持既有用户设备注册。 |
+| 2026-11-06 | 再次核实匿名设备注册路由仍固定返回 503；记录 deviceCode 仅标识而非认证秘密、独立秘密与幂等结果须由安全协议定义，不以临时随机生成后遗失或客户端自报秘密冒充完整注册。 |
+| 2026-11-08 | API-GAP-032 Redis session create/revoke 改为 Lua 原子检查及 TTL tombstone；新增 migration 0022 持久关联 registration replay 与 sid，登出清除 replay 密文，避免 Redis 会话已删而 SQL bundle 仍可重放。新增 route regression 验证 device cookie HttpOnly/SameSite/path/fixed expiry/host-only 与 JSON 秘密不泄漏（auth routes 20/20）。Redis 丢失、非 registration session 来源及 user-wide fence 仍未闭环。 |

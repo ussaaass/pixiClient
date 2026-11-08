@@ -31,8 +31,10 @@ describe('createApiClient transport contract', () => {
     const fetchPort = vi.fn();
     const client = createApiClient(fetchPort);
 
-    await expect(client.deviceRegister({ ...validDeviceRegistration, deviceCode: 'short' }, 'idem-key'))
-      .rejects.toMatchObject({ status: 400, code: 'VALIDATION_FAILED' });
+    await expect(client.deviceRegister({ ...validDeviceRegistration, deviceCode: 'short' }, 'idem-key')).rejects.toMatchObject({
+      status: 400,
+      code: 'VALIDATION_FAILED',
+    });
     expect(fetchPort).not.toHaveBeenCalled();
   });
 
@@ -51,6 +53,44 @@ describe('createApiClient transport contract', () => {
     expect(headers.get('Idempotency-Key')).toBe('idem-key');
     expect(headers.get('Content-Type')).toBe('application/json');
     expect(init?.body).toBe(JSON.stringify(validDeviceRegistration));
+  });
+
+  it('sends production device login with an empty cookie-only DTO', async () => {
+    const fetchPort = vi.fn().mockResolvedValue(new Response(JSON.stringify(successEnvelope(registeredSession)), { status: 200 }));
+    const client = createApiClient(fetchPort);
+
+    await client.deviceLogin();
+
+    expect(fetchPort).toHaveBeenCalledOnce();
+    expect(fetchPort.mock.calls[0]?.[0]).toBe(IdentityEndpoint.deviceLogin.path);
+    expect(fetchPort.mock.calls[0]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' });
+    expect(JSON.parse(String(fetchPort.mock.calls[0]?.[1]?.body))).toEqual({});
+  });
+
+  it('sends the production device-login cookie-only request without credential fields', async () => {
+    const fetchPort = vi.fn().mockResolvedValue(new Response(JSON.stringify(successEnvelope(registeredSession)), { status: 200 }));
+    const client = createApiClient(fetchPort);
+
+    await client.deviceLogin();
+
+    expect(fetchPort).toHaveBeenCalledOnce();
+    expect(fetchPort.mock.calls[0]?.[0]).toBe(IdentityEndpoint.deviceLogin.path);
+    expect(fetchPort.mock.calls[0]?.[1]).toMatchObject({ method: 'POST', credentials: 'include' });
+    const headers = new Headers(fetchPort.mock.calls[0]?.[1]?.headers);
+    expect(headers.get('Content-Type')).toBe('application/json');
+    expect(JSON.parse(String(fetchPort.mock.calls[0]?.[1]?.body))).toEqual({});
+  });
+
+  it('sends the refresh operation ID supplied by the caller', async () => {
+    const fetchPort = vi.fn().mockResolvedValue(new Response(JSON.stringify(successEnvelope(registeredSession)), { status: 200 }));
+    const client = createApiClient(fetchPort);
+    const refresh = { operationId: 'operation_id_123456' };
+
+    await client.refresh(refresh);
+
+    expect(fetchPort).toHaveBeenCalledOnce();
+    expect(fetchPort.mock.calls[0]?.[0]).toBe(IdentityEndpoint.refresh.path);
+    expect(JSON.parse(String(fetchPort.mock.calls[0]?.[1]?.body))).toEqual(refresh);
   });
 
   it('parses a valid success envelope and returns its data', async () => {

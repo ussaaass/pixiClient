@@ -13,8 +13,10 @@ export const CoinMarketTradeStatus = {
   SELLER_EVIDENCE_PENDING: 5,
   PLATFORM_REVIEW: 6,
   RELEASED: 7,
-  RETURNED: 8,
+  AUTO_RELEASED: 8,
   PAYMENT_EXPIRED: 9,
+  RESOLVED_RETURN: 10,
+  CANCELLED: 11,
 } as const;
 export const CoinMarketErrorCode = {
   ACCESS_DISABLED: 'SOCIAL_ACCESS_DISABLED',

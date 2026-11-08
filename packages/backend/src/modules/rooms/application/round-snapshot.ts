@@ -54,12 +54,22 @@ function assertRound(round: RoundModel, requestedId: string): void {
     const rulesSnapshot = field(round, 'rulesSnapshot');
     const fencingToken = field(round, 'fencingToken');
     if (
-      id !== requestedId || !idPattern.test(id) || !idPattern.test(roomId) ||
-      typeof roundNo !== 'string' || !/^[1-9][0-9]{0,19}$/.test(roundNo) || BigInt(roundNo) > MAX_BIGINT ||
-      !Object.values(RoundStatus).includes(status as never) || typeof handlerVersion !== 'string' || handlerVersion.length === 0 ||
-      rulesSnapshot === null || typeof rulesSnapshot !== 'object' || Array.isArray(rulesSnapshot) ||
-      typeof fencingToken !== 'string' || !/^[1-9][0-9]{0,19}$/.test(fencingToken)
-    ) throw new Error('invalid round snapshot');
+      id !== requestedId ||
+      !idPattern.test(id) ||
+      !idPattern.test(roomId) ||
+      typeof roundNo !== 'string' ||
+      !/^[1-9][0-9]{0,19}$/.test(roundNo) ||
+      BigInt(roundNo) > MAX_BIGINT ||
+      !Object.values(RoundStatus).includes(status as never) ||
+      typeof handlerVersion !== 'string' ||
+      handlerVersion.length === 0 ||
+      rulesSnapshot === null ||
+      typeof rulesSnapshot !== 'object' ||
+      Array.isArray(rulesSnapshot) ||
+      typeof fencingToken !== 'string' ||
+      !/^[1-9][0-9]{0,19}$/.test(fencingToken)
+    )
+      throw new Error('invalid round snapshot');
   } catch {
     throw new RoomDomainError(R.STORAGE_UNAVAILABLE, 'round snapshot is malformed');
   }
@@ -78,13 +88,19 @@ function assertPlayers(rows: RoundPlayerModel[], roundId: string, callerId: stri
       const submissionSnapshot = field(row, 'submissionSnapshot');
       const netCoinDelta = field(row, 'netCoinDelta');
       if (
-        !idPattern.test(id) || playerRoundId !== roundId || !idPattern.test(userId) || seen.has(userId) ||
-        !Number.isSafeInteger(seatNo) || seatNo < 1 || seatNo > 4 ||
+        !idPattern.test(id) ||
+        playerRoundId !== roundId ||
+        !idPattern.test(userId) ||
+        seen.has(userId) ||
+        !Number.isSafeInteger(seatNo) ||
+        seatNo < 1 ||
+        seatNo > 4 ||
         !Object.values(RoundPlayerStatus).includes(status as never) ||
         (netCoinDelta !== null && (status !== RoundPlayerStatus.SETTLED || roundStatus !== RoundStatus.SETTLED)) ||
         (submissionSnapshot !== null && (typeof submissionSnapshot !== 'object' || Array.isArray(submissionSnapshot))) ||
         (netCoinDelta !== null && (typeof netCoinDelta !== 'string' || !/^-?(0|[1-9][0-9]*)$/.test(netCoinDelta)))
-      ) throw new Error('invalid player row');
+      )
+        throw new Error('invalid player row');
       seen.add(userId);
       return {
         userId,
@@ -92,7 +108,8 @@ function assertPlayers(rows: RoundPlayerModel[], roundId: string, callerId: stri
         seatNo,
         status,
         // Private cards/arrangement are visible only to the owning member.
-        submissionSnapshot: userId === callerId && roundStatus === RoundStatus.SETTLED ? submissionSnapshot as Record<string, unknown> | null : null,
+        submissionSnapshot:
+          userId === callerId && roundStatus === RoundStatus.SETTLED ? (submissionSnapshot as Record<string, unknown> | null) : null,
         netCoinDelta,
       };
     });
@@ -104,7 +121,10 @@ function assertPlayers(rows: RoundPlayerModel[], roundId: string, callerId: stri
 }
 
 export function createRoundSnapshotUseCase(deps: RoundSnapshotDeps) {
-  return async function getRoundSnapshot(input: { userId: string; roundId: string; afterSeq?: string; limit?: number }, tx?: Tx): Promise<RoundSnapshotDto> {
+  return async function getRoundSnapshot(
+    input: { userId: string; roundId: string; afterSeq?: string; limit?: number },
+    tx?: Tx,
+  ): Promise<RoundSnapshotDto> {
     if (!idPattern.test(input.userId) || !idPattern.test(input.roundId)) {
       throw new RoomDomainError(R.INVALID_SUBMISSION, 'invalid snapshot identity');
     }
@@ -125,7 +145,8 @@ export function createRoundSnapshotUseCase(deps: RoundSnapshotDeps) {
       const roundStatus = field(round, 'status');
       const players = assertPlayers(rawPlayers, input.roundId, input.userId, roundStatus);
       const rawEvents = await deps.roundEventRepo.listRoundEventsAfterSeq(input.roundId, afterSeq, limit + 1, tx);
-      if (!Array.isArray(rawEvents) || rawEvents.length > limit + 1 || (rawEvents.length > limit && rawEvents[limit] !== undefined)) throw new Error('invalid event page');
+      if (!Array.isArray(rawEvents) || rawEvents.length > limit + 1 || (rawEvents.length > limit && rawEvents[limit] !== undefined))
+        throw new Error('invalid event page');
       let previousSeq = afterSequence;
       const events = rawEvents.slice(0, limit).map((event) => {
         if (field(event, 'roundId') !== input.roundId) throw new Error('event belongs to another round');
@@ -134,25 +155,37 @@ export function createRoundSnapshotUseCase(deps: RoundSnapshotDeps) {
         const eventType = field(event, 'eventType');
         const roundPlayerId = field(event, 'roundPlayerId');
         if (
-          !/^([1-9][0-9]{0,19})$/.test(seq) || BigInt(seq) <= previousSeq || (previousSeq = BigInt(seq)) > MAX_BIGINT ||
+          !/^([1-9][0-9]{0,19})$/.test(seq) ||
+          BigInt(seq) <= previousSeq ||
+          (previousSeq = BigInt(seq)) > MAX_BIGINT ||
           !/^[A-Za-z0-9:_-]{1,160}$/.test(eventKey) ||
-          !Number.isSafeInteger(eventType) || eventType < 1 ||
+          !Number.isSafeInteger(eventType) ||
+          eventType < 1 ||
           (roundPlayerId !== null && !idPattern.test(roundPlayerId))
-        ) throw new Error('invalid event row');
+        )
+          throw new Error('invalid event row');
         const eventRoundPlayerId = roundPlayerId === null ? null : players.find((player) => player.roundPlayerId === roundPlayerId)?.userId;
         if (roundPlayerId !== null && eventRoundPlayerId === undefined) throw new Error('event participant is unknown');
         const ownEvent = eventRoundPlayerId === input.userId;
         return {
-          seq, eventKey, eventType,
+          seq,
+          eventKey,
+          eventType,
           roundPlayerId: ownEvent ? roundPlayerId : null,
         };
       });
       const nextCursor = events.length === 0 ? afterSeq : events[events.length - 1]!.seq;
       return {
-        roundId: field(round, 'id'), roomId: field(round, 'roomId'), roundNo: field(round, 'roundNo'),
-        status: roundStatus, handlerVersion: field(round, 'handlerVersion'),
-        rulesSnapshot: field(round, 'rulesSnapshot'), fencingToken: field(round, 'fencingToken'),
-        players, events, nextCursor,
+        roundId: field(round, 'id'),
+        roomId: field(round, 'roomId'),
+        roundNo: field(round, 'roundNo'),
+        status: roundStatus,
+        handlerVersion: field(round, 'handlerVersion'),
+        rulesSnapshot: field(round, 'rulesSnapshot'),
+        fencingToken: field(round, 'fencingToken'),
+        players,
+        events,
+        nextCursor,
       };
     } catch (error) {
       if (error instanceof RoomDomainError) throw error;

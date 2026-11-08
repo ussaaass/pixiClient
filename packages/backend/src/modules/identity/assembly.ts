@@ -17,7 +17,7 @@
  *   消费端在 worker 落地前无消费者；
  * - TOTP 密文 KMS 未接入：encryptTotpSecret/decryptTotpSecret 为占位封装（"TOTP"
  *   前缀），部署密钥设施落地后替换；
- * - WelcomeGiftPort 未实现（赠币属 wallet 模块，本步只留接口 + 用例内 TODO）；
+ * - WelcomeGiftPort 由 server composition 在 wallet 可用时注入；缺失时 registration fail closed；
  * - refresh 用例的 sid 定位依赖路由层在 Cookie 双值存 sid + refresh token（本步
  *   session-store 无 hash→sid 倒排索引，决策点登记）。
  */
@@ -53,6 +53,7 @@ import { SequelizeUnitOfWork } from './ports/unit-of-work.js';
 
 import { SecurityEventService } from './application/security-events.js';
 import { DeviceRegisterUseCase } from './application/device-register.js';
+import { AnonymousDeviceRegistrationUseCase, type PlayerAssetAccountsPort } from './application/anonymous-device-registration.js';
 import { DeviceLoginUseCase } from './application/device-login.js';
 import { PasswordLoginUseCase } from './application/password-login.js';
 import { RecoveryUseCase } from './application/recovery.js';
@@ -76,8 +77,9 @@ export interface IdentityModuleConfig {
   kid?: string;
   /** 时钟注入（测试可传固定时钟；缺省 SystemClock）。 */
   clock?: Clock;
-  /** 欢迎赠币端口（wallet 模块未建；传 null 登记 TODO，§4 幂等赠币）。 */
+  /** 欢迎赠币端口（wallet 未装配时为 null；生产组合应注入其幂等赠币适配器）。 */
   welcomeGift?: WelcomeGiftPort | null;
+  playerAssetAccounts?: PlayerAssetAccountsPort | null;
 }
 
 /** 装配依赖（Sequelize 实例 + ioredis 实例 + 配置；模型类在装配内取）。 */
@@ -110,6 +112,7 @@ export interface IdentityModule {
 
   // 用例实例
   deviceRegister: DeviceRegisterUseCase;
+  anonymousDeviceRegistration: AnonymousDeviceRegistrationUseCase;
   deviceLogin: DeviceLoginUseCase;
   passwordLogin: PasswordLoginUseCase;
   recovery: RecoveryUseCase;
@@ -201,10 +204,19 @@ export async function createIdentityModule(deps: IdentityModuleDeps): Promise<Id
   const outboxPortFactory = (tx: Tx): OutboxPort => new SequelizeOutboxPort(OutboxModel, tx);
   const defaultOutbox = outboxPortFactory({ transaction: null });
 
-  // --- 用例实例（构造注入 ports；welcomeGift 缺省 null 登记 TODO，§4 幂等赠币） ---
+  // --- 用例实例（构造注入 ports；无 wallet 时 registration 用例拒绝发会话） ---
   const welcomeGift = config.welcomeGift ?? null;
 
   const deviceRegister = new DeviceRegisterUseCase(repository, sessionPort, jwtIssuer, clock, welcomeGift);
+  const anonymousDeviceRegistration = new AnonymousDeviceRegistrationUseCase(
+    repository,
+    unitOfWork,
+    config.playerAssetAccounts ?? null,
+    welcomeGift,
+    sessionPort,
+    jwtIssuer,
+    clock,
+  );
 
   const deviceLogin = new DeviceLoginUseCase(repository, sessionPort, jwtIssuer, clock, rateLimitPort, securityEvents);
 
@@ -239,6 +251,7 @@ export async function createIdentityModule(deps: IdentityModuleDeps): Promise<Id
     securityEvents,
 
     deviceRegister,
+    anonymousDeviceRegistration,
     deviceLogin,
     passwordLogin,
     recovery,

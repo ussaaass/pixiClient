@@ -4,7 +4,17 @@ import { HealthResponseSchema } from './health';
 import { WalletAssetSummarySchema, WalletSummaryResponseSchema } from './wallet';
 import { MockPaymentOrderDtoSchema, MockPaymentEventDtoSchema } from './mock-payment';
 import { NotificationSummaryResponseSchema } from './notifications';
-import { IdentitySettingsResponseSchema } from './identity';
+import { IdentitySettingsResponseSchema, RefreshRequestSchema } from './identity';
+import {
+  RoundSettlementQuerySchema,
+  RoundSettlementResponseSchema,
+  RoundStartRequestSchema,
+  RoundStartResponseSchema,
+  RoomCreatedResponseSchema,
+  RoundSubmitRequestSchema,
+  RoundSubmitResponseSchema,
+} from './game-room';
+import { CoinMarketTradeStatus, CoinMarketTradeSchema } from './coin-market';
 
 /**
  * 契约层回归测试。
@@ -17,6 +27,102 @@ import { IdentitySettingsResponseSchema } from './identity';
  */
 
 const ISO_UTC = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+
+describe('刷新请求契约', () => {
+  test('requires a bounded opaque operation id and rejects extra data', () => {
+    expect(Value.Check(RefreshRequestSchema, { operationId: 'operation_id_123456' })).toBe(true);
+    expect(Value.Check(RefreshRequestSchema, { operationId: 'short' })).toBe(false);
+    expect(Value.Check(RefreshRequestSchema, { operationId: 'operation_id_123456', extra: true })).toBe(false);
+  });
+});
+
+describe('room creation response contract', () => {
+  test('matches RoomCreateUseCase DTO with explicit replay state', () => {
+    const response = { roomId: '12', roomCode: 'ABC234', status: 1, capacity: 4, ownerKey: 'owner:9', replay: false };
+    expect(Value.Check(RoomCreatedResponseSchema, response)).toBe(true);
+    expect(Value.Check(RoomCreatedResponseSchema, { ...response, replay: 'false' })).toBe(false);
+    expect(Value.Check(RoomCreatedResponseSchema, { ...response, createdAt: '2026-11-06T13:00:00.000Z' })).toBe(false);
+  });
+});
+
+describe('round start response contract', () => {
+  test('matches RoundStartUseCase DTO including replay and rejects route-local fields', () => {
+    const response = { roundId: '12', roundKey: 'round-key', status: 2, replay: true };
+    expect(Value.Check(RoundStartResponseSchema, response)).toBe(true);
+    expect(Value.Check(RoundStartResponseSchema, { ...response, roundNo: '3' })).toBe(false);
+    expect(Value.Check(RoundStartResponseSchema, { ...response, status: 'ACTIVE' })).toBe(false);
+    expect(Value.Check(RoundStartResponseSchema, { ...response, replay: 'true' })).toBe(false);
+  });
+});
+
+describe('round start request contract', () => {
+  test('accepts only client-selected water units and fencing token, never coin amounts', () => {
+    const valid = { fencingToken: '12', waterUnits: '1' };
+    expect(Value.Check(RoundStartRequestSchema, valid)).toBe(true);
+    for (const units of ['0', '01', '-1', '1.5']) {
+      expect(Value.Check(RoundStartRequestSchema, { ...valid, waterUnits: units })).toBe(false);
+    }
+    expect(Value.Check(RoundStartRequestSchema, { ...valid, fencingToken: '0' })).toBe(false);
+    expect(Value.Check(RoundStartRequestSchema, { ...valid, wagerCoins: '1', maxLossHoldCoins: '100' })).toBe(false);
+    expect(Value.Check(RoundStartRequestSchema, { ...valid, extra: true })).toBe(false);
+  });
+});
+
+describe('round submit response contract', () => {
+  test('matches RoundSubmitUseCase DTO and rejects route-local omissions', () => {
+    const response = {
+      roundId: '12',
+      roundPlayerId: '34',
+      submittedAt: '2026-11-06T13:00:00.000Z',
+      replay: false,
+      allSubmitted: true,
+    };
+    expect(Value.Check(RoundSubmitResponseSchema, response)).toBe(true);
+    expect(Value.Check(RoundSubmitResponseSchema, { ...response, replay: 'false' })).toBe(false);
+    expect(Value.Check(RoundSubmitResponseSchema, { ...response, extra: true })).toBe(false);
+  });
+});
+
+describe('round submit request contract', () => {
+  test('accepts exact 3/5/5 piles and rejects malformed cards, attempts and extra properties', () => {
+    const valid = {
+      fencingToken: '12',
+      arrangement: { front: [0, 1, 2], middle: [3, 4, 5, 6, 7], back: [8, 9, 10, 11, 12] },
+      attempt: 1,
+    };
+    expect(Value.Check(RoundSubmitRequestSchema, valid)).toBe(true);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, arrangement: { ...valid.arrangement, front: [0, 1] } })).toBe(false);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, arrangement: { ...valid.arrangement, back: [0, 1, 2, 3, 52] } })).toBe(false);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, attempt: 0 })).toBe(false);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, fencingToken: '0' })).toBe(false);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, fencingToken: '00012' })).toBe(false);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, fencingToken: '1'.repeat(21) })).toBe(false);
+    expect(Value.Check(RoundSubmitRequestSchema, { ...valid, ignored: true })).toBe(false);
+  });
+});
+
+describe('房间结算契约', () => {
+  test('结算轮询可不带 fencing token，触发时只接受正整数字符串', () => {
+    expect(Value.Check(RoundSettlementQuerySchema, {})).toBe(true);
+    expect(Value.Check(RoundSettlementQuerySchema, { fencingToken: '12' })).toBe(true);
+    expect(Value.Check(RoundSettlementQuerySchema, { fencingToken: '' })).toBe(false);
+    expect(Value.Check(RoundSettlementQuerySchema, { fencingToken: '0' })).toBe(false);
+    expect(Value.Check(RoundSettlementQuerySchema, { fencingToken: 12 })).toBe(false);
+    expect(Value.Check(RoundSettlementQuerySchema, { extra: true })).toBe(false);
+  });
+
+  test('settlement response matches the use-case DTO and rejects route-local drift', () => {
+    const response = {
+      roundId: '10',
+      settlementId: '20',
+      players: [{ userId: '1', water: '-5', foul: false }],
+      replay: true,
+    };
+    expect(Value.Check(RoundSettlementResponseSchema, response)).toBe(true);
+    expect(Value.Check(RoundSettlementResponseSchema, { ...response, status: 'SETTLED' })).toBe(false);
+    expect(Value.Check(RoundSettlementResponseSchema, { ...response, players: [{ ...response.players[0], water: -5 }] })).toBe(false);
+  });
+});
 
 describe('契约包时间戳格式', () => {
   test('健康检查的 serverNow 必须是严格 ISO UTC', () => {
@@ -100,6 +206,49 @@ describe('契约包金额口径', () => {
   });
 });
 
+describe('金币集市交易状态契约', () => {
+  test('status 名称与值完全镜像 coin_market_trade 的 DDL 状态机', () => {
+    expect(CoinMarketTradeStatus).toEqual({
+      PAYMENT_PENDING: 1,
+      SELLER_CONFIRMATION_PENDING: 2,
+      DISPUTED: 3,
+      BUYER_EVIDENCE_PENDING: 4,
+      SELLER_EVIDENCE_PENDING: 5,
+      PLATFORM_REVIEW: 6,
+      RELEASED: 7,
+      AUTO_RELEASED: 8,
+      PAYMENT_EXPIRED: 9,
+      RESOLVED_RETURN: 10,
+      CANCELLED: 11,
+    });
+    expect(Object.values(CoinMarketTradeStatus)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]);
+    const trade = {
+      tradeId: '1',
+      listingId: '2',
+      actorRole: 'BUYER',
+      coins: '1000',
+      grossCents: '100',
+      paymentMethod: 1,
+      paymentInstructions: '',
+      paymentDeadlineAt: '2026-10-21T09:30:00.000Z',
+      sellerDeadlineAt: null,
+      buyerEvidenceDeadlineAt: null,
+      sellerEvidenceDeadlineAt: null,
+      platformDecisionDeadlineAt: null,
+      paymentProof: null,
+      appealReason: null,
+      buyerEvidence: null,
+      sellerEvidence: null,
+      createdAt: '2026-10-21T09:30:00.000Z',
+      updatedAt: '2026-10-21T09:30:00.000Z',
+    };
+    for (const status of Object.values(CoinMarketTradeStatus)) {
+      expect(Value.Check(CoinMarketTradeSchema, { ...trade, status })).toBe(true);
+    }
+    expect(Value.Check(CoinMarketTradeSchema, { ...trade, status: 0 })).toBe(false);
+    expect(Value.Check(CoinMarketTradeSchema, { ...trade, status: 12 })).toBe(false);
+  });
+});
 describe('契约字段集合固定', () => {
   test('通知汇总结构固定', () => {
     const response = { items: [], unavailableSources: [] };

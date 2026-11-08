@@ -69,18 +69,18 @@ export class AssetAccountModel
   extends Model<AssetAccountModelAttributes, AssetAccountModelCreationAttributes>
   implements AssetAccountModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  userId!: string;
-  accountType!: number;
-  assetType!: number;
-  currency!: string;
-  amount!: string;
-  frozenAmount!: string;
-  version!: string;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare userId: string;
+  declare accountType: number;
+  declare assetType: number;
+  declare currency: string;
+  declare amount: string;
+  declare frozenAmount: string;
+  declare version: string;
   static associate(models: { AssetAccountModel: typeof AssetAccountModel }): void {
     void models.AssetAccountModel;
     // user 侧 belongsTo 在 identity.ts / index.ts 跨文件登记（user 为保留字表，FK 由迁移管理）。
@@ -129,23 +129,23 @@ export class AssetOperationModel
   extends Model<AssetOperationModelAttributes, AssetOperationModelCreationAttributes>
   implements AssetOperationModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  operationKey!: string;
-  operationType!: number;
-  requestHash!: Uint8Array;
-  initiatedByUserId!: string | null;
-  operatedByAdminUserId!: string | null;
-  approvedByAdminUserId!: string | null;
-  adminSessionKey!: string | null;
-  reversesAssetOperationId!: string | null;
-  reason!: string | null;
-  extra!: Record<string, unknown> | null;
-  resultSnapshot!: Record<string, unknown> | null;
-  committedAt!: Date | string | null;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare operationKey: string;
+  declare operationType: number;
+  declare requestHash: Uint8Array;
+  declare initiatedByUserId: string | null;
+  declare operatedByAdminUserId: string | null;
+  declare approvedByAdminUserId: string | null;
+  declare adminSessionKey: string | null;
+  declare reversesAssetOperationId: string | null;
+  declare reason: string | null;
+  declare extra: Record<string, unknown> | null;
+  declare resultSnapshot: Record<string, unknown> | null;
+  declare committedAt: Date | string | null;
   static associate(models: { AssetOperationModel: typeof AssetOperationModel }): void {
     // 自引用：reverses_asset_operation_id → asset_operation.id（RESTRICT 外键由迁移 0004 管理）。
     AssetOperationModel.belongsTo(models.AssetOperationModel, {
@@ -199,22 +199,22 @@ export class AssetEntryModel
   extends Model<AssetEntryModelAttributes, AssetEntryModelCreationAttributes>
   implements AssetEntryModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  assetOperationId!: string;
-  assetAccountId!: string;
-  assetHoldId!: string | null;
-  entrySeq!: number;
-  entryType!: number;
-  delta!: string;
-  frozenDelta!: string;
-  amountAfter!: string;
-  frozenAfter!: string;
-  accountVersion!: string;
-  memo!: string;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare assetOperationId: string;
+  declare assetAccountId: string;
+  declare assetHoldId: string | null;
+  declare entrySeq: number;
+  declare entryType: number;
+  declare delta: string;
+  declare frozenDelta: string;
+  declare amountAfter: string;
+  declare frozenAfter: string;
+  declare accountVersion: string;
+  declare memo: string;
   static associate(models: { AssetEntryModel: typeof AssetEntryModel }): void {
     void models.AssetEntryModel;
     // asset_operation / asset_account / asset_hold 侧 FK 在 index.ts 跨文件登记。
@@ -255,19 +255,19 @@ export type AssetHoldModelCreationAttributes = Optional<
 >;
 
 export class AssetHoldModel extends Model<AssetHoldModelAttributes, AssetHoldModelCreationAttributes> implements AssetHoldModelAttributes {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  assetAccountId!: string;
-  assetOperationId!: string;
-  holdKey!: string;
-  holdType!: number;
-  amount!: string;
-  remainingAmount!: string;
-  expiresAt!: Date | string | null;
-  closedAt!: Date | string | null;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare assetAccountId: string;
+  declare assetOperationId: string;
+  declare holdKey: string;
+  declare holdType: number;
+  declare amount: string;
+  declare remainingAmount: string;
+  declare expiresAt: Date | string | null;
+  declare closedAt: Date | string | null;
   static associate(models: { AssetHoldModel: typeof AssetHoldModel }): void {
     void models.AssetHoldModel;
     // asset_account / asset_operation 侧 FK 在 index.ts 跨文件登记。
@@ -316,20 +316,20 @@ export class CoinExchangeModel
   extends Model<CoinExchangeModelAttributes, CoinExchangeModelCreationAttributes>
   implements CoinExchangeModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  userId!: string;
-  assetOperationId!: string;
-  coins!: string;
-  cashCents!: string;
-  feeCents!: string;
-  rateCoinUnits!: string;
-  rateCashCents!: string;
-  roundingType!: number;
-  previewKey!: string;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare userId: string;
+  declare assetOperationId: string;
+  declare coins: string;
+  declare cashCents: string;
+  declare feeCents: string;
+  declare rateCoinUnits: string;
+  declare rateCashCents: string;
+  declare roundingType: number;
+  declare previewKey: string;
   static associate(models: { CoinExchangeModel: typeof CoinExchangeModel }): void {
     void models.CoinExchangeModel;
     // user / asset_operation 侧 FK 在 index.ts 跨文件登记（order 外键无 join 需要，不入模型）。
@@ -370,18 +370,18 @@ export type GiftGrantModelCreationAttributes = Optional<
 >;
 
 export class GiftGrantModel extends Model<GiftGrantModelAttributes, GiftGrantModelCreationAttributes> implements GiftGrantModelAttributes {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  userId!: string;
-  assetOperationId!: string;
-  orderId!: string | null;
-  grantKey!: string;
-  coins!: string;
-  turnoverMultiplier!: string;
-  requiredTurnoverCoins!: string;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare userId: string;
+  declare assetOperationId: string;
+  declare orderId: string | null;
+  declare grantKey: string;
+  declare coins: string;
+  declare turnoverMultiplier: string;
+  declare requiredTurnoverCoins: string;
   static associate(models: { GiftGrantModel: typeof GiftGrantModel }): void {
     void models.GiftGrantModel;
     // user / asset_operation / order 侧 FK 在 index.ts 跨文件登记。
@@ -418,14 +418,14 @@ export class TurnoverStateModel
   extends Model<TurnoverStateModelAttributes, TurnoverStateModelCreationAttributes>
   implements TurnoverStateModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  userId!: string;
-  remainingCoins!: string;
-  version!: string;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare userId: string;
+  declare remainingCoins: string;
+  declare version: string;
   static associate(models: { TurnoverStateModel: typeof TurnoverStateModel }): void {
     void models.TurnoverStateModel;
     // user 侧 FK 在 index.ts 跨文件登记。

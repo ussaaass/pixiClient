@@ -28,8 +28,8 @@
  * - PAYMENT_PENDING=1 → SELLER_CONFIRMATION_PENDING=2（卖家确认收款）；
  * - SELLER_CONFIRMATION_PENDING=2 → RELEASED=7（买家确认放币，首版登记
  *   放币分录经 wallet ledger 扩展点）；
- * - PAYMENT_PENDING=1 → PAYMENT_EXPIRED=9（付款截止超时，worker 扫描推进，
- *   首版登记 §6.3 worker 未建，用例层只读判定旧态）；
+ * - PAYMENT_PENDING=1 → PAYMENT_EXPIRED=9（付款截止超时，bounded worker 扫描推进，
+ *   期限 48h，由 PAYMENT_DEADLINE_SECONDS 统一定义）；
  * - PAYMENT_PENDING=1 → CANCELLED=11（买家取消 / 卖家取消，释放占款）；
  * - SELLER_CONFIRMATION_PENDING=2 → RESOLVED_RETURN=10（争议裁决返还，
  *   首版只读不写，Admin 裁决端点归 §9 第 9 步）；
@@ -117,8 +117,8 @@ export function priceQuote(coins: string, priceCentsPer1000Coins: string): { gro
   return { grossCents: grossCents.toString(), sellerNetCents: sellerNetCents.toString() };
 }
 
-/** 付款截止时间（秒；首版 30 分钟 = 1800s，登记决策点：可经 configuration 模块注入）。 */
-export const PAYMENT_DEADLINE_SECONDS = 1800;
+/** 买家付款截止时间（秒；CoinMarket SDD 确认的 48 小时）。 */
+export const PAYMENT_DEADLINE_SECONDS = 48 * 60 * 60;
 
 /**
  * 交易状态机转换表（11 态 DDL 权威；首版只覆盖玩家侧路径，DISPUTE 裁决路径

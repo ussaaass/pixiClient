@@ -16,7 +16,6 @@ import { OutboxModel } from '@gameing/backend/infrastructure/database/models/eve
 import { SequelizeOutboxWorkerRepo } from './adapters/sequelize-outbox-worker.js';
 import { createOutboxDispatcher, type OutboxTaskHandler, type SocketNotifPort } from './outbox-dispatcher.js';
 import { createOutboxWorker, type OutboxWorkerHandles } from './outbox-worker.js';
-import { createPayoutTaskHandler, createTradeExpiryTaskHandler, createReferralRewardTaskHandler } from './outbox-task-handlers.js';
 import type { PaymentsModule } from '@gameing/backend/modules/payments/public';
 import type { CoinMarketModule } from '@gameing/backend/modules/coin-market/public';
 import type { ReferralModule } from '@gameing/backend/modules/referral/public';
@@ -32,8 +31,17 @@ export function createSocketNotifPort(socketAuth: SocketAuthHandles): SocketNoti
       const sockets = socketAuth.connectionsByUser.get(userId);
       if (sockets === undefined || sockets.size === 0) return;
       for (const socket of sockets) {
+        // A disconnect may race with a previously captured user connection set.
+        // Socket.IO silently ignores emit() on disconnected sockets, so prune
+        // those entries here; an empty active set is a normal offline success
+        // because clients recover authoritative state over HTTP.
+        if (!socket.connected) {
+          sockets.delete(socket);
+          continue;
+        }
         socket.emit(event, { ...payload, source: 'outbox' });
       }
+      if (sockets.size === 0) socketAuth.connectionsByUser.delete(userId);
     },
   };
 }
@@ -71,37 +79,12 @@ export function bootstrapOutboxWorker(options: OutboxWorkerBootstrapOptions): Ou
   const repo = new SequelizeOutboxWorkerRepo(OutboxModel);
   const socketNotif = createSocketNotifPort(socketAuth);
 
-  // 任务注册表：仅注册依赖模块均就绪的处理器（缺省跳过，不阻塞启动）。
+  // Financial task topics are fail-closed until their handlers perform the
+  // complete domain transaction (including ledger posting and idempotency).
+  // In particular, the prior placeholder handlers logged success without
+  // performing their business side effects, which would incorrectly mark rows
+  // SENT. Keep them unregistered so the dispatcher schedules retry/dead-letter.
   const tasks: OutboxTaskHandler[] = [];
-  const mod = options.modules ?? {};
-  if (mod.paymentsModule !== undefined && mod.walletModule !== undefined) {
-    tasks.push(
-      createPayoutTaskHandler({
-        paymentsModule: mod.paymentsModule,
-        logger,
-        clock: mod.walletModule.clock,
-      }),
-    );
-  }
-  if (mod.coinMarketModule !== undefined && mod.walletModule !== undefined) {
-    tasks.push(
-      createTradeExpiryTaskHandler({
-        coinMarketModule: mod.coinMarketModule,
-        logger,
-        clock: mod.walletModule.clock,
-      }),
-    );
-  }
-  if (mod.referralModule !== undefined && mod.walletModule !== undefined) {
-    tasks.push(
-      createReferralRewardTaskHandler({
-        referralModule: mod.referralModule,
-        walletModule: mod.walletModule,
-        logger,
-        clock: mod.walletModule.clock,
-      }),
-    );
-  }
 
   const dispatcher = createOutboxDispatcher({
     tasks,

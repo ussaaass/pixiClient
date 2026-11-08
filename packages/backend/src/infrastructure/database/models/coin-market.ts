@@ -77,25 +77,25 @@ export class CoinMarketListingModel
   extends Model<CoinMarketListingModelAttributes, CoinMarketListingModelCreationAttributes>
   implements CoinMarketListingModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  sellerUserId!: string;
-  listingKey!: string;
-  assetHoldId!: string;
-  listedCoins!: string;
-  availableCoins!: string;
-  reservedCoins!: string;
-  filledCoins!: string;
-  cancelledCoins!: string;
-  priceCentsPer1000Coins!: string;
-  receiveMethod!: number;
-  receiveSnapshot!: Record<string, unknown> | null;
-  platformPaymentOptIn!: number;
-  cancelledAt!: Date | string | null;
-  suspendedByUserId!: string | null;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare sellerUserId: string;
+  declare listingKey: string;
+  declare assetHoldId: string;
+  declare listedCoins: string;
+  declare availableCoins: string;
+  declare reservedCoins: string;
+  declare filledCoins: string;
+  declare cancelledCoins: string;
+  declare priceCentsPer1000Coins: string;
+  declare receiveMethod: number;
+  declare receiveSnapshot: Record<string, unknown> | null;
+  declare platformPaymentOptIn: number;
+  declare cancelledAt: Date | string | null;
+  declare suspendedByUserId: string | null;
   static associate(models: { CoinMarketListingModel: typeof CoinMarketListingModel }): void {
     void models.CoinMarketListingModel;
     // user / asset_hold 侧 FK 在 index.ts 跨文件登记。
@@ -188,41 +188,41 @@ export class CoinMarketTradeModel
   extends Model<CoinMarketTradeModelAttributes, CoinMarketTradeModelCreationAttributes>
   implements CoinMarketTradeModelAttributes
 {
-  id!: string;
-  status!: number;
-  createdAt!: Date | string;
-  updatedAt!: Date | string;
-  deletedAt!: Date | string | null;
-  coinMarketListingId!: string;
-  buyerUserId!: string;
-  tradeKey!: string;
-  coins!: string;
-  grossCents!: string;
-  paymentMode!: number;
-  paymentChannelId!: string | null;
-  feeRateBps!: number;
-  feeCents!: string;
-  sellerNetCents!: string;
-  paymentProofAssetId!: string | null;
-  chainTxId!: string | null;
-  usdtRateSnapshot!: string | null;
-  paymentDeadlineAt!: Date | string;
-  sellerResponseDeadlineAt!: Date | string | null;
-  buyerEvidenceDeadlineAt!: Date | string | null;
-  buyerEvidenceAssetId!: string | null;
-  buyerEvidenceSubmittedAt!: Date | string | null;
-  sellerEvidenceDeadlineAt!: Date | string | null;
-  sellerEvidenceAssetId!: string | null;
-  sellerEvidenceSubmittedAt!: Date | string | null;
-  platformDecisionDeadlineAt!: Date | string | null;
-  sellerDisputeNote!: string | null;
-  paidAt!: Date | string | null;
-  supportConversationId!: string | null;
-  adjudicatedByUserId!: string | null;
-  resolutionCode!: number | null;
-  resolutionNote!: string | null;
-  adjudicatedAt!: Date | string | null;
-  assetOperationId!: string | null;
+  declare id: string;
+  declare status: number;
+  declare createdAt: Date | string;
+  declare updatedAt: Date | string;
+  declare deletedAt: Date | string | null;
+  declare coinMarketListingId: string;
+  declare buyerUserId: string;
+  declare tradeKey: string;
+  declare coins: string;
+  declare grossCents: string;
+  declare paymentMode: number;
+  declare paymentChannelId: string | null;
+  declare feeRateBps: number;
+  declare feeCents: string;
+  declare sellerNetCents: string;
+  declare paymentProofAssetId: string | null;
+  declare chainTxId: string | null;
+  declare usdtRateSnapshot: string | null;
+  declare paymentDeadlineAt: Date | string;
+  declare sellerResponseDeadlineAt: Date | string | null;
+  declare buyerEvidenceDeadlineAt: Date | string | null;
+  declare buyerEvidenceAssetId: string | null;
+  declare buyerEvidenceSubmittedAt: Date | string | null;
+  declare sellerEvidenceDeadlineAt: Date | string | null;
+  declare sellerEvidenceAssetId: string | null;
+  declare sellerEvidenceSubmittedAt: Date | string | null;
+  declare platformDecisionDeadlineAt: Date | string | null;
+  declare sellerDisputeNote: string | null;
+  declare paidAt: Date | string | null;
+  declare supportConversationId: string | null;
+  declare adjudicatedByUserId: string | null;
+  declare resolutionCode: number | null;
+  declare resolutionNote: string | null;
+  declare adjudicatedAt: Date | string | null;
+  declare assetOperationId: string | null;
   static associate(models: { CoinMarketTradeModel: typeof CoinMarketTradeModel }): void {
     void models.CoinMarketTradeModel;
     // listing / user / payment_channel / support_conversation / asset_operation / asset 侧 FK
@@ -291,6 +291,9 @@ export function registerCoinMarketListingModel(sequelize: Sequelize): void {
   (CoinMarketListingModel.init as unknown as ModelInitFn)(
     {
       id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, allowNull: false, comment: '此表主键，对外以十进制字符串表示' },
+      created_at: { field: 'created_at', type: DataTypes.DATE, allowNull: false, comment: '创建时间，UTC' },
+      updated_at: { field: 'updated_at', type: DataTypes.DATE, allowNull: false, comment: '更新时间，UTC' },
+      deleted_at: { field: 'deleted_at', type: DataTypes.DATE, allowNull: true, comment: '删除时间，恒 NULL' },
       status: {
         type: DataTypes.SMALLINT,
         allowNull: false,
@@ -399,6 +402,9 @@ export function registerCoinMarketTradeModel(sequelize: Sequelize): void {
   (CoinMarketTradeModel.init as unknown as ModelInitFn)(
     {
       id: { type: DataTypes.BIGINT, primaryKey: true, autoIncrement: true, allowNull: false, comment: '此表主键，对外以十进制字符串表示' },
+      created_at: { field: 'created_at', type: DataTypes.DATE, allowNull: false, comment: '创建时间，UTC' },
+      updated_at: { field: 'updated_at', type: DataTypes.DATE, allowNull: false, comment: '更新时间，UTC' },
+      deleted_at: { field: 'deleted_at', type: DataTypes.DATE, allowNull: true, comment: '删除时间，恒 NULL' },
       status: {
         type: DataTypes.SMALLINT,
         allowNull: false,

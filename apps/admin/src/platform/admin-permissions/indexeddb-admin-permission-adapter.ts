@@ -1,13 +1,38 @@
-import type { AdminManagedUserDto, AdminPermissionAuditDto } from '@gameing/admin-contracts/admin-permissions';
+import type { AdminManagedUserDto, AdminPermissionAuditDto, AdminPermissionPathDto } from '@gameing/admin-contracts/admin-permissions';
+import { ADMIN_PERMISSION_PATHS } from './admin-permission-registry';
 import { AdminManagedUserRoleType, AdminManagedUserStatus, AdminPermissionSource } from '@gameing/admin-contracts/admin-permissions';
 import { ADMIN_DEVELOPMENT_DATABASE, openAdminDevelopmentDatabase } from '../browser-development-database';
 import type { AdminPermissionRepositoryPort } from './admin-permission-application';
 
 const LOCAL_ADMIN_PERMISSION_OPERATOR_ID = '90001';
 const DEMO_ADMIN_USERS: readonly AdminManagedUserDto[] = [
-  { userId: '90002', username: '运营演练管理员', roleType: AdminManagedUserRoleType.ADMIN, status: AdminManagedUserStatus.ACTIVE, permissions: ['admin.users.read', 'admin.audit.read'], authVersion: 1, source: AdminPermissionSource.LOCAL_DEMO },
-  { userId: '90003', username: '财务演练管理员', roleType: AdminManagedUserRoleType.ADMIN, status: AdminManagedUserStatus.ACTIVE, permissions: ['admin.users.read', 'admin.support.read'], authVersion: 2, source: AdminPermissionSource.LOCAL_DEMO },
-  { userId: '90004', username: '停用演练管理员', roleType: AdminManagedUserRoleType.ADMIN, status: AdminManagedUserStatus.LOCKED, permissions: ['admin.users.read'], authVersion: 3, source: AdminPermissionSource.LOCAL_DEMO },
+  {
+    userId: '90002',
+    username: '运营演练管理员',
+    roleType: AdminManagedUserRoleType.ADMIN,
+    status: AdminManagedUserStatus.ACTIVE,
+    permissions: ['admin.users.read', 'admin.audit.read'],
+    authVersion: 1,
+    source: AdminPermissionSource.LOCAL_DEMO,
+  },
+  {
+    userId: '90003',
+    username: '财务演练管理员',
+    roleType: AdminManagedUserRoleType.ADMIN,
+    status: AdminManagedUserStatus.ACTIVE,
+    permissions: ['admin.users.read', 'admin.support.read'],
+    authVersion: 2,
+    source: AdminPermissionSource.LOCAL_DEMO,
+  },
+  {
+    userId: '90004',
+    username: '停用演练管理员',
+    roleType: AdminManagedUserRoleType.ADMIN,
+    status: AdminManagedUserStatus.LOCKED,
+    permissions: ['admin.users.read'],
+    authVersion: 3,
+    source: AdminPermissionSource.LOCAL_DEMO,
+  },
 ];
 
 export class IndexedDbAdminPermissionAdapter implements AdminPermissionRepositoryPort {
@@ -15,6 +40,10 @@ export class IndexedDbAdminPermissionAdapter implements AdminPermissionRepositor
   private seedPromise: Promise<void> | undefined;
 
   constructor(private readonly databaseName = ADMIN_DEVELOPMENT_DATABASE) {}
+
+  async listPaths(): Promise<AdminPermissionPathDto[]> {
+    return ADMIN_PERMISSION_PATHS.map((path) => ({ ...path }));
+  }
 
   async listUsers(): Promise<AdminManagedUserDto[]> {
     await this.ensureDemoUsers();
@@ -31,7 +60,11 @@ export class IndexedDbAdminPermissionAdapter implements AdminPermissionRepositor
   async listAudits(targetAdminUserId?: string): Promise<AdminPermissionAuditDto[]> {
     const database = await this.database();
     if (!targetAdminUserId) return database.getAll('admin_permission_audit');
-    return database.getAllFromIndex('admin_permission_audit', 'by-target-created', IDBKeyRange.bound([targetAdminUserId, ''], [targetAdminUserId, '\uffff']));
+    return database.getAllFromIndex(
+      'admin_permission_audit',
+      'by-target-created',
+      IDBKeyRange.bound([targetAdminUserId, ''], [targetAdminUserId, '\uffff']),
+    );
   }
 
   async findAuditByRequestKey(requestKey: string): Promise<AdminPermissionAuditDto | null> {
@@ -44,7 +77,8 @@ export class IndexedDbAdminPermissionAdapter implements AdminPermissionRepositor
     const completed = transaction.done;
     try {
       const current = await transaction.objectStore('admin_permission_users').get(user.userId);
-      if (!current || current.status !== AdminManagedUserStatus.ACTIVE || current.authVersion !== audit.previousAuthVersion) throw new Error('ADMIN_PERMISSION_CONFLICT');
+      if (!current || current.status !== AdminManagedUserStatus.ACTIVE || current.authVersion !== audit.previousAuthVersion)
+        throw new Error('ADMIN_PERMISSION_CONFLICT');
       await Promise.all([
         transaction.objectStore('admin_permission_users').put({ ...user, permissions: [...user.permissions] }),
         transaction.objectStore('admin_permission_audit').add({ ...audit, adminUserId: LOCAL_ADMIN_PERMISSION_OPERATOR_ID }),
@@ -61,7 +95,9 @@ export class IndexedDbAdminPermissionAdapter implements AdminPermissionRepositor
     return globalThis.crypto.randomUUID();
   }
 
-  now(): string { return new Date().toISOString(); }
+  now(): string {
+    return new Date().toISOString();
+  }
 
   async close(): Promise<void> {
     const promise = this.databasePromise;
@@ -81,7 +117,7 @@ export class IndexedDbAdminPermissionAdapter implements AdminPermissionRepositor
       const transaction = database.transaction('admin_permission_users', 'readwrite');
       const completed = transaction.done;
       const users = transaction.objectStore('admin_permission_users');
-      if (await users.count() === 0) {
+      if ((await users.count()) === 0) {
         for (const user of DEMO_ADMIN_USERS) await users.add({ ...user, permissions: [...user.permissions] });
       }
       await completed;

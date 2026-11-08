@@ -23,7 +23,7 @@
  * - 成功（TOTP 已提交或无 TOTP）→ SessionResponse；成功（需 TOTP）→ LoginChallengeResponse。
  */
 
-import type { PasswordLoginRequestSchema, SessionResponseSchema, LoginChallengeResponseSchema, Static } from '@gameing/contracts/identity';
+import type { PasswordLoginRequestSchema, LoginChallengeResponseSchema, Static } from '@gameing/contracts/identity';
 import type { UserModel } from '../../../infrastructure/database/models/identity.js';
 import { UserStatus } from '../../../infrastructure/database/models/identity.js';
 import { DomainError, I } from '../domain/errors.js';
@@ -42,10 +42,10 @@ import { buildNewSession } from '../adapters/redis-session-port.js';
 import { toPlayerUser } from '../adapters/row-mappers.js';
 import { createHash } from 'node:crypto';
 import type { SecurityEventService } from './security-events.js';
+import type { SessionResult } from './session-result.js';
 
 export type PasswordLoginResult =
-  | { kind: 'SESSION'; response: Static<typeof SessionResponseSchema> }
-  | { kind: 'CHALLENGE'; response: Static<typeof LoginChallengeResponseSchema> };
+  { kind: 'SESSION'; response: SessionResult } | { kind: 'CHALLENGE'; response: Static<typeof LoginChallengeResponseSchema> };
 
 export interface PasswordLoginInput {
   request: Static<typeof PasswordLoginRequestSchema>;
@@ -136,7 +136,7 @@ export class PasswordLoginUseCase {
       ctx: PasswordLoginInput['ctx'];
     },
     tx: Tx,
-  ): Promise<Static<typeof SessionResponseSchema>> {
+  ): Promise<SessionResult> {
     const record = await this.challenges.getLoginChallenge(input.challengeId);
     if (record === null) {
       // 区分未创建（NOT_FOUND）与过期（EXPIRED）：Redis 已删的 10min 挑战 → CHALLENGE_NOT_FOUND；
@@ -254,13 +254,7 @@ export class PasswordLoginUseCase {
     return null;
   }
 
-  private async issueSession(
-    user: UserModel,
-    ctx: PasswordLoginInput['ctx'],
-    now: Date,
-    nowMs: number,
-    tx: Tx,
-  ): Promise<Static<typeof SessionResponseSchema>> {
+  private async issueSession(user: UserModel, ctx: PasswordLoginInput['ctx'], now: Date, nowMs: number, tx: Tx): Promise<SessionResult> {
     const sid = randomId(18); // 36 hex = session_key CHAR(36)
     const refreshToken = this.jwt.createRefreshToken();
     const refreshHash = this.jwt.hashRefreshToken(refreshToken);
@@ -319,6 +313,8 @@ export class PasswordLoginUseCase {
       expiresAt: expiresAtIso,
       user: toPlayerUser(user),
       device: { deviceId: ctx.deviceId ?? user.id, trusted: true },
+      sid,
+      refreshToken,
     };
   }
 

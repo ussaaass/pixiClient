@@ -50,6 +50,7 @@ export {
   type TradeReleasedDto,
 } from './application/trade-create.js';
 export { TradeConfirmUseCase } from './application/trade-confirm.js';
+export { CoinMarketExpiryScanUseCase } from './application/coin-market-expiry-scan.js';
 export {
   TradeListUseCase,
   type TradePageDto,
