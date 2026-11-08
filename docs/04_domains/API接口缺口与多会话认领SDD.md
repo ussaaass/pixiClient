@@ -39,7 +39,8 @@
 | API-GAP-018 | P3 / 5（支撑接口测试） | Support 已有 HTTP 路由 contract regression | **路由切片已测试；生产支撑闭环仍未验** | 当前 `/me/support/conversations` 有 router handler；新增测试验证 GET `/api/v1/me/support/conversations` 的鉴权、principal userId 转发与 success envelope/response；生产支撑模块配置、服务端鉴权安全/客服闭环须单独验收 | 不改业务与契约、不宣称客服生产闭环 | SESSION-API-GAP-2026-11-07-I / DONE / 100%（限此 route contract test） |
 | API-GAP-019 | P2 / 2（wallet 纯规则测试） | wallet ledger-rules 纯函数契约回归 | **已补直接单测；不改变规则实现** | `ledger-rules.test.ts` 覆盖 `1:10 → {10n,100n}`、`12:345 → {345n,1200n}`、非法格式、请求哈希、报价时效/匹配、守恒、版本冲突、余额门禁、兑换正额和流水门禁；Docker Vitest 1 file / 8 tests、ESLint 与 backend typecheck passed | 测试锁定当前实现且暴露比例解析缺陷；修复需独立 implementation slice，因测试任务只读规则实现；不代表资金事务或端到端 GAP-009 完成 | SESSION-API-GAP-2026-11-07-J / DONE / 100%（限纯规则测试） |
 | API-GAP-020 | P3 / 5（社交接口测试） | Social message-history HTTP contract regression | **已完成路由测试；生产权限/实时闭环未验** | `social.routes.test.ts` 验证认证、principal/cursor 参数、null tx 及 success envelope；focused Docker node:test 1/1、Prettier、ESLint、server typecheck 通过 | 只验证 fake modules 下的 route contract；不宣称生产社交授权或实时消息闭环 | SESSION-API-GAP-2026-11-07-K / DONE / 100%（限 route contract test） |
-| API-GAP-021 | P2 / 2（wallet parser 修正） | 修复 `cny_to_coin_ratio` 正整数捕获组解析 | **已修复并通过 focused 验证** | parser 正则未定义 capture groups，导致 match[1]/match[2] 为 undefined，合法 `1:10` 被错误拒绝；权威双资产 SDD §2 要求 `1:10 → 10n/100n`；已完成 `ledger-rules.test.ts` 用例锁定观察到行为 | 仅修复 pure parser + 该测试，不能改资金业务语义；focused Docker Vitest/backend typecheck 与 Graphify 验证 | SESSION-API-GAP-2026-11-07-L / DONE / 100%（正整数比例 capture groups 已恢复；测试/typecheck 已通过） |
+| API-GAP-021 | P2 / 2（wallet parser 修正） | 修复 `cny_to_coin_ratio` 正整数捕获组解析 | **已修复并通过 focused 验证** | parser 正则未定义 capture groups，导致 match[1]/match[2] 为 undefined，合法 `1:10` 被错误拒绝；权威双资产 SDD §2 要求 `1:10 → 10n/100n`；`ledger-rules.test.ts` 已验证合法和非法值 | 仅修复 pure parser + 该测试，不能改资金业务语义；focused Docker Vitest/backend typecheck 与 Graphify 验证 | SESSION-API-GAP-2026-11-07-L / DONE / 100%（正整数比例 capture groups 已恢复；测试/typecheck 已通过） |
+| API-GAP-022 | P2 / 2（social use-case 测试） | Social message-list 成员鉴权与游标 use-case 回归 | **拟新增直接单测** | `message-list.ts` 对 conversation membership 校验后才查询 message repo，并归一 afterMessageNo；暂无该 use-case 专属测试 | 仅新增 use-case test 覆盖非成员拒绝/不查消息、成员游标传递/映射、非法游标；不改 route 或 production policy，不宣称实时消息闭环 | SESSION-API-GAP-2026-11-07-M / CLAIMED / 0%（待 focused Vitest） |
 
 ## 4. 可并行切片建议
 
@@ -67,6 +68,7 @@
 - `SESSION-API-GAP-2026-11-07-J`（API-GAP-019）已完成新增 `packages/backend/src/modules/wallet/domain/ledger-rules.test.ts`，覆盖汇率比例解析、请求哈希、报价匹配/时效、守恒、版本冲突、余额及兑换正额、流水门禁。Focused Docker Vitest 1 file / 8 tests、backend typecheck 通过。后续复核纠正了 `1:10` 正常格式的断言，符合权威双资产 SDD。
 - `SESSION-API-GAP-2026-11-07-K`（API-GAP-020）已完成 `apps/server/src/http/social.routes.test.ts`，只验证现存 social history route；用 fake IdentityModule/SocialModule/Sequelize 覆盖未认证拒绝、认证后 principal、conversationId、cursor、null tx 与响应数据。Focused Docker node:test 1/1、Prettier、ESLint、server typecheck 通过；不证明生产模块装配或成员授权闭环。
 - `SESSION-API-GAP-2026-11-07-L`（API-GAP-021）已修复 wallet ratio parser 正则捕获组，并更新测试验证合法 `1:10` / `12:345` 返回精确比例；Docker Vitest 1 file / 8 tests、ESLint、backend typecheck 通过。
+- `SESSION-API-GAP-2026-11-07-M`（API-GAP-022）认领 social message-list use-case 单测；只新增 `packages/backend/src/modules/social/application/message-list.test.ts`，覆盖成员校验、查询输入和游标归一，不触碰 handler/application 生产实现。
 
 ## 6. 变更历史
 
