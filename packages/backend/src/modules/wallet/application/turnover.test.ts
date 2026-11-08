@@ -25,7 +25,7 @@ describe('TurnoverGateUseCase', () => {
     await expect(gate.assertTransferAllowed('7', {})).resolves.toBeUndefined();
   });
 
-  it('denies ACTIVE positive turnover and reports the exact domain error', async () => {
+  it('denies positive turnover when the ledger gate is closed and reports the exact domain error', async () => {
     const { gate } = makeGate({ remainingCoins: '250', canTransferOrWithdraw: false });
 
     await expect(gate.evaluate('7')).resolves.toEqual({
@@ -40,7 +40,7 @@ describe('TurnoverGateUseCase', () => {
     });
   });
 
-  it('allows a COMPLETE zero-balance state row', async () => {
+  it('allows a state with no remaining amount as directed by the ledger', async () => {
     const { gate } = makeGate({ remainingCoins: '0', canTransferOrWithdraw: true });
 
     await expect(gate.evaluate('7')).resolves.toEqual({
@@ -51,7 +51,7 @@ describe('TurnoverGateUseCase', () => {
     await expect(gate.assertTransferAllowed('7', {})).resolves.toBeUndefined();
   });
 
-  it('fails closed for positive REVERSED turnover', async () => {
+  it('denies positive turnover when the ledger gate is closed', async () => {
     const { gate } = makeGate({ remainingCoins: '80', canTransferOrWithdraw: false });
 
     await expect(gate.evaluate('7')).resolves.toMatchObject({
