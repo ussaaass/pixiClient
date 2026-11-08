@@ -23,7 +23,7 @@
 | API-GAP-002 | P0 / 0 | 生产 Web identity/session composition（注册/登录/刷新/登出/当前用户） | **前端接口组合缺失**；部分 HTTP client 与后端 auth 路由存在 | `apps/web/src/main.ts` 的生产分支只注入 game experience/catalog；`player-entry/composition.ts` 使用 offline adapter；未发现当前用户摘要 API | 先解决注册与 current-user 契约；需生产浏览器验收；允许拆出已批准子项 | — / OPEN / 0% |
 | API-GAP-003 | P0 / 0 | `GET /api/v1/me`（当前用户/玩家摘要） | **契约/API 缺口待核实** | auth routes 有 identity-settings 但未发现玩家当前用户/大厅摘要 endpoint；需检查后端实施 SDD 与 contracts 的权威 DTO 定义后再实现 | 先冻结必要字段及授权规则；不可随意新增泄露个人/代理字段 | — / OPEN / 0% |
 | API-GAP-004 | P1 / 1 | 房间 Socket.IO namespace、成员房间加入/广播 | **服务端接口缺失** | `apps/server/src/socket/socket-auth.ts` 当前只挂 `/platform`；room namespace deferred | 房间成员鉴权、事件序号/幂等、仅向授权玩家发私有状态；与权威发牌设计依赖 | — / BLOCKED_DECISION / 0% |
-| API-GAP-005 | P1 / 1 | `GET /api/v1/rounds/:roundId/snapshot` 与游标事件恢复 | **已实现，待下轮运行验收** | 初始勘查时 rooms route 无该快照端点；当前已有 route、contract、use case 与 members-only authorization | 当前实现已过独立 route integration (1/1)、7 use-case tests、backend/server/contracts typecheck、contracts tests (29)、scoped ESLint 与 graphify update；diff review、commit/push 留当前会话继续。事件仅返回元数据，结算前隐藏全部 arrangement | SESSION-GAP-2026-11-07-A / IMPLEMENTED_PENDING_PUSH / 90% |
+| API-GAP-005 | P1 / 1 | `GET /api/v1/rounds/:roundId/snapshot` 与游标事件恢复 | **已实现，待下轮运行验收** | 初始勘查时 rooms route 无该快照端点；当前已有 route、contract、use case 与 members-only authorization | 实现与验证已完成，代码提交 `29944ac` 并推送 `origin/main`；当前 session 认领已可供其他工作站查看。事件仅返回元数据，结算前隐藏全部 arrangement | SESSION-GAP-2026-11-07-A / DONE / 100% |
 | API-GAP-006 | P1 / 1 | 服务端发牌、私牌密文读写与披露 | **业务服务/存储未闭环** | room-start 主要建局/占款；assembly 中私有 payload ciphertext 标注 placeholder | 随机源、seed commit/reveal、公平性审计、密钥与争议披露决策，暂不认领实现 | — / BLOCKED_DECISION / 0% |
 | API-GAP-007 | P1 / 1 | 真实双客户端牌局/断线/重启恢复验收接口链 | **端到端验收缺失** | SDD §6.4 要求两客户端、失败注入、跨设备重放；现有 focused unit tests 不能代替 E2E | 依赖 GAP-004/005/006；无房间恢复/超时政策前不标完成 | — / OPEN / 0% |
 | API-GAP-008 | P2 / 2 | 生产 Web wallet composition（summary/activity/transfer/exchange） | **前端接线缺失**；服务端 routes/use cases 存在 | `apps/server/src/http/wallet.routes.ts` 有端点；生产 Web main 尚未注入 wallet app，模块装配还依赖 `SYSTEM_USER_ID` | 真实浏览器/API contract/ledger reconciliation 验收；建议先接只读 summary/activity 子切片 | — / OPEN / 0% |
@@ -42,12 +42,11 @@
 
 ## 5. 当前施工认领
 
-首次整理会话 `SESSION-GAP-2026-11-07-A` 已认领 API-GAP-005（快照与游标补拉）。新增 contract、use case、route 与 7 个 use-case tests；已通过独立 route integration (1/1)、先前 server app suite (14/14)、backend/server/contracts typecheck、contracts tests (29)、scoped ESLint 与 graphify update。端点在结算前隐藏所有 arrangement，仅返回事件元数据。当前实现已提交前评审，认领进度 90%；本行须在推送完成后更新为 DONE。
+首次整理会话 `SESSION-GAP-2026-11-07-A` 已完成 API-GAP-005（快照与游标补拉）。新增 contract、use case、route 与 7 个 use-case tests；通过独立 route integration (1/1)、server app suite (14/14)、backend/server/contracts typecheck、contracts tests (29)、scoped ESLint 与 graphify update。端点在结算前隐藏所有 arrangement，仅返回事件元数据。提交 `29944ac` 已推送至 `origin/main`。
 
 ## 6. 变更历史
 
 | 日期 | 变更 |
 |---|---|
 | 2026-11-07 | 新建接口缺口总账，拆分缺失路由、未接生产客户端、Mock/占位与决策/外部凭证阻塞；建立跨 session 唯一认领、进度、冲突与完成协议。 |
-| 2026-11-07 | API-GAP-005 完成快照查询端点初版与授权/恢复测试，认领状态推进至待提交。 |
-| 2026-11-07 | 实施 API-GAP-005 快照查询端点、成员授权与游标分页；补充接口和 use-case 测试。 |
+| 2026-11-07 | API-GAP-005 完成快照查询端点、成员授权与游标分页；contract/use-case/route tests 通过，并提交 `29944ac` 推送至 origin/main，认领标记 DONE。 |
