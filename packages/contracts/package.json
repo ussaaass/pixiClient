@@ -11,6 +11,7 @@
     "./mock-payment": "./src/mock-payment.ts",
     "./platform-events/announcement": "./src/platform-events/announcement.ts",
     "./game-room": "./src/game-room.ts",
+    "./round-snapshot": "./src/round-snapshot.ts",
     "./lobby-game-reference": "./src/lobby-game-reference.ts",
     "./game-catalog": "./src/game-catalog.ts",
     "./game-experience": "./src/game-experience.ts",

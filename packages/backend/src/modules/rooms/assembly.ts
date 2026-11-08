@@ -63,6 +63,7 @@ import { RoomJoinUseCase } from './application/room-join.js';
 import { RoundStartUseCase } from './application/round-start.js';
 import { RoundSubmitUseCase } from './application/round-submit.js';
 import { RoundSettleUseCase } from './application/round-settle.js';
+import { createRoundSnapshotUseCase } from './application/round-snapshot.js';
 import { GameEntryUseCase } from './application/game-entry.js';
 
 import type { WalletModule } from '../wallet/assembly.js';
@@ -101,6 +102,7 @@ export interface RoomsModule {
   roundStart: RoundStartUseCase;
   roundSubmit: RoundSubmitUseCase;
   roundSettle: RoundSettleUseCase;
+  roundSnapshot: ReturnType<typeof createRoundSnapshotUseCase>;
   gameEntry: GameEntryUseCase;
 
   /**
@@ -183,6 +185,7 @@ export function createRoomsModule(deps: RoomsModuleDeps): RoomsModule {
     clock,
     defaultOutbox,
   );
+  const roundSnapshot = createRoundSnapshotUseCase({ roundRepo, roundEventRepo });
   const gameEntry = new GameEntryUseCase(gameEntryRepo, clock);
 
   const module: RoomsModule = {
@@ -201,6 +204,7 @@ export function createRoomsModule(deps: RoomsModuleDeps): RoomsModule {
     roundStart,
     roundSubmit,
     roundSettle,
+    roundSnapshot,
     gameEntry,
 
     async withTx<T>(scope: { transaction: Transaction | null }, fn: (outbox: OutboxPort) => T | Promise<T>): Promise<T> {

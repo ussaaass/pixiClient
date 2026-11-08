@@ -32,6 +32,7 @@ export { RoomJoinUseCase, type JoinRoomResultDto } from './application/room-join
 export { RoundStartUseCase, type RoundStartResultDto } from './application/round-start.js';
 export { RoundSubmitUseCase, type RoundSubmitResultDto } from './application/round-submit.js';
 export { RoundSettleUseCase, type RoundSettlementDto } from './application/round-settle.js';
+export { createRoundSnapshotUseCase, type RoundSnapshotDto } from './application/round-snapshot.js';
 export { GameEntryUseCase, type GameEntryDto } from './application/game-entry.js';
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,12 @@ export { WalletOperationType, WalletEntryType } from './ports/rooms-repository-e
 // 领域纯函数与错误工具（domain/；fencing/状态机/幂等键/哈希/金额转换，无 IO）
 // ---------------------------------------------------------------------------
 export { RoomDomainError, R, isRoomDomainError, isDuplicateKeyError, type RoomErrorCode } from './domain/errors.js';
+export {
+  parseShisanshuiStakeConfig,
+  resolveShisanshuiStake,
+  type ShisanshuiStakeConfig,
+  type ResolvedShisanshuiStake,
+} from './domain/stake-config.js';
 export {
   ROUND_STATUS,
   ROUND_PLAYER_STATUS,
