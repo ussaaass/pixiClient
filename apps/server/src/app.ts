@@ -279,8 +279,8 @@ export function createApp(options: CreateAppOptions = {}): Koa {
   }
 
   // --- support 路由（identity + support + sequelize 模块装配后挂载；客服无资金操作，无需 wallet） ---
-  if (identityModule && supportModule && sequelize) {
-    const supportRouter = createSupportRoutes(supportModule, identityModule, sequelize);
+  if (identityModule && supportModule && adminModule && sequelize) {
+    const supportRouter = createSupportRoutes(supportModule, identityModule, adminModule, sequelize);
     router.use(supportRouter.routes(), supportRouter.allowedMethods());
   }
 

@@ -24,6 +24,8 @@ import { Type } from '@sinclair/typebox';
 import { Value } from '@gameing/contracts/wallet';
 import type { SupportModule, Tx, OutboxPort } from '@gameing/backend/modules/support/public';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
+import type { AdminModule } from '@gameing/backend/modules/admin/public';
+import { createAdminAuthMiddleware, type AdminAuthState } from '../infrastructure/auth/admin-auth-middleware.js';
 import { setSuccess } from '../infrastructure/http/response.js';
 import { ApiError } from '../infrastructure/http/error-boundary.js';
 import { createPlayerAuthMiddleware, type AuthState } from '../infrastructure/auth/player-auth-middleware.js';
@@ -131,9 +133,15 @@ async function submitInTx<T>(module: SupportModule, sequelize: Sequelize, fn: (t
 
 // --- 路由工厂 ---
 
-export function createSupportRoutes(module: SupportModule, identityModule: IdentityModule, sequelize: Sequelize): Router {
+export function createSupportRoutes(
+  module: SupportModule,
+  identityModule: IdentityModule,
+  adminModule: AdminModule,
+  sequelize: Sequelize,
+): Router {
   const router = new Router({ prefix: '' });
   const auth = createPlayerAuthMiddleware(identityModule);
+  const adminAuth = createAdminAuthMiddleware(identityModule, adminModule);
 
   // POST /me/support/conversations（创建工单，201）
   router.post('/me/support/conversations', auth, async (ctx) => {
@@ -176,20 +184,16 @@ export function createSupportRoutes(module: SupportModule, identityModule: Ident
 
   // POST /admin/support/conversations/:id/claim（坐席领取，200；重放幂等）
   // 首版简化：同玩家 token + role_type 校验（完整 Admin audience 中间件归 §9 第 9 步）
-  router.post('/admin/support/conversations/:id/claim', auth, async (ctx) => {
-    const userId = requireUserId(ctx.state as AuthState);
+  router.post('/admin/support/conversations/:id/claim', adminAuth, async (ctx) => {
+    const adminUserId = (ctx.state as AdminAuthState).adminUserId;
+    if (adminUserId === undefined) throw new ApiError('AD_ADMIN_UNAUTHORIZED', '未认证。', { status: 401 });
     const conversationId = ctx.params.id;
     if (conversationId === undefined) throw new ApiError('NOT_FOUND', '路径参数缺失。', { status: 404 });
-    // 首版：从 AuthState 取 roleType（identity 模块写入 ctx.state.roleType）
-    const roleType = (ctx.state as AuthState & { roleType?: number }).roleType ?? 0;
-    if (roleType === 0) {
-      throw new ApiError('ADMIN_PERMISSION_DENIED', '无坐席权限（需 role_type & 4）。', { status: 403 });
-    }
     const result = await submitInTx(module, sequelize, async (tx) => {
       return module.ticketClaim.run({
         conversationId,
-        adminUserId: userId,
-        adminRoleType: roleType,
+        adminUserId,
+        adminRoleType: 4,
         tx,
       });
     });
@@ -239,18 +243,15 @@ export function createSupportRoutes(module: SupportModule, identityModule: Ident
   });
 
   // POST /support/conversations/:id/resolve（坐席关闭，200）
-  router.post('/support/conversations/:id/resolve', auth, async (ctx) => {
-    const userId = requireUserId(ctx.state as AuthState);
+  router.post('/support/conversations/:id/resolve', adminAuth, async (ctx) => {
+    const adminUserId = (ctx.state as AdminAuthState).adminUserId;
+    if (adminUserId === undefined) throw new ApiError('AD_ADMIN_UNAUTHORIZED', '未认证。', { status: 401 });
     const conversationId = ctx.params.id;
     if (conversationId === undefined) throw new ApiError('NOT_FOUND', '路径参数缺失。', { status: 404 });
-    const roleType = (ctx.state as AuthState & { roleType?: number }).roleType ?? 0;
-    if (roleType === 0) {
-      throw new ApiError('ADMIN_PERMISSION_DENIED', '无坐席权限（需 role_type & 4）。', { status: 403 });
-    }
     const result = await submitInTx(module, sequelize, async (tx) => {
       return module.ticketResolve.run({
-        adminUserId: userId,
-        adminRoleType: roleType,
+        adminUserId,
+        adminRoleType: 4,
         conversationId,
         tx,
       });

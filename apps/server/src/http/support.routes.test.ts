@@ -4,6 +4,7 @@ import { createApp } from '../app.js';
 import { createLogger, createMemorySink } from '../infrastructure/logging/logger.js';
 import type { IdentityModule } from '@gameing/backend/modules/identity/public';
 import type { SupportModule } from '@gameing/backend/modules/support/public';
+import type { AdminModule } from '@gameing/backend/modules/admin/public';
 import type { Sequelize } from 'sequelize';
 
 test('support conversation list authenticates and scopes the query to the principal user', async () => {
@@ -34,7 +35,8 @@ test('support conversation list authenticates and scopes the query to the princi
     },
   } as unknown as SupportModule;
   const sequelize = {} as Sequelize;
-  const app = createApp({ logger, identityModule, supportModule, sequelize });
+  const adminModule = {} as AdminModule;
+  const app = createApp({ logger, identityModule, supportModule, adminModule, sequelize });
   const testServer = app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => testServer.once('listening', resolve));
   const address = testServer.address();
@@ -91,13 +93,14 @@ test('support player reply rejects forged staff sender types before opening a tr
       },
     },
   } as unknown as SupportModule;
+  const adminModule = {} as AdminModule;
   const sequelize = {
     transaction: async (callback: (tx: unknown) => unknown) => {
       transactionCalls.push(true);
       return callback({ transaction: 'tx' });
     },
   } as unknown as Sequelize;
-  const app = createApp({ logger, identityModule, supportModule, sequelize });
+  const app = createApp({ logger, identityModule, supportModule, adminModule, sequelize });
   const testServer = app.listen(0, '127.0.0.1');
   await new Promise<void>((resolve) => testServer.once('listening', resolve));
   const address = testServer.address();
