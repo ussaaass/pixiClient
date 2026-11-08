@@ -64,6 +64,7 @@ import { RoundStartUseCase } from './application/round-start.js';
 import { RoundSubmitUseCase } from './application/round-submit.js';
 import { RoundSettleUseCase } from './application/round-settle.js';
 import { createRoundSnapshotUseCase } from './application/round-snapshot.js';
+import { createClaimRoundRecoveryUseCase } from './application/claim-round-recovery.js';
 import { GameEntryUseCase } from './application/game-entry.js';
 
 import type { WalletModule } from '../wallet/assembly.js';
@@ -103,6 +104,8 @@ export interface RoomsModule {
   roundSubmit: RoundSubmitUseCase;
   roundSettle: RoundSettleUseCase;
   roundSnapshot: ReturnType<typeof createRoundSnapshotUseCase>;
+  /** Internal recovery-worker primitive; requires transaction; never runs settlement or exposes handler state. */
+  claimRoundRecovery: ReturnType<typeof createClaimRoundRecoveryUseCase>;
   gameEntry: GameEntryUseCase;
 
   /**
@@ -186,6 +189,7 @@ export function createRoomsModule(deps: RoomsModuleDeps): RoomsModule {
     defaultOutbox,
   );
   const roundSnapshot = createRoundSnapshotUseCase({ roundRepo, roundEventRepo });
+  const claimRoundRecovery = createClaimRoundRecoveryUseCase({ roomRepo, roundRepo });
   const gameEntry = new GameEntryUseCase(gameEntryRepo, clock);
 
   const module: RoomsModule = {
@@ -205,6 +209,7 @@ export function createRoomsModule(deps: RoomsModuleDeps): RoomsModule {
     roundSubmit,
     roundSettle,
     roundSnapshot,
+    claimRoundRecovery,
     gameEntry,
 
     async withTx<T>(scope: { transaction: Transaction | null }, fn: (outbox: OutboxPort) => T | Promise<T>): Promise<T> {

@@ -104,6 +104,9 @@ export interface RoomRepo {
 
   /** 标记 room ACTIVE=2 + bump fencing_token（每次状态变更 +1，防旧进程写入）。 */
   markRoomActive(roomId: string, newFencingToken: bigint, tx: Tx): Promise<void>;
+
+  /** 持有 room→round 锁后，以旧 token CAS 将 ACTIVE room 置为 RECOVERING 并写入新 token。 */
+  claimRoomRecovery(input: { roomId: string; expectedFencingToken: string; newFencingToken: string; tx: Tx }): Promise<void>;
 }
 
 // ---------------------------------------------------------------------------
@@ -131,7 +134,10 @@ export interface RoundRepo {
     tx: Tx;
   }): Promise<{ inserted: boolean; round: RoundModel }>;
 
-  /** 按主键锁读（SELECT ... FOR UPDATE；round 行锁）。 */
+  /** 只读 immutable parent id，recovery claim 不应查询 handler/ciphertext 列。 */
+  findRoundRoomId(roundId: string, tx: Tx): Promise<{ roomId: string } | null>;
+
+  /** 按主键锁读（SELECT ... FOR UPDATE；遵循 room → round 锁序）。 */
   lockRound(roundId: string, tx: Tx): Promise<RoundModel | null>;
 
   /** 按 round_key 查（断线恢复重放用；U(round_key) 全局唯一）。 */
@@ -209,12 +215,8 @@ export interface RoundRepo {
    */
   cancelRound(input: { roundId: string; fencingToken: string; tx: Tx }): Promise<void>;
 
-  /**
-   * 断线恢复（round RECOVERING=6；客户端重连经 snapshot 读全量；
-   * 重放走原 handler 版本，不重掷；本方法只推进 round 状态，
-   * 实际恢复逻辑由 handler 经 outbox 事件驱动）。
-   */
-  recoverRound(roundId: string, fencingToken: string, tx: Tx): Promise<void>;
+  /** ACTIVE round 以当前 fencing token CAS 转为 RECOVERING 并同步新 room token。 */
+  recoverRound(input: { roundId: string; expectedFencingToken: string; newFencingToken: string; tx: Tx }): Promise<void>;
 
   /** 读 round_player 全量快照（断线恢复用；按 seat_no 升序）。 */
   listRoundPlayers(roundId: string, tx?: Tx): Promise<RoundPlayerModel[]>;

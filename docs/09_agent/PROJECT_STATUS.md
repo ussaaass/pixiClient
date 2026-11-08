@@ -55,6 +55,7 @@
 - Round 73 的 review 发现 `/rounds` start replay 查询包含 SETTLING，但该状态应通过结算端点处理；现只对 PREPARING/ACTIVE 返回幂等成功，避免混淆业务动作，增加状态门禁测试。
 
 - 房间/牌局用例包含成员授权、fencing、幂等和资金侧门禁；Round 70 为 round-start 所有既有 round replay 返回路径增加了 round_player / 当前 SEATED membership 对照，要求四人数量、userId、membership ID 与 seatNo 一一匹配且 seatNo 唯一。
+- API-GAP-035 增加限缩恢复权 claim：caller-owned transaction 按 room→round 锁、仅投影 roomId、ACTIVE room/round + token 一致性检查后双表 CAS 递增 fencing token 并转 RECOVERING；PREPARING/SETTLING/终态 fail closed。focused tests 17/17、backend typecheck、Graphify 在原分支通过；当前集成复验待执行。未完成 worker lease/failure detection/scheduling、handler replay/private-card recovery、timeout policy、settlement 或生产恢复 E2E。
 - Round 68 settlement 防止重复玩家 userId/playerId 集合进入规则/账本处理；Round 74 进一步要求 scoring water 总和为零，先于 settlement 持久化与账本访问 fail closed。Round 69/70 start replay 防止参与者或座位快照漂移。
 - 生产匿名身份注册仍受凭证 bootstrap 协议阻塞；不得自行发明 device secret 的 wire 传输/挑战协议。
 - 服务端权威发牌、私有牌状态加密与争议审计、正式 game/tier 定价与 scoring config snapshot 仍未完成；不声称联机游戏端到端闭环。
@@ -70,6 +71,7 @@
 
 | 日期 | 变更 |
 | 2026-11-08 | API-GAP-032 provisioning：新增 migration 0021、SQL permanent key/hash tombstone + AES-GCM 24h replay、匿名玩家/device/wallet/gift 同事务用例、90d device cookie 和默认 disabled gate。MySQL 0020/0021 up/status/down/up/status；Docker registration 2/2、wallet ensure 6/6、auth routes 19/19、backend/server typecheck 通过。仍未做 MySQL/Redis 故障注入与真实浏览器验收，生产 gate 保持关闭。 |
+| 2026-11-08 | API-GAP-035 rooms 恢复 fencing claim 经集成并入 main：ACTIVE room/round 同事务按 room→round 锁、双表 expected-token CAS 递增并转 RECOVERING；不含 worker/replay/timeout/结算/财务副作用。集成分支既有 focused suite 17/17；归档 main 上完整复验记录于合并提交后。 |
 | 2026-11-07 | Goal round 54 settle round_player 授权前快照校验覆盖数组稠密性、成员字段/原型/反射异常；adapter+submit+settle 定向155/155、typecheck、scoped ESLint、Prettier通过。 |
 | 2026-11-07 | Goal round 52 replay 分支校验返回 row 的 round/user/type/status、规范 ID 与有效 submittedAt；错绑快照 STORAGE_UNAVAILABLE。adapter+submit/settle 151/151、typecheck、scoped ESLint、Prettier通过。 |
 | 2026-11-07 | Goal round 51 adapter 要求 submit 更新恰好一行并验证重读快照匹配轮次/用户/状态/key/hash/type；异常 fail closed。新增回归，定向145/145、typecheck、scoped ESLint、Prettier通过。 |

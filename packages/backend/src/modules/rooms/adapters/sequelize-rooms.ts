@@ -26,8 +26,8 @@
  * - `STORAGE_UNAVAILABLE`：Sequelize 故障 / 行缺失 / 状态机转换影响行数 0
  *   （可重试）。
  * - `FENCING_CONFLICT`：fencing_token 校验失败（旧进程写入被拒；
- *   本层不做 fencing 校验——用例层前置读 room/round 行后调
- *   `domain/round-rules.ts` `isValidFencingToken`，本层只落库）。
+ *   use case 校验 owner/token，本层 mutation 使用 expected-token/status
+ *   条件更新并检查 affected rows，接管与旧 owner 写入竞争时 fail closed）。
  *
  * 结构约定（每表一类，不混类）：
  * 各 Repo 接口各有 `create` / `lockByPk` 等同名方法，一个类无法实现两个
@@ -284,6 +284,18 @@ export class SequelizeRoomRepo implements RoomRepo {
       { where: { id: roomId }, transaction: txq } as never,
     );
   }
+
+  async claimRoomRecovery(input: { roomId: string; expectedFencingToken: string; newFencingToken: string; tx: Tx }): Promise<void> {
+    const txq = txOf(input.tx);
+    const [rows] = await this.models.RoomModel.update(
+      { status: RoomStatus.RECOVERING, fencingToken: input.newFencingToken } as never,
+      {
+        where: { id: input.roomId, status: RoomStatus.ACTIVE, fencingToken: input.expectedFencingToken },
+        transaction: txq,
+      } as never,
+    );
+    if (rows !== 1) throw new RoomDomainError(R.FENCING_CONFLICT, 'room recovery compare-and-swap failed');
+  }
 }
 
 /**
@@ -335,6 +347,15 @@ export class SequelizeRoundRepo implements RoundRepo {
       }
       throw err;
     }
+  }
+
+  async findRoundRoomId(roundId: string, tx: Tx): Promise<{ roomId: string } | null> {
+    const txq = txOf(tx);
+    const round = await this.models.RoundModel.findByPk(roundId, {
+      attributes: ['roomId'],
+      transaction: txq,
+    } as never);
+    return round === null ? null : { roomId: round.roomId };
   }
 
   async lockRound(roundId: string, tx: Tx): Promise<RoundModel | null> {
@@ -646,9 +667,16 @@ export class SequelizeRoundRepo implements RoundRepo {
     );
   }
 
-  async recoverRound(roundId: string, fencingToken: string, tx: Tx): Promise<void> {
-    const txq = txOf(tx);
-    await this.models.RoundModel.update({ status: RoundStatus.RECOVERING } as never, { where: { id: roundId }, transaction: txq } as never);
+  async recoverRound(input: { roundId: string; expectedFencingToken: string; newFencingToken: string; tx: Tx }): Promise<void> {
+    const txq = txOf(input.tx);
+    const [rows] = await this.models.RoundModel.update(
+      { status: RoundStatus.RECOVERING, fencingToken: input.newFencingToken } as never,
+      {
+        where: { id: input.roundId, status: RoundStatus.ACTIVE, fencingToken: input.expectedFencingToken },
+        transaction: txq,
+      } as never,
+    );
+    if (rows !== 1) throw new RoomDomainError(R.FENCING_CONFLICT, 'round recovery compare-and-swap failed');
   }
 
   async listRoundPlayers(roundId: string, tx?: Tx): Promise<RoundPlayerModel[]> {
